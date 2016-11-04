@@ -1,0 +1,18 @@
+symbol,name,category
+SPY,SPDR S&P 500,Equity
+IWM,iShares Russell 2000,Equity
+QQQ,PowerShares QQQ Nasdaq100,Equity
+USO,US Oil Fund,Commodity
+UNG, US Nat Gas Fund,Commodity
+GLD,SPDR Gold Shares,Commodity
+FXE,Guggenheim CurrencyShares Euro,Currency
+FXA,Guggenheim CurrencyShares Australian Dollar,Currency
+FXY,Guggenheim CurrencyShares Yen,Currency
+FXF,Guggenheim CurrencyShares Swiss Franc,Currency
+VNQ,Vanguard REIT ETF,Real Estate
+IYR,iShares US Real Estate,Real Estate
+HYG,iShares High Yield Corp Bond,Bond
+TLT,iShares 20+ yr treasury,Bond
+LQD,iShares Investment grade Corp Bond,Bond
+EMB,iShares Emerging Mkt Bond,Bond
+BND,Total Bond Mkt,Bond

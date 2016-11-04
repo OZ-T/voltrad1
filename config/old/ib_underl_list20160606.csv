@@ -1,0 +1,6 @@
+id,symbol,reqId,name,category,type,multiplier,trading_class,Exchange,Primary_Exchange,Currency,Expiry
+1,SPX,1002,S&P 500,Index,OPT,100,,SMART,,USD,20160714
+2,ES,1003,Mini future S&P,Future,FOP,50,,GLOBEX,,USD,20160715
+3,RUT,1004,Russell 2000,Index,OPT,100,,SMART,,USD,20160714
+4,IWM,1005,iShares Russell 2000,Equity,OPT,100,,SMART,,USD,20160715
+5,SPY,1001,SPDR S&P 500,Equity,OPT,100,,SMART,,USD,20160715

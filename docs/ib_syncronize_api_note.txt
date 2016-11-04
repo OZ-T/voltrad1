@@ -1,0 +1,235 @@
+Simplifying IB's API
+
+One of the main challenges for beginners with Interactive Brokers' API is that it's asynchronous- you say reqHistData and then nothing
+happens, and then some fractions of a second later a totally different method gets fired with the data you requested as an argument.
+For many systems, this slight speed optimization is unnecessary. It only helps when you're requesting many different things all at once.
+For the speed increase, the API is significantly less beginner-friendly.
+
+I'll explain how to make the API synchronized so that when you call an API function, it returns what you requested directly, just
+like a normal function. After googling it, in the technical terminology, it looks like I'm converting the API from "non-blocking
+asyncronous" to "blocking syncronous". You'll need IbPy if you don't already have it.
+
+This is inappropriate for systems that rapidly react to streams of intraday data, but is useful for requesting historical data,
+portfolio information, executions, the time, and the next valid id.
+
+Let's review how the API works:
+The two key parts are:
+1) EClientSocket - sends requests
+2) EWrapper - receives requested values
+
+After requesting something through the EClientSocket, you need to wait for a bit until all the requested values have hit the EWrapper.
+In general to syncronize things we'll follow this pattern:
+def syncronized_request(x):
+	myEClientSocket.request_x
+	wait
+	return myEWrapper.x
+
+'request_x' is a usual EClientSocket method which you can look up in the API doc.
+'wait' is defined like this-
+def wait():
+	inc_secs = .2 # a fifth of a second
+	while not myEWrapper.isDone:
+		sleep(inc_secs)
+	myEWrapper.isDone = False
+'myEWrapper.x' pulls the requested data out of the local variable 'x' where it has been stored in your overwridden EWrapper class.
+
+First import some libraries:
+Boilerplate Code (1)
+Then create your event listener subclass:
+Boilerplate Code (2)
+
+Then instantiate the requester and receiver:
+myEWrapper      = syncEWrapper()
+myEClientSocket = EClientSocket(myEWrapper)
+
+Now we can write the two simplest syncronized API functions:
+def getTime():
+	myEClientSocket.reqCurrentTime()
+	wait()
+	return myEWrapper.time
+
+def getData(contract):
+	myEClientSocket.reqRealTimeBars(tickerId=1,
+					contract=contract,
+					barSize=5,
+					whatToShow='MIDPOINT',
+					useRTH=1)
+	wait()
+	myEClientSocket.cancelRealTimeBars(tickerId=1)
+	return myEWrapper.bar
+
+Notice that we already added the variables 'time' and 'bar' to myEWrapper
+
+Let's add two more functions to hide the implementation:
+def connect(clientId):
+	myEClientSocket.eConnect('localhost', 7496, clientId)
+
+def disconnect():
+	myEClientSocket.eDisconnect()
+
+Run Boilerplate Code (3) to define my simplifying etf contract factory
+
+Now we can use the API easily, just call:
+spy = contract_etf('SPY')
+connect(1)
+getTime()
+getData(spy)
+sleep(1)
+getData(spy)
+disconnect()
+exit()
+
+Now that you see it works, you can look back and see how it worked
+Feel free to reuse or modify my code
+
+------------------------
+Boilerplate Code (1)
+from ib.ext.EWrapper import EWrapper
+from ib.ext.EClientSocket import EClientSocket
+import datetime as dt
+from time import sleep
+
+Boilerplate Code (3)
+import ib.ext
+def contract_etf(sym):
+	c = ib.ext.Contract.Contract()
+	c.m_symbol = sym.upper()
+	c.m_secType = 'STK'
+	c.m_exchange = 'SMART'
+	c.m_currency = 'USD'
+	return c
+
+Boilerplate Code (2)
+Subclassing EWrapper is the most intimidating part at first. Here's my subclass of it, which you can just copy:
+class syncEWrapper(EWrapper):
+	## variables to store requested data
+	isDone = False
+	time = None
+	bar  = None
+	## overwridden listener functions
+	def author():
+		return 'Max F. Dama'
+	def tickPrice(self, tickerId, field, price, canAutoExecute):
+		raise NotImplementedError()
+	def tickSize(self, tickerId, field, size):
+		raise NotImplementedError()
+	def tickOptionComputation(self, tickerId,
+									field,
+									impliedVol,
+									delta,
+									modelPrice,
+									pvDividend):
+		raise NotImplementedError()
+	def tickGeneric(self, tickerId, tickType, value):
+		raise NotImplementedError()
+	def tickString(self, tickerId, tickType, value):
+		raise NotImplementedError()
+	def tickEFP(self, tickerId,
+					  tickType,
+					  basisPoints,
+					  formattedBasisPoints,
+					  impliedFuture,
+					  holdDays,
+					  futureExpiry,
+					  dividendImpact,
+					  dividendsToExpiry):
+		raise NotImplementedError()
+	def orderStatus(self, orderId,
+						  status,
+						  filled,
+						  remaining,
+						  avgFillPrice,
+						  permId,
+						  parentId,
+						  lastFillPrice,
+						  clientId,
+						  whyHeld):
+		raise NotImplementedError()
+	def openOrder(self, orderId, contract, order, orderState):
+		raise NotImplementedError()
+	def updateAccountValue(self, key, value, currency, accountName):
+		raise NotImplementedError()
+	def updatePortfolio(self, contract,
+							  position,
+							  marketPrice,
+							  marketValue,
+							  averageCost,
+							  unrealizedPNL,
+							  realizedPNL,
+							  accountName):
+		raise NotImplementedError()
+	def updateAccountTime(self, timeStamp):
+		raise NotImplementedError()
+	def nextValidId(self, orderId):
+		pass
+	def contractDetails(self, reqId, contractDetails):
+		raise NotImplementedError()
+	def bondContractDetails(self, reqId, contractDetails):
+		raise NotImplementedError()
+	def contractDetailsEnd(self, reqId):
+		raise NotImplementedError()
+	def execDetails(self, orderId, contract, execution):
+		raise NotImplementedError()
+	def updateMktDepth(self, tickerId,
+							 position,
+							 operation,
+							 side,
+							 price,
+							 size):
+		raise NotImplementedError()
+	def updateMktDepthL2(self, tickerId,
+							   position,
+							   marketMaker,
+							   operation,
+							   side,
+							   price,
+							   size):
+		raise NotImplementedError()
+	def updateNewsBulletin(self, msgId, msgType, message, origExchange):
+		raise NotImplementedError()
+	def managedAccounts(self, accountsList):
+		raise NotImplementedError()
+	def receiveFA(self, faDataType, xml):
+		raise NotImplementedError()
+	def historicalData(self, reqId,
+							 date,
+							 open,
+							 high,
+							 low,
+							 close,
+							 volume,
+							 count,
+							 WAP,
+							 hasGaps):
+		raise NotImplementedError()
+	def scannerParameters(self, xml):
+		raise NotImplementedError()
+	def scannerData(self, reqId,
+						  rank,
+						  contractDetails,
+						  distance,
+						  benchmark,
+						  projection,
+						  legsStr):
+		raise NotImplementedError()
+	def scannerDataEnd(self, reqId):
+		raise NotImplementedError()
+	def realtimeBar(self, reqId,
+						  time,
+						  open,
+						  high,
+						  low,
+						  close,
+						  volume,
+						  wap,
+						  count):
+		self.bar = (time, open, high, low, close, volume)
+		self.isDone = True
+	def currentTime(self, time):
+		self.time = dt.datetime.fromtimestamp(time)
+		self.isDone = True
+	def fundamentalData(self, reqId, data):
+		raise NotImplementedError()
+	def error(self,*err):
+		print err
+

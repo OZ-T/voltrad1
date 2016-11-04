@@ -1,0 +1,67 @@
+100,101,106,165,225,233,236,258,411,456
+
+(1, 321, "Error validating request:-'zd' : cause - Incorrect generic tick list of 100,101,104,106,162,165,221,225,233,236,256,258,292,411,456.  Legal ones for (FOP) are: 
+100(Option Volume)
+101(Option Open Interest)
+105(Average Opt Volume)
+106(impvolat)
+107(climpvlt)
+125(Bond analytic data)
+165(Misc. Stats)
+166(CScreen)
+225(Auction)
+232/221(Mark Price)
+233(RTVolume)
+236(inventory)
+258/47(Fundamentals)
+291(ivclose)
+293(TradeCount)
+294(TradeRate)
+295(VolumeRate)
+318(LastRTHTrade)
+370(ParticipationMonitor)
+370(ParticipationMonitor)
+377(CttTickTag)
+377(CttTickTag)
+381(IB Rate)
+384(RfqTickRespTag)
+384(RfqTickRespTag)
+387(DMM)
+388(Issuer Fundamentals)
+391(IBWarrantImpVolCompeteTick)
+405(Index Capabilities)
+407(FuturesMargins)
+411(rthistvol)
+428(Monetary Close Price)
+439(MonitorTickTag)
+439(MonitorTickTag)
+456/59(IBDividends)
+459(RTCLOSE)
+460(Bond Factor Multiplier)
+499(Fee and Rebate Rate)
+506(midptiv)
+511(hvolrt10 (per-underlying))
+512(hvolrt30 (per-underlying))
+513(hvolrt50 (per-underlying))
+514(hvolrt75 (per-underlying))
+515(hvolrt100 (per-underlying))
+516(hvolrt150 (per-underlying))
+517(hvolrt200 (per-underlying))
+521(fzmidptiv)
+545(vsiv)
+576(EtfNavBidAsk(navbidask))
+577(EtfNavLast(navlast))
+578(EtfNavClose(navclose))
+584(Average Opening Vol.)
+585(Average Closing Vol.)
+587(Mark Price Delayed)
+
+
+
+100,101,105,106,107,125,165,166,225,232,233,236,258,291,293,294,295,318,370,370,377,377,381,384,384,387,388,391,405,407,411,428,439,439,456,459,460,499,506,511,512,513,514,515,516,517,521,545,576,577,578,584,585,587
+
+
+
+['lastOptPrice', 'modelPvDividend', 'lastPvDividend', 'bidImpliedVol', 'askImpliedVol', 'lastSize', 'bidPrice', 'modelDelta', 'bidGamma', 'MarkPrice', 'modelOptPrice', 'closePrice', 'lastGamma', 'askOptPrice', 'Volume', 'modelImpliedVol', 'lastTheta', 'askUndPrice', 'bidTheta', 'modelUndPrice', 'askGamma', 'bidDelta', 'askVega', 'bidVega', 'askSize', 'modelVega', 'askPrice', 'Halted', 'lastUndPrice', 'bidOptPrice', 'bidSize', 'lastDelta', 'askDelta', 'modelTheta', 'askPvDividend', 'bidPvDividend', 'askTheta', 'modelGamma', 'lastImpliedVol', 'CallOI', 'PutOI', 'bidUndPrice', 'lastVega']
+
+['lastOptPrice', 'modelPvDividend', 'lastPvDividend', 'bidImpliedVol', 'askImpliedVol', 'lastSize', 'bidPrice', 'modelDelta', 'bidGamma', 'MarkPrice', 'modelOptPrice', 'closePrice', 'lastGamma', 'askOptPrice', 'Volume', 'modelImpliedVol', 'lastTheta', 'askUndPrice', 'bidTheta', 'modelUndPrice', 'askGamma', 'bidDelta', 'askVega', 'bidVega', 'askSize', 'modelVega', 'askPrice', 'Halted', 'lastUndPrice', 'bidOptPrice', 'bidSize', 'lastDelta', 'askDelta', 'modelTheta', 'askPvDividend', 'bidPvDividend', 'askTheta', 'modelGamma', 'lastImpliedVol', 'CallOI', 'PutOI', 'bidUndPrice', 'lastVega']

@@ -1,0 +1,2 @@
+id,symbol,reqId,name,category,type,multiplier,trading_class,Exchange,Primary_Exchange,Currency,Expiry
+1,SPX,1002,S&P 500,Index,OPT,100,,SMART,,USD,20160714
