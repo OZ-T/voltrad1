@@ -324,8 +324,6 @@ def extrae_detalle_operaciones(year,month,day,hour,symbol,expiry,secType,account
         df1 = df1[df1.load_dttm <= valuation_dttm]
         df1=df1.rename(columns={'execid':'index'})
         df1.set_index(keys=['index'], drop=True, inplace=True)
-        #print "extrae_detalle_operaciones " , df1
-        dataframe = dataframe.append(df1)
         #for item in store.keys():
         #    date_object = datetime.strptime(str(item), '/%Y/%b/%d/%H/%M')
             # print("item=", str(item), date_object,valuation_dttm)
@@ -333,6 +331,14 @@ def extrae_detalle_operaciones(year,month,day,hour,symbol,expiry,secType,account
         #        df1=store.select(item,where=['symbol=='+symbol,'expiry=='+expiry])
         #        df1['load_dttm']=datetime.strptime(item, '/%Y/%b/%d/%H/%M')
         #        dataframe = dataframe.append(df1)
+
+        # en cada trade se toma la foto del portfolio y de la account para tener de comisiones coste base y margin por
+        # trade
+
+
+
+        #print "extrae_detalle_operaciones " , df1
+        dataframe = dataframe.append(df1)
         store.close()
     elif scenarioMode == "Y":
         df1 = globalconf.orders_dataframe_simulation(simulName=simulName)

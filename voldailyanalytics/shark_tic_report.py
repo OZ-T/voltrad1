@@ -34,9 +34,9 @@ def prev_weekday(adate):
 #
 def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMode,simulName,appendh5):
     print "Running for valuation date: " , i_date
-    # fecha en que se calcula la foto de la estrategia
+    # fechas en que se calcula la foto de la estrategia
+    # fecha que se utiliza para calcular retornos del subyacente y se convertira en hora mas cercana al cierre luego
     fecha_valoracion=i_date
-    #fecha que se utiliza para calcular retornos del subyacente y se convertira en hora mas cercana al cierre luego
     fecha_val_tminus1 = prev_weekday(fecha_valoracion)
     i_year=fecha_valoracion.year
     p_i_day_t0 = fecha_valoracion.day
@@ -174,7 +174,7 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
         retorno_suby_dia = np.nan
 
     ###################################################################################################################
-    # recupero la ultima cadena de opciones disponible para el subyacente y vencimiento dados en el datetime de valoracion
+    # FILTRO la ultima cadena de opciones disponible para el subyacente y vencimiento dados en el datetime de valoracion
     ###################################################################################################################
     cadena_opcs = cadena_opcs[cadena_opcs['load_dttm'] == hora_max]
     #cadena_opcs.info()
@@ -194,7 +194,7 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
     impl_vol_suby = subset_df['modelImpliedVol'].mean()
 
     ###################################################################################################################
-    # SACA FECHAS CON ORDERS Y JUNTA CON PRICES DE OPTIONS CHAIN
+    # SACA FECHAS para las que hay TRADES Y JUNTA CON PRICES DE OPTIONS CHAIN
     # se obtiene la lista de todas las datetimes en que se han realizado operaciones
     ###################################################################################################################
     temp_ts1=operaciones.reset_index().set_index('times').tz_localize('Europe/Madrid')
@@ -202,16 +202,15 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
 
     # Enriquezco las posiciones desde el inicio con las quotes de la cadena de opciones IV, griegas precio del subyacente etc
     # en cada date de todas las operaciones que se han realizado desde el inicio de la estrategia
-    lista_dias = set([x.date() for x in oper_series1])
-    #print "list de dias con operaciones en la estrategia: " , lista_dias
+    lista_dias_con_trades = set([x.date() for x in oper_series1])
+    #print "list de dias con operaciones en la estrategia: " , lista_dias_con_trades
     cadena_opcs_orders= pd.DataFrame()
-    for x in lista_dias:
+    for x in lista_dias_con_trades:
         temporal1 =ra.extrae_options_chain(year=x.year, month=str(x.month).zfill(2),  #x.strftime("%B")[:3],
                                            day=str(x.day).zfill(2),hour="23",
                                            symbol=i_symbol,expiry=i_expiry,secType=i_secType)
         cadena_opcs_orders=cadena_opcs_orders.append(temporal1)
 
-    # devuelve en ops_w_hist_opt_chain la lista de operaciones historicas con las cotizaciones de la cadena de opciones incluida
     cadena_opcs_orders[[u'CallOI',u'PutOI', u'Volume', u'askDelta', u'askGamma',
            u'askImpliedVol', u'askOptPrice', u'askPrice', u'askPvDividend',
            u'askSize', u'askTheta', u'askUndPrice', u'askVega', u'bidDelta',
@@ -233,16 +232,15 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
            u'modelDelta', u'modelGamma', u'modelImpliedVol', u'modelOptPrice',
            u'modelPvDividend', u'modelTheta', u'modelUndPrice', u'modelVega',
            u'multiplier', u'strike']].apply(pd.to_numeric)
-
     cadena_opcs_orders[['expiry','load_dttm']] = cadena_opcs_orders[['expiry','load_dttm']].apply(pd.to_datetime)
-
     cadena_opcs_orders_temp=cadena_opcs_orders.rename(columns={'load_dttm':'times'})
     #cadena_opcs_orders_temp=cadena_opcs_orders_temp.reset_index().set_index(['times','strike','right','expiry','symbol'])
     #cadena_opcs_orders_temp.info()
     cadena_opcs_orders_temp['on']=cadena_opcs_orders_temp['times'].dt.strftime("%Y-%m-%d %H")
     cadena_opcs_orders_temp = cadena_opcs_orders_temp.drop_duplicates(subset=['expiry', 'strike', 'symbol', 'right', 'on'], keep='last')
-
     operaciones['on']=operaciones['times'].dt.strftime("%Y-%m-%d %H")
+
+    # devuelve en ops_w_hist_opt_chain la lista de operaciones historicas con las cotizaciones de la cadena de opciones incluida
     ops_w_hist_opt_chain = pd.merge(operaciones, cadena_opcs_orders_temp, how='left', on=['expiry', 'strike','symbol','right','on']) #.fillna(method='ffill')
     #ops_w_hist_opt_chain.to_excel("real.xlsx")
     # Para cada datetime en que se han realizado operaciones (variable oper_series1) se extraen de cadena_opcs2 los precios mas adecuados
@@ -270,12 +268,12 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
     temp1=temp1.reset_index()
     temp1['on']=temp1['load_dttm'].dt.strftime("%Y-%m-%d %H")
 
-    t_trade_summary=ops_w_hist_opt_chain[['times_opt_chain','load_dttm','times_ops','localSymbol','lastUndPrice','avgprice','multiplier',
+    ops_w_hist_opt_chain=ops_w_hist_opt_chain[['times_opt_chain','load_dttm','times_ops','localSymbol','lastUndPrice','avgprice','multiplier',
                            'qty','side','DTE','modelDelta','modelGamma','modelTheta','modelVega','strike','shares']].drop_duplicates()
 
-    t_trade_summary['on']=t_trade_summary['times_opt_chain'].dt.strftime("%Y-%m-%d %H")
-    trade_summary = pd.merge(t_trade_summary, temp1, how='left', on=['on'])
+    ops_w_hist_opt_chain['on']=ops_w_hist_opt_chain['times_opt_chain'].dt.strftime("%Y-%m-%d %H")
 
+    trade_summary = pd.merge(ops_w_hist_opt_chain, temp1, how='left', on=['on'])
     # calcular 1SD con el horizonte de dias DTE
     trade_summary['1SD'] = trade_summary['lastUndPrice'] * trade_summary['ImplVolATM'] / (365.0/((trade_summary['DTE']) ) )**0.5
     trade_summary['lastUndPrice_less1SD']=trade_summary['lastUndPrice'] - trade_summary['1SD']
@@ -287,31 +285,27 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
     trade_summary['sign'] = 0
     trade_summary.loc[trade_summary['side'] == 'SLD', 'sign'] = -1
     trade_summary.loc[trade_summary['side'] == 'BOT', 'sign'] = 1
-
     trade_summary['CreditoBruto'] = trade_summary['avgprice'] * trade_summary['multiplier'] * trade_summary['shares'] * trade_summary['sign']
-
     #esto es util para la fase de apertura
     trade_summary['1SD15D'] = trade_summary['lastUndPrice'] * trade_summary['ImplVolATM'] / (365.0/((15.0) ) )**0.5
     trade_summary['1SD21D'] = trade_summary['lastUndPrice'] * trade_summary['ImplVolATM'] / (365.0/((21.0) ) )**0.5
-
     trade_summary=trade_summary.sort_values(by=['times_opt_chain', 'localSymbol'] , ascending=[False, True])
 
     # juntar las posiciones con la cadena de opciones para tener las griegas, bid ask volumen etc
     # el datetime de los dos conjutnos de datos tiene siempre un lag por ese motivo el market value de pos
     # no coincide con el last price que vienen de cadena_opcs
-    result = pd.merge(posiciones, cadena_opcs, how='left', on=['expiry', 'strike','symbol','right'])
-    result = result[['localSymbol','right','position','bidPrice','askPrice','lastPrice','marketValue','averageCost','multiplier_x',
-                    'modelDelta','modelGamma','modelTheta','modelVega','load_dttm_y','load_dttm_x','modelImpliedVol'
-                     ,'expiry','lastUndPrice']]
+    positions_summary = pd.merge(posiciones, cadena_opcs, how='left', on=['expiry', 'strike','symbol','right'])
+    positions_summary = positions_summary[['localSymbol','right','position','bidPrice','askPrice','lastPrice',
+                                           'marketValue','averageCost','multiplier_x','modelDelta','modelGamma',
+                                           'modelTheta','modelVega','load_dttm_y','load_dttm_x','modelImpliedVol',
+                                           'expiry','lastUndPrice']]
 
     #cross check marketValue from portfolio and that derived from market prices
-    result['marketValuefromPrices'] = result['position'] * result['multiplier_x'] * ( result['bidPrice'] + result['askPrice'] ) / 2.0
-    result['expiry'] = result['expiry'].apply(pd.to_datetime)
-    result.rename(columns={'multiplier_x': 'multiplier', 'load_dttm_y': 'load_dttm_cadena'
-                          , 'load_dttm_x': 'load_dttm_posiciones'}, inplace=True)
-    #print "result " , result
-    result.to_excel("result.xlsx")
-
+    positions_summary['marketValuefromPrices'] = positions_summary['position'] * positions_summary['multiplier_x'] \
+                                                 * ( positions_summary['bidPrice'] + positions_summary['askPrice'] ) / 2.0
+    positions_summary['expiry'] = positions_summary['expiry'].apply(pd.to_datetime)
+    positions_summary.rename(columns={'multiplier_x': 'multiplier', 'load_dttm_y': 'load_dttm_cadena'
+                                        , 'load_dttm_x': 'load_dttm_posiciones'}, inplace=True)
     """
     u'averageCost', u'conId', u'expiry', u'localSymbol', u'marketPrice',
            u'marketValue', u'multiplier_x', u'position', u'realizedPNL', u'right',
@@ -331,29 +325,28 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
     """
 
     #caclulo dias a expiracion en el trade
-    result['DTE'] = (result['expiry'] - fecha_valoracion ).astype('timedelta64[D]').astype(int)
+    positions_summary['DTE'] = (positions_summary['expiry'] - fecha_valoracion ).astype('timedelta64[D]').astype(int)
     ## hay que calcular aqui la IV de las opciones ATM en el momento del trade, se saca de la cadena de opciones
-    result['ImplVolATM'] = cadena_opcs.ix[(cadena_opcs['strike'] - cadena_opcs['lastUndPrice']).abs().argsort()[:4] ]['modelImpliedVol'].mean()
+    positions_summary['ImplVolATM'] = cadena_opcs.ix[(cadena_opcs['strike'] - cadena_opcs['lastUndPrice']).abs().argsort()[:4] ]['modelImpliedVol'].mean()
     # calcular 1SD con el horizonte de dias DTE
-    result['1SD'] = result['lastUndPrice'] * result['ImplVolATM'] / (365.0/((result['DTE']) ) )**0.5
-    result['lastUndPrice_less1SD']=result['lastUndPrice'] - result['1SD']
-    result['lastUndPrice_plus1SD']=result['lastUndPrice'] + result['1SD']
-    result['midPrice']= ( result['bidPrice'] + result['askPrice'] ) / 2
-    result['ValCurrent'] = result['midPrice'] * np.sign(result['position'])
-    result['costUnit'] = result['averageCost'] * np.sign(result['position']) / result['multiplier']
-    result['Dshort'] = result['modelDelta'] * result['multiplier']
-    result['DshortPosition'] = result['modelDelta'] * result['multiplier'] * result['position']
-    result['GammaPosition'] = result['modelGamma'] * result['multiplier'] * result['position']
-    result['ThetaPosition'] = result['modelTheta'] * result['multiplier'] * result['position']
-    result['VegaPosition'] = result['modelVega'] * result['multiplier'] * result['position']
-    positions_summary=result
+    positions_summary['1SD'] = positions_summary['lastUndPrice'] * positions_summary['ImplVolATM'] / (365.0/((positions_summary['DTE']) ) )**0.5
+    positions_summary['lastUndPrice_less1SD']=positions_summary['lastUndPrice'] - positions_summary['1SD']
+    positions_summary['lastUndPrice_plus1SD']=positions_summary['lastUndPrice'] + positions_summary['1SD']
+    positions_summary['midPrice']= ( positions_summary['bidPrice'] + positions_summary['askPrice'] ) / 2
+    positions_summary['ValCurrent'] = positions_summary['midPrice'] * np.sign(positions_summary['position'])
+    positions_summary['costUnit'] = positions_summary['averageCost'] * np.sign(positions_summary['position']) / positions_summary['multiplier']
+    positions_summary['Dshort'] = positions_summary['modelDelta'] * positions_summary['multiplier']
+    positions_summary['DshortPosition'] = positions_summary['modelDelta'] * positions_summary['multiplier'] * positions_summary['position']
+    positions_summary['GammaPosition'] = positions_summary['modelGamma'] * positions_summary['multiplier'] * positions_summary['position']
+    positions_summary['ThetaPosition'] = positions_summary['modelTheta'] * positions_summary['multiplier'] * positions_summary['position']
+    positions_summary['VegaPosition'] = positions_summary['modelVega'] * positions_summary['multiplier'] * positions_summary['position']
     positions_summary=positions_summary.sort_values(by=['right', 'localSymbol'] , ascending=[False, True])
 
     # agregar por spreads
-    spread_summary = result.groupby(by=['right'])['ValCurrent','costUnit','marketValue','DshortPosition'].sum()
+    spread_summary = positions_summary.groupby(by=['right'])['ValCurrent','costUnit','marketValue','DshortPosition'].sum()
     # agregar total
-    total_summary = result[['DshortPosition','GammaPosition','ThetaPosition','VegaPosition','marketValue']].sum()
-    total_summary_risk = result[['lastUndPrice','ImplVolATM','multiplier']].mean()
+    total_summary = positions_summary[['DshortPosition','GammaPosition','ThetaPosition','VegaPosition','marketValue']].sum()
+    total_summary_risk = positions_summary[['lastUndPrice','ImplVolATM','multiplier']].mean()
     total_summary_risk['Pts1SD1D'] = total_summary_risk['lastUndPrice'] * total_summary_risk['ImplVolATM'] / np.sqrt(365.0)
     total_summary_risk['Pts1SD5D'] = total_summary_risk['lastUndPrice'] * total_summary_risk['ImplVolATM'] / np.sqrt(365.0/5.0)
     total_summary=total_summary.append(total_summary_risk)
@@ -608,7 +601,7 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
                               'VegaThetaRatio':total_summary['VegaThetaRatio'],
                               'DTMaxdatost_1':hora_max_tminus1.strftime("%Y-%m-%d %H:%M:%S"),
                               'DTMaxdatost': hora_max.strftime("%Y-%m-%d %H:%M:%S"),
-                              'DToperaciones':str(lista_dias),
+                              'DToperaciones':str(lista_dias_con_trades),
                               'MargenNeto': margen_neto
                               },index=[hora_max.strftime("%Y-%m-%d %H:%M:%S")])
     if appendh5 != 1:
@@ -719,7 +712,7 @@ if __name__=="__main__":
     fecha_valoracion = dt.datetime(year=2016, month=9, day=20, hour=15, minute=59, second=59)
     #fecha_valoracion=dt.datetime.now()
     run_analytics(symbol="SPY", expiry="20161021", secType="OPT", accountid=accountid,
-                  valuation_dt=fecha_valoracion,scenarioMode="Y",simulName="spy1016dls",appendh5=1)
+                  valuation_dt=fecha_valoracion,scenarioMode="Y",simulName="spy1016dls",appendh5=0)
     #run_analytics(symbol="ES", expiry="20161118", secType="FOP", accountid=accountid,
     #             valuation_dt=fecha_valoracion,scenarioMode="N",simulName="NA",appendh5=1)
 
