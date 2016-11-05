@@ -11,15 +11,17 @@ from pandas import ExcelWriter
 from scipy import stats
 import datetime as dt
 from volsetup import config
+from volsetup.logger import logger
 
 # Regular trading hours in US (CEST time)
 # TODO: need to consider change saving time CEST vs CET
 _rth = (15,16,17,18,19,20,21)
 
-def prev_weekday(adate):
+def prev_weekday_close(adate):
     _offsets = (3, 1, 1, 1, 1, 1, 2)
-    return adate - dt.timedelta(days=_offsets[adate.weekday()])
+    return ( adate - dt.timedelta(days=_offsets[adate.weekday()]) ).replace(hour=23,minute=59, second=59)
 
+log = logger("Shark TIC Analytics")
 
 # Analizar TIC activas para un subyacente y vencimiento dados para una datetime de valoracion dada
 #   1.- se obtiene del chain option del h5 historico para la datetime de valoracion, los precios (opciones y subyacente),
@@ -33,109 +35,96 @@ def prev_weekday(adate):
 #       en que se ha realizado operaciones (este historico se obtiene en el punto 4 anterior)
 #
 def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMode,simulName,appendh5):
-    print "Running for valuation date: " , i_date
-    # fechas en que se calcula la foto de la estrategia
-    # fecha que se utiliza para calcular retornos del subyacente y se convertira en hora mas cercana al cierre luego
-    fecha_valoracion=i_date
-    fecha_val_tminus1 = prev_weekday(fecha_valoracion)
-    i_year=fecha_valoracion.year
-    p_i_day_t0 = fecha_valoracion.day
-    p_i_hour_t0 = fecha_valoracion.hour
-    i_month=fecha_valoracion.strftime("%B")[:3]
-    i_month_num=str(fecha_valoracion.month).zfill(2)
-    i_day_t0= str(fecha_valoracion.day).zfill(2)
-    i_month_num_tminus1 = str(fecha_val_tminus1.month).zfill(2)
-    i_day_tminus1 = str(fecha_val_tminus1.day).zfill(2)
+    log.info("Running for valuation date: [%s] " % (str(i_date)) )
 
-    ###################################################################################################################
-    # PORTFOLIO en la fecha de valoracion
-    # posiciones actuales en las opciones en el symbol y el expiry
-    ###################################################################################################################
-    posiciones=ra.extrae_portfolio_positions(year=i_year,month=i_month,day=p_i_day_t0,hour=p_i_hour_t0,
-                                             symbol=i_symbol,expiry=i_expiry,secType=i_secType,accountid=accountid,
-                                             scenarioMode=scenarioMode,simulName=simulName)
-    #posiciones.to_excel("posiciones.xlsx")
-    posiciones=posiciones[[u'averageCost',u'conId', u'expiry', u'localSymbol', u'marketPrice', u'marketValue',
-                           u'multiplier', u'position', u'realizedPNL',
-                           u'right', u'strike', u'symbol', u'unrealizedPNL', u'current_datetime',
-                           u'load_dttm']]
-    # se queda con la última foto cargada del dia (la h5 accounts se actualiza cada hora RTH)
-    posiciones=posiciones.reset_index().drop_duplicates(subset='index',keep='last').set_index('index')
-    posiciones['load_dttm'] = posiciones['load_dttm'].apply(pd.to_datetime)
-    posiciones[[u'averageCost',u'marketPrice',u'marketValue', u'multiplier', u'position',
-                u'realizedPNL', u'strike',u'unrealizedPNL']] = posiciones[[u'averageCost',u'marketPrice',
-                                                            u'marketValue', u'multiplier', u'position',
-                                                            u'realizedPNL', u'strike', u'unrealizedPNL']].apply(pd.to_numeric)
+    # fechas en que se calcula la foto de la estrategia
+    fecha_valoracion=i_date
+    # fecha que se utiliza para calcular retornos del subyacente y se convierte en hora mas cercana al cierre
+    fecha_val_tminus1 = prev_weekday_close(fecha_valoracion)
 
     ###################################################################################################################
     # ORDERS
     # se obtienen todas operaciones desde el inicio de la estrategia hasta el datetime de valoracion
     ###################################################################################################################
-    operaciones=ra.extrae_detalle_operaciones(year=i_year,month=i_month_num,day=i_day_t0,hour=p_i_hour_t0,
+    operaciones=ra.extrae_detalle_operaciones(valuation_dttm=fecha_valoracion,
                                               symbol=i_symbol,expiry=i_expiry,secType=i_secType,accountid=accountid,
                                               scenarioMode=scenarioMode, simulName=simulName)
-    #operaciones.to_excel("operaciones.xlsx")
-    operaciones=operaciones[['localSymbol','avgprice','expiry','conId','current_datetime','symbol','load_dttm',
-                             'multiplier','price','qty','right','side','strike','times','shares']]
-    operaciones[['avgprice','multiplier','price','qty','strike','shares']]= \
-                    operaciones[['avgprice','multiplier','price','qty','strike','shares']].apply(pd.to_numeric)
 
-    operaciones[['expiry','current_datetime','load_dttm','times']] = \
-                    operaciones[['expiry','current_datetime','load_dttm','times']].apply(pd.to_datetime)
-    #operaciones.columns
-    #operaciones.index
-    # elimina duplicados causados por posibles recargas manuales de los ficheros h5 desde IB API
-    operaciones=operaciones.reset_index().drop_duplicates(subset='index',keep='last').set_index('index')
+    ###################################################################################################################
+    # SACA FECHAS para las que hay TRADES Y JUNTA CON PORTFOLIO ACCOUNT Y PRICES DE OPTIONS CHAIN
+    # se obtiene la lista de todas las datetimes en que se han realizado operaciones
+    ###################################################################################################################
+    temp_ts1=operaciones.reset_index().set_index('orders_times') #.tz_localize('Europe/Madrid')
+    oper_series1=temp_ts1.index.unique().to_pydatetime()
+    #lista_dttm_con_trades = set([x.date() for x in oper_series1])
+    lista_dttm_con_trades = set([x.replace(minute=59, second=59) for x in oper_series1])
+    #x = x.replace(minute=59, second=59)  # to ensure we han updated data in portfolio after the trade
+    log.info("dttm operaciones: [%s] " % (str(lista_dttm_con_trades)) )
+
+    ###################################################################################################################
+    # PORTFOLIO en la fecha de valoracion y en las fechas de los trades
+    # La foto del portfolio mas actual se saca para hacer cross check con el market value y p&l que se clcula de los precios
+    # en la ejecucion con SCENARIO=N. Para la ejecucion de SCENARIO no se usa
+    # posiciones actuales en las opciones en el symbol y el expiry
+    ###################################################################################################################
+    if scenarioMode != "Y":
+        # base cse
+        posiciones = ra.extrae_portfolio_positions(valuation_dttm=fecha_valoracion,
+                                                   symbol=i_symbol, expiry=i_expiry, secType=i_secType,
+                                                   accountid=accountid,
+                                                   scenarioMode=scenarioMode, simulName=simulName)
+    else:
+        # scenario case
+        x=max(lista_dttm_con_trades)
+        posiciones = ra.extrae_portfolio_positions(valuation_dttm=x,
+                                                   symbol=i_symbol, expiry=i_expiry, secType=i_secType,
+                                                   accountid=accountid,
+                                                   scenarioMode=scenarioMode, simulName=simulName)
+        posiciones['marketValue'] = 0 # no se usa
+        posiciones['unrealizedPNL'] = 0  # no se usa
+        posiciones['current_datetime'] = fecha_valoracion
+        posiciones['load_dttm'] = fecha_valoracion
+
+
+
+    posiciones_trades_dates = pd.DataFrame()
+    for x in lista_dttm_con_trades:
+        temp_portfolio =ra.extrae_portfolio_positions(valuation_dttm=x ,
+                                           symbol=i_symbol,expiry=i_expiry,secType=i_secType,
+                                           accountid = accountid,
+                                           scenarioMode = scenarioMode, simulName = simulName)
+        posiciones_trades_dates=posiciones_trades_dates.append(temp_portfolio)
+
+
+    ###################################################################################################################
+    # ACCOUNT
+    ###################################################################################################################
+    account=ra.extrae_account_snapshot_new(valuation_dttm=fecha_valoracion,
+                                           accountid=accountid,scenarioMode=scenarioMode, simulName=simulName)
+    # foto de la cuenta en el cierre del dia anterior a la fecha de valoracion
+    #account=account.append(ra.extrae_account_snapshot_new(valuation_dttm=fecha_val_tminus1,
+    #                                                      accountid=accountid, #cierre del dia anterior
+    #                                                      scenarioMode = scenarioMode, simulName = simulName))
+
+    account_trades_dates = pd.DataFrame()
+    # foto de la cuenta en las fechas de los trades
+    for x in lista_dttm_con_trades:
+        temp_account =ra.extrae_account_snapshot_new(valuation_dttm=x ,
+                                                       accountid = accountid,
+                                                       scenarioMode = scenarioMode, simulName = simulName)
+        account_trades_dates=account_trades_dates.append(temp_account)
 
     ###################################################################################################################
     # OPTIONS CHAIN
     # precios de la cadena de opciones lo mas cerca posible de la fecha de valoracion
     # realmente saca todos los precios del dia anteriores a dicha fecha
     ###################################################################################################################
-    cadena_opcs=ra.extrae_options_chain(year=i_year, month=i_month_num, day=i_day_t0,hour=p_i_hour_t0,
-                                        symbol=i_symbol,expiry=i_expiry,secType=i_secType)
-
-    #cadena_opcs.columns
-    cadena_opcs[[u'CallOI',u'PutOI', u'Volume', u'askDelta', u'askGamma',
-                   u'askImpliedVol', u'askOptPrice', u'askPrice', u'askPvDividend',
-                   u'askSize', u'askTheta', u'askUndPrice', u'askVega', u'bidDelta',
-                   u'bidGamma', u'bidImpliedVol', u'bidOptPrice', u'bidPrice',
-                   u'bidPvDividend', u'bidSize', u'bidTheta', u'bidUndPrice', u'bidVega',
-                   u'closePrice', u'highPrice', u'lastDelta', u'lastGamma', u'lastImpliedVol',
-                   u'lastOptPrice', u'lastPrice', u'lastPvDividend', u'lastSize',
-                   u'lastTheta', u'lastUndPrice', u'lastVega', u'lowPrice',
-                   u'modelDelta', u'modelGamma', u'modelImpliedVol', u'modelOptPrice',
-                   u'modelPvDividend', u'modelTheta', u'modelUndPrice', u'modelVega',
-                   u'multiplier', u'strike']] = cadena_opcs[[u'CallOI',u'PutOI', u'Volume', u'askDelta', u'askGamma',
-                   u'askImpliedVol', u'askOptPrice', u'askPrice', u'askPvDividend',
-                   u'askSize', u'askTheta', u'askUndPrice', u'askVega', u'bidDelta',
-                   u'bidGamma', u'bidImpliedVol', u'bidOptPrice', u'bidPrice',
-                   u'bidPvDividend', u'bidSize', u'bidTheta', u'bidUndPrice', u'bidVega',
-                   u'closePrice', u'highPrice', u'lastDelta', u'lastGamma', u'lastImpliedVol',
-                   u'lastOptPrice', u'lastPrice', u'lastPvDividend', u'lastSize',
-                   u'lastTheta', u'lastUndPrice', u'lastVega', u'lowPrice',
-                   u'modelDelta', u'modelGamma', u'modelImpliedVol', u'modelOptPrice',
-                   u'modelPvDividend', u'modelTheta', u'modelUndPrice', u'modelVega',
-                   u'multiplier', u'strike']].apply(pd.to_numeric)
-    cadena_opcs['load_dttm'] = cadena_opcs['load_dttm'].apply(pd.to_datetime)
+    cadena_opcs=ra.extrae_options_chain(valuation_dttm=fecha_valoracion,symbol=i_symbol,expiry=i_expiry,secType=i_secType)
 
     # cadena de opciones en el cierre del dia anterior a la fecha de valoracion
     # realmente saca todos los precios del dia anteriores a dicha fecha
-    cadena_opcs_tminus1=ra.extrae_options_chain(year=i_year, month=i_month_num_tminus1, day=i_day_tminus1,hour=23, #cierre del dia anterior
+    cadena_opcs_tminus1=ra.extrae_options_chain(valuation_dttm=fecha_val_tminus1, #cierre del dia anterior
                                                 symbol=i_symbol,expiry=i_expiry,secType=i_secType)
-
-    ###################################################################################################################
-    # foto de la cuenta en la fecha de valoracion
-    ###################################################################################################################
-    account=ra.extrae_account_snapshot_new(year=i_year, month=fecha_valoracion.month, day=p_i_day_t0,
-                                           hour=p_i_hour_t0,accountid=accountid,
-                                           scenarioMode=scenarioMode, simulName=simulName)
-    # foto de la cuenta en el cierre del dia anterior a la fecha de valoracion
-    account=account.append(ra.extrae_account_snapshot_new(year=i_year, month=fecha_val_tminus1.month,
-                                                          day=fecha_val_tminus1.day,hour=23,
-                                                          accountid=accountid, #cierre del dia anterior
-                                                          scenarioMode = scenarioMode, simulName = simulName))
-    #account.to_excel("account.xlsx")
 
     ###################################################################################################################
     # 1.- PRECIO DEL SUBYACENTE EN valuation datetime
@@ -144,211 +133,253 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
     # para cada load_dttm debe haber pequeñas diferencias en el precio del subyacente
     # por el modo asincrono en que se recuperan los datos.
     ###################################################################################################################
-    underl_prc_df = cadena_opcs[['lastUndPrice','load_dttm']].groupby(['load_dttm']).agg(lambda x: stats.mode(x)[0][0])
+    underl_prc_df = cadena_opcs[['prices_lastUndPrice','prices_load_dttm']].groupby(['prices_load_dttm']).agg(lambda x: stats.mode(x)[0][0])
     #print "underl_prc_df ",underl_prc_df
     # si el dataset esta vacio no se puede continuar en la analitica.
     if underl_prc_df.empty:
         print "No option data to analyze (t). Exiting ..."
         return
     # esto me da el ultimo precio disponible en la H5 del subyacente antes de la fecha de valoracion
-    underl_prc = float(underl_prc_df.ix[np.max(underl_prc_df.index)]['lastUndPrice'])
+    underl_prc = float(underl_prc_df.ix[np.max(underl_prc_df.index)]['prices_lastUndPrice'])
     hora_max=np.max(underl_prc_df.index)
 
     ###################################################################################################################
     ## Lo mismo pero para t-1 (ayer)
     ###################################################################################################################
-    underl_prc_df_tminus1 = cadena_opcs_tminus1[['lastUndPrice','load_dttm']].groupby(['load_dttm']).agg(lambda x: stats.mode(x)[0][0])
+    underl_prc_df_tminus1 = cadena_opcs_tminus1[['prices_lastUndPrice',
+                                                 'prices_load_dttm']].groupby(['prices_load_dttm']).agg(lambda x: stats.mode(x)[0][0])
     if underl_prc_df_tminus1.empty:
         print "No option data to analyze (t-1). Exiting ..."
         return
-    underl_prc_tminus1 = float(underl_prc_df_tminus1.ix[np.max(underl_prc_df_tminus1.index)]['lastUndPrice'])
+    underl_prc_tminus1 = float(underl_prc_df_tminus1.ix[np.max(underl_prc_df_tminus1.index)]['prices_lastUndPrice'])
     hora_max_tminus1=np.max(underl_prc_df_tminus1.index)
 
     ###################################################################################################################
     # calcular el retorno del subyacente entre el cierre de ayer y lo que llevamos de hoy
     ###################################################################################################################
     try:
-        retorno_suby_dia = np.log(float(underl_prc_df[underl_prc_df.index == hora_max]['lastUndPrice'])
-               / float(underl_prc_df_tminus1[underl_prc_df_tminus1.index == hora_max_tminus1]['lastUndPrice'] ) )
+        retorno_suby_dia = np.log(float(underl_prc_df[underl_prc_df.index == hora_max]['prices_lastUndPrice'])
+               / float(underl_prc_df_tminus1[underl_prc_df_tminus1.index == hora_max_tminus1]['prices_lastUndPrice'] ) )
     except ZeroDivisionError:
         retorno_suby_dia = np.nan
 
     ###################################################################################################################
     # FILTRO la ultima cadena de opciones disponible para el subyacente y vencimiento dados en el datetime de valoracion
     ###################################################################################################################
-    cadena_opcs = cadena_opcs[cadena_opcs['load_dttm'] == hora_max]
+    cadena_opcs = cadena_opcs[cadena_opcs['prices_load_dttm'] == hora_max]
     #cadena_opcs.info()
     cadena_opcs.index = pd.RangeIndex(start=0, stop=len(cadena_opcs), step=1)
-    cadena_opcs = cadena_opcs.dropna(subset=['askDelta'])
-    cadena_opcs=cadena_opcs.drop_duplicates(subset=['strike','symbol','secType','right','load_dttm','expiry',
-                                           'current_date','currency','exchange'])
+    cadena_opcs = cadena_opcs.dropna(subset=['prices_askDelta'])
+    cadena_opcs=cadena_opcs.drop_duplicates(subset=['prices_strike','prices_symbol','prices_secType','prices_right',
+                                                    'prices_load_dttm','prices_expiry','prices_current_date',
+                                                    'prices_currency','prices_exchange'])
 
     ###################################################################################################################
     # CALCULA LA IV ATM
     # saca los strikes mas cerca de ATM de la cadena de opciones del paso anterior
     ###################################################################################################################
-    subset_df=cadena_opcs.ix[(cadena_opcs['strike'] - underl_prc).abs().argsort()[:4]]
+    subset_df=cadena_opcs.ix[(cadena_opcs['prices_strike'] - underl_prc).abs().argsort()[:4]]
     # cadena_opcs[(cadena_opcs['strike']-underl_prc).abs() < 0.5]
     # mejor usar modelImpliedVol que lastImpliedVol ???!!!
     #calcula la volimpl del subyacente como las medias de las vol impl de las opciones mas ATM
-    impl_vol_suby = subset_df['modelImpliedVol'].mean()
-
-    ###################################################################################################################
-    # SACA FECHAS para las que hay TRADES Y JUNTA CON PRICES DE OPTIONS CHAIN
-    # se obtiene la lista de todas las datetimes en que se han realizado operaciones
-    ###################################################################################################################
-    temp_ts1=operaciones.reset_index().set_index('times').tz_localize('Europe/Madrid')
-    oper_series1=temp_ts1.index.unique()
+    impl_vol_suby = subset_df['prices_modelImpliedVol'].mean()
 
     # Enriquezco las posiciones desde el inicio con las quotes de la cadena de opciones IV, griegas precio del subyacente etc
     # en cada date de todas las operaciones que se han realizado desde el inicio de la estrategia
-    lista_dias_con_trades = set([x.date() for x in oper_series1])
-    #print "list de dias con operaciones en la estrategia: " , lista_dias_con_trades
     cadena_opcs_orders= pd.DataFrame()
-    for x in lista_dias_con_trades:
-        temporal1 =ra.extrae_options_chain(year=x.year, month=str(x.month).zfill(2),  #x.strftime("%B")[:3],
-                                           day=str(x.day).zfill(2),hour="23",
+    for x in lista_dttm_con_trades:
+        temporal1 =ra.extrae_options_chain(valuation_dttm=x,
                                            symbol=i_symbol,expiry=i_expiry,secType=i_secType)
         cadena_opcs_orders=cadena_opcs_orders.append(temporal1)
 
-    cadena_opcs_orders[[u'CallOI',u'PutOI', u'Volume', u'askDelta', u'askGamma',
-           u'askImpliedVol', u'askOptPrice', u'askPrice', u'askPvDividend',
-           u'askSize', u'askTheta', u'askUndPrice', u'askVega', u'bidDelta',
-           u'bidGamma', u'bidImpliedVol', u'bidOptPrice', u'bidPrice',
-           u'bidPvDividend', u'bidSize', u'bidTheta', u'bidUndPrice', u'bidVega',
-           u'closePrice', u'highPrice', u'lastDelta', u'lastGamma', u'lastImpliedVol',
-           u'lastOptPrice', u'lastPrice', u'lastPvDividend', u'lastSize',
-           u'lastTheta', u'lastUndPrice', u'lastVega', u'lowPrice',
-           u'modelDelta', u'modelGamma', u'modelImpliedVol', u'modelOptPrice',
-           u'modelPvDividend', u'modelTheta', u'modelUndPrice', u'modelVega',
-           u'multiplier', u'strike']] = cadena_opcs_orders[[u'CallOI',u'PutOI', u'Volume', u'askDelta', u'askGamma',
-           u'askImpliedVol', u'askOptPrice', u'askPrice', u'askPvDividend',
-           u'askSize', u'askTheta', u'askUndPrice', u'askVega', u'bidDelta',
-           u'bidGamma', u'bidImpliedVol', u'bidOptPrice', u'bidPrice',
-           u'bidPvDividend', u'bidSize', u'bidTheta', u'bidUndPrice', u'bidVega',
-           u'closePrice', u'highPrice', u'lastDelta', u'lastGamma', u'lastImpliedVol',
-           u'lastOptPrice', u'lastPrice', u'lastPvDividend', u'lastSize',
-           u'lastTheta', u'lastUndPrice', u'lastVega', u'lowPrice',
-           u'modelDelta', u'modelGamma', u'modelImpliedVol', u'modelOptPrice',
-           u'modelPvDividend', u'modelTheta', u'modelUndPrice', u'modelVega',
-           u'multiplier', u'strike']].apply(pd.to_numeric)
-    cadena_opcs_orders[['expiry','load_dttm']] = cadena_opcs_orders[['expiry','load_dttm']].apply(pd.to_datetime)
-    cadena_opcs_orders_temp=cadena_opcs_orders.rename(columns={'load_dttm':'times'})
+    cadena_opcs_orders[['prices_expiry']] = cadena_opcs_orders[['prices_expiry']].apply(pd.to_datetime)
+
     #cadena_opcs_orders_temp=cadena_opcs_orders_temp.reset_index().set_index(['times','strike','right','expiry','symbol'])
     #cadena_opcs_orders_temp.info()
-    cadena_opcs_orders_temp['on']=cadena_opcs_orders_temp['times'].dt.strftime("%Y-%m-%d %H")
-    cadena_opcs_orders_temp = cadena_opcs_orders_temp.drop_duplicates(subset=['expiry', 'strike', 'symbol', 'right', 'on'], keep='last')
-    operaciones['on']=operaciones['times'].dt.strftime("%Y-%m-%d %H")
+    cadena_opcs_orders['on']=cadena_opcs_orders['prices_load_dttm'].dt.strftime("%Y-%m-%d %H")
+    cadena_opcs_orders = cadena_opcs_orders.drop_duplicates(subset=['prices_expiry', 'prices_strike',
+                                                                    'prices_symbol', 'prices_right', 'on'], keep='last')
 
-    # devuelve en ops_w_hist_opt_chain la lista de operaciones historicas con las cotizaciones de la cadena de opciones incluida
-    ops_w_hist_opt_chain = pd.merge(operaciones, cadena_opcs_orders_temp, how='left', on=['expiry', 'strike','symbol','right','on']) #.fillna(method='ffill')
-    #ops_w_hist_opt_chain.to_excel("real.xlsx")
+    operaciones['on']=operaciones['orders_times'].dt.strftime("%Y-%m-%d %H")
+
+    # devuelve en trade_summary la lista de operaciones historicas con las cotizaciones de la cadena de opciones incluida
+    trade_summary = pd.merge(operaciones, cadena_opcs_orders, how='left',
+                             left_on=['orders_expiry', 'orders_strike','orders_symbol','orders_right','on'],
+                             right_on=['prices_expiry', 'prices_strike','prices_symbol','prices_right','on']
+                             ) #.fillna(method='ffill')
+
     # Para cada datetime en que se han realizado operaciones (variable oper_series1) se extraen de cadena_opcs2 los precios mas adecuados
     # cruzar esta lista con las cotizacionon la IV
-    ops_w_hist_opt_chain = ops_w_hist_opt_chain[['localSymbol','avgprice','expiry','conId','current_datetime_x','symbol','lastUndPrice',
-                                    'modelImpliedVol','load_dttm',
-                                    'multiplier_x','price','qty','shares','right','side','strike','times_x','times_y',
-                                    'bidPrice','askPrice','lastPrice','current_datetime_y',
-                                    'modelDelta','modelGamma','modelTheta','modelVega']]
-
-    ops_w_hist_opt_chain= ops_w_hist_opt_chain.rename(columns={'multiplier_x': 'multiplier',  'times_x':'times_ops',  'times_y':'times_opt_chain',
-                                         'current_datetime_x':'current_datetime_ops','current_datetime_y':'current_datetime_chain',
-                                         'load_dttm_x': 'load_dttm_operaciones'})
+    trade_summary = trade_summary[['orders_localSymbol','orders_avgprice','orders_expiry','orders_current_datetime',
+                                   'orders_symbol','orders_load_dttm','orders_multiplier','orders_price','orders_qty',
+                                   'orders_shares','orders_right','orders_side','orders_strike','orders_times',
+                                   'prices_lastUndPrice','prices_modelImpliedVol','prices_bidPrice','prices_askPrice',
+                                   'prices_lastPrice','prices_current_datetime','prices_modelDelta','prices_modelGamma',
+                                   'prices_modelTheta','prices_modelVega']]
 
     #caclulo dias a expiracion en el trade
-    ops_w_hist_opt_chain['DTE'] = (ops_w_hist_opt_chain['expiry'] - ops_w_hist_opt_chain['times_ops'] ).astype('timedelta64[D]').astype(int)
+    trade_summary['DTE'] = (trade_summary['orders_expiry'] - trade_summary['orders_times'] ).astype('timedelta64[D]').astype(int)
+    ######################################################################################################################
+    # Calculo IV ATM en cada trade
     ## hay que calcular aqui la IV de las opciones ATM en el momento del trade, se saca de la cadena de opciones
-    cadena_opcs_orders.index = cadena_opcs_orders[['strike','load_dttm','right']]
-
+    cadena_opcs_orders.index = cadena_opcs_orders[['prices_strike','prices_load_dttm','prices_right']]
     # es necesario calcular esto aperturado por load_dttm (aqui se calcula un valor para todas las fechas de operaciones)
     # result2['ImplVolATM'] = cadena_opcs2.ix[(cadena_opcs2['strike'] - cadena_opcs2['lastUndPrice']).abs().argsort()[:16] ]['modelImpliedVol'].mean()
-    temp1=cadena_opcs_orders.ix[(cadena_opcs_orders['strike'] - cadena_opcs_orders['lastUndPrice']).abs().argsort()[:64] ][['load_dttm','modelImpliedVol']]
-    temp1=temp1.groupby(by=['load_dttm'])['load_dttm','modelImpliedVol'].mean()
-    temp1=temp1.rename(columns={'modelImpliedVol':'ImplVolATM'})
+    temp1=cadena_opcs_orders.ix[(cadena_opcs_orders['prices_strike']
+                                 - cadena_opcs_orders['prices_lastUndPrice']).abs().argsort()[:64] ][['prices_load_dttm',
+                                                                                                      'prices_modelImpliedVol']]
+    temp1=temp1.groupby(by=['prices_load_dttm'])['prices_load_dttm','prices_modelImpliedVol'].mean()
+    temp1=temp1.rename(columns={'prices_modelImpliedVol':'ImplVolATM'})
     temp1=temp1.reset_index()
-    temp1['on']=temp1['load_dttm'].dt.strftime("%Y-%m-%d %H")
+    temp1['on']=temp1['prices_load_dttm'].dt.strftime("%Y-%m-%d %H")
 
-    ops_w_hist_opt_chain=ops_w_hist_opt_chain[['times_opt_chain','load_dttm','times_ops','localSymbol','lastUndPrice','avgprice','multiplier',
-                           'qty','side','DTE','modelDelta','modelGamma','modelTheta','modelVega','strike','shares']].drop_duplicates()
+    trade_summary=trade_summary[['orders_avgprice',
+                                 'orders_load_dttm',
+                                 'orders_times',
+                                 'orders_localSymbol',
+                                 'prices_lastUndPrice',
+                                 'orders_multiplier',
+                                 'orders_qty',
+                                 'orders_side',
+                                 'DTE',
+                                 'prices_modelGamma',
+                                 'prices_modelTheta',
+                                 'prices_modelVega',
+                                 'orders_strike',
+                                 'orders_shares']].drop_duplicates()
 
-    ops_w_hist_opt_chain['on']=ops_w_hist_opt_chain['times_opt_chain'].dt.strftime("%Y-%m-%d %H")
+    trade_summary['on']=trade_summary['orders_times'].dt.strftime("%Y-%m-%d %H")
+    trade_summary = pd.merge(trade_summary, temp1, how='left', on=['on'])
 
-    trade_summary = pd.merge(ops_w_hist_opt_chain, temp1, how='left', on=['on'])
     # calcular 1SD con el horizonte de dias DTE
-    trade_summary['1SD'] = trade_summary['lastUndPrice'] * trade_summary['ImplVolATM'] / (365.0/((trade_summary['DTE']) ) )**0.5
-    trade_summary['lastUndPrice_less1SD']=trade_summary['lastUndPrice'] - trade_summary['1SD']
-    trade_summary['lastUndPrice_plus1SD']=trade_summary['lastUndPrice'] + trade_summary['1SD']
-    trade_summary['DIT'] = (fecha_valoracion - ops_w_hist_opt_chain['times_ops'] ).astype('timedelta64[D]').astype(int) # days in trade
-    trade_summary=trade_summary.rename(columns={'load_dttm_x':'load_dttm'})
-    trade_summary = trade_summary.drop('load_dttm_y', 1)
+    trade_summary['1SD'] = trade_summary['prices_lastUndPrice'] * trade_summary['ImplVolATM'] / (365.0/((trade_summary['DTE']) ) )**0.5
+    trade_summary['lastUndPrice_less1SD']=trade_summary['prices_lastUndPrice'] - trade_summary['1SD']
+    trade_summary['lastUndPrice_plus1SD']=trade_summary['prices_lastUndPrice'] + trade_summary['1SD']
+    trade_summary['DIT'] = (fecha_valoracion - trade_summary['orders_times'] ).astype('timedelta64[D]').astype(int) # days in trade
+    trade_summary=trade_summary.rename(columns={'orders_load_dttm':'load_dttm'})
     trade_summary = trade_summary.drop('on', 1)
     trade_summary['sign'] = 0
-    trade_summary.loc[trade_summary['side'] == 'SLD', 'sign'] = -1
-    trade_summary.loc[trade_summary['side'] == 'BOT', 'sign'] = 1
-    trade_summary['CreditoBruto'] = trade_summary['avgprice'] * trade_summary['multiplier'] * trade_summary['shares'] * trade_summary['sign']
+    trade_summary.loc[trade_summary['orders_side'] == 'SLD', 'sign'] = -1
+    trade_summary.loc[trade_summary['orders_side'] == 'BOT', 'sign'] = 1
+    trade_summary['CreditoBruto'] = trade_summary['orders_avgprice'] * trade_summary['orders_multiplier'] \
+                                    * trade_summary['orders_shares'] * trade_summary['sign']
     #esto es util para la fase de apertura
-    trade_summary['1SD15D'] = trade_summary['lastUndPrice'] * trade_summary['ImplVolATM'] / (365.0/((15.0) ) )**0.5
-    trade_summary['1SD21D'] = trade_summary['lastUndPrice'] * trade_summary['ImplVolATM'] / (365.0/((21.0) ) )**0.5
-    trade_summary=trade_summary.sort_values(by=['times_opt_chain', 'localSymbol'] , ascending=[False, True])
+    trade_summary['1SD15D'] = trade_summary['prices_lastUndPrice'] * trade_summary['ImplVolATM'] / (365.0/((15.0) ) )**0.5
+    trade_summary['1SD21D'] = trade_summary['prices_lastUndPrice'] * trade_summary['ImplVolATM'] / (365.0/((21.0) ) )**0.5
+    trade_summary=trade_summary.sort_values(by=['orders_times', 'orders_localSymbol'] , ascending=[False, True])
 
+    # calculo las primas brutas de comisiones de todas las operaciones hasta la fecha de valoracion
+    operaciones['group'] = operaciones['orders_expiry'].dt.strftime("%Y%m%d")+operaciones['orders_strike'].map(str) \
+                           + operaciones['orders_symbol'].map(str)+operaciones['orders_right'].map(str)
+    #las primas brutas o precio bruto son todas las primas de todas las ordenes hasta la valuation dttm
+    todate_precio_bruto=operaciones.groupby(['group'])['group',
+                                                        'orders_precio_bruto'
+                                                      ].agg({'orders_precio_bruto':np.sum}).reset_index()
+    todate_precio_bruto.columns=['group','orders_precio_bruto']
+    #todate_precio_bruto.columns=todate_precio_bruto.columns.droplevel()
+    # en el caso de ser una simulacion no tengo necesariamente registros de posiciones en la fecha de valoracion
+    # tampoco los necesito, dado que el MtM del protfolio lo derivo de las ordenes, comisiones y precios del mercado
+    # en el caso de caso base (no escenario) si recupero el portfolio en valuation dttm principalmente para
+    # validar y que cuadre rezonablemente.
+    posiciones['group'] = posiciones['portfolio_expiry'].map(str)+posiciones['portfolio_strike'].map(str) \
+                          +posiciones['portfolio_symbol'].map(str)+posiciones['portfolio_right'].map(str)
+    posiciones = pd.merge(posiciones,todate_precio_bruto, how='left',left_on=['group'],right_on=['group'])
+
+    #en real tengo el porfolio en la fecha de valoracion pero en simulacion lo que meto es unicamente el portfolio
+    # en cada fecha de trade, necesito sacar el portfolio_averageCost en la ultima operacion antes de la fecha de
+    # valoracion
+    posiciones_trades_dates=posiciones_trades_dates.loc[posiciones_trades_dates.portfolio_load_dttm
+                                                        == np.max(posiciones_trades_dates.portfolio_load_dttm)]
+    posiciones_trades_dates['group'] = posiciones_trades_dates['portfolio_expiry'].map(str)\
+                                       +posiciones_trades_dates['portfolio_strike'].map(str) \
+                                       +posiciones_trades_dates['portfolio_symbol'].map(str)\
+                                       +posiciones_trades_dates['portfolio_right'].map(str)
+    #el precio neto son las primas netas de comisiones tal y como se contabiliza en el portfolio tras la ultima orden
+    #  de la estrategia
+    todate_precio_neto=posiciones_trades_dates.groupby(['group'])['group',
+                                                        'portfolio_precio_neto'
+                                                      ].agg({'portfolio_precio_neto':np.sum}).reset_index()
+    todate_precio_neto.columns = ['group', 'portfolio_precio_neto']
+    posiciones=posiciones.drop('portfolio_precio_neto',1)
+    posiciones = pd.merge(posiciones, todate_precio_neto, how='left', left_on=['group'],
+                                                            right_on=['group']).drop('group', 1)
     # juntar las posiciones con la cadena de opciones para tener las griegas, bid ask volumen etc
     # el datetime de los dos conjutnos de datos tiene siempre un lag por ese motivo el market value de pos
     # no coincide con el last price que vienen de cadena_opcs
-    positions_summary = pd.merge(posiciones, cadena_opcs, how='left', on=['expiry', 'strike','symbol','right'])
-    positions_summary = positions_summary[['localSymbol','right','position','bidPrice','askPrice','lastPrice',
-                                           'marketValue','averageCost','multiplier_x','modelDelta','modelGamma',
-                                           'modelTheta','modelVega','load_dttm_y','load_dttm_x','modelImpliedVol',
-                                           'expiry','lastUndPrice']]
+    positions_summary = pd.merge(posiciones, cadena_opcs, how='left',
+                                 left_on=['portfolio_expiry', 'portfolio_strike', 'portfolio_symbol', 'portfolio_right'],
+                                 right_on=['prices_expiry', 'prices_strike', 'prices_symbol', 'prices_right'])
 
     #cross check marketValue from portfolio and that derived from market prices
-    positions_summary['marketValuefromPrices'] = positions_summary['position'] * positions_summary['multiplier_x'] \
-                                                 * ( positions_summary['bidPrice'] + positions_summary['askPrice'] ) / 2.0
-    positions_summary['expiry'] = positions_summary['expiry'].apply(pd.to_datetime)
-    positions_summary.rename(columns={'multiplier_x': 'multiplier', 'load_dttm_y': 'load_dttm_cadena'
-                                        , 'load_dttm_x': 'load_dttm_posiciones'}, inplace=True)
-    """
-    u'averageCost', u'conId', u'expiry', u'localSymbol', u'marketPrice',
-           u'marketValue', u'multiplier_x', u'position', u'realizedPNL', u'right',
-           u'strike', u'symbol', u'unrealizedPNL', u'current_datetime_x',
-           u'load_dttm_x', u'CallOI', u'Halted', u'PutOI', u'Volume', u'askDelta',
-           u'askGamma', u'askImpliedVol', u'askOptPrice', u'askPrice',
-           u'askPvDividend', u'askSize', u'askTheta', u'askUndPrice', u'askVega',
-           u'bidDelta', u'bidGamma', u'bidImpliedVol', u'bidOptPrice', u'bidPrice',
-           u'bidPvDividend', u'bidSize', u'bidTheta', u'bidUndPrice', u'bidVega',
-           u'closePrice', u'currency', u'current_date', u'current_datetime_y',
-           u'exchange', u'highPrice', u'lastDelta', u'lastGamma',
-           u'lastImpliedVol', u'lastOptPrice', u'lastPrice', u'lastPvDividend',
-           u'lastSize', u'lastTheta', u'lastUndPrice', u'lastVega', u'load_dttm_y',
-           u'lowPrice', u'modelDelta', u'modelGamma', u'modelImpliedVol',
-           u'modelOptPrice', u'modelPvDividend', u'modelTheta', u'modelUndPrice',
-           u'modelVega', u'multiplier_y', u'secType'
-    """
+    # el market value gross se calcula a partir de los precios de mercado de la cadena de opciones
+    positions_summary['marketValueGross'] = positions_summary['portfolio_position'] \
+                                             * positions_summary['portfolio_multiplier'] \
+                                             * (positions_summary['prices_bidPrice'] \
+                                                + positions_summary['prices_askPrice']) / 2.0
+
+    positions_summary = positions_summary[['portfolio_averageCost',
+                                           'portfolio_expiry',
+                                           'portfolio_position',
+                                           'portfolio_multiplier',
+                                           'portfolio_strike',
+                                           'portfolio_symbol',
+                                           'portfolio_right',
+                                           'portfolio_marketValue',
+                                           'portfolio_unrealizedPNL',
+                                           'portfolio_current_datetime',
+                                           'portfolio_load_dttm',
+                                           'marketValueGross',
+                                           'orders_precio_bruto',
+                                           'portfolio_precio_neto'
+                                           'prices_lastUndPrice',
+                                           'prices_modelImpliedVol',
+                                           'prices_bidPrice',
+                                           'prices_askPrice',
+                                           'prices_modelDelta',
+                                           'prices_modelGamma',
+                                           'prices_modelTheta',
+                                           'prices_modelVega'
+                                           ]]
+
+    # este es el precio de mercado neto de comisiones calculado y que debe ser parecido al
+    # que se contabiliza a nivel de portfolio en el caso base (portfolio_marketValue)
+    positions_summary['marketValuefromPrices'] =  positions_summary['marketValueGross'] \
+                                                 + np.sign(positions_summary['portfolio_position']) \
+                                                 * ( np.sign(positions_summary['portfolio_position'])
+                                                     * positions_summary['orders_precio_bruto'] \
+                                                    - (positions_summary['portfolio_precio_neto']) )
+
+    positions_summary['unrealizedPNLfromPrices'] = positions_summary['marketValuefromPrices'] \
+                                                   - positions_summary['portfolio_precio_neto']
+
+    positions_summary['portfolio_expiry'] = positions_summary['portfolio_expiry'].apply(pd.to_datetime)
 
     #caclulo dias a expiracion en el trade
-    positions_summary['DTE'] = (positions_summary['expiry'] - fecha_valoracion ).astype('timedelta64[D]').astype(int)
+    positions_summary['DTE'] = (positions_summary['portfolio_expiry'] - fecha_valoracion ).astype('timedelta64[D]').astype(int)
     ## hay que calcular aqui la IV de las opciones ATM en el momento del trade, se saca de la cadena de opciones
-    positions_summary['ImplVolATM'] = cadena_opcs.ix[(cadena_opcs['strike'] - cadena_opcs['lastUndPrice']).abs().argsort()[:4] ]['modelImpliedVol'].mean()
+    positions_summary['ImplVolATM'] = cadena_opcs.ix[(cadena_opcs['strike'] - cadena_opcs['prices_lastUndPrice']).abs().argsort()[:4] ]['prices_modelImpliedVol'].mean()
     # calcular 1SD con el horizonte de dias DTE
-    positions_summary['1SD'] = positions_summary['lastUndPrice'] * positions_summary['ImplVolATM'] / (365.0/((positions_summary['DTE']) ) )**0.5
-    positions_summary['lastUndPrice_less1SD']=positions_summary['lastUndPrice'] - positions_summary['1SD']
-    positions_summary['lastUndPrice_plus1SD']=positions_summary['lastUndPrice'] + positions_summary['1SD']
-    positions_summary['midPrice']= ( positions_summary['bidPrice'] + positions_summary['askPrice'] ) / 2
-    positions_summary['ValCurrent'] = positions_summary['midPrice'] * np.sign(positions_summary['position'])
-    positions_summary['costUnit'] = positions_summary['averageCost'] * np.sign(positions_summary['position']) / positions_summary['multiplier']
-    positions_summary['Dshort'] = positions_summary['modelDelta'] * positions_summary['multiplier']
-    positions_summary['DshortPosition'] = positions_summary['modelDelta'] * positions_summary['multiplier'] * positions_summary['position']
-    positions_summary['GammaPosition'] = positions_summary['modelGamma'] * positions_summary['multiplier'] * positions_summary['position']
-    positions_summary['ThetaPosition'] = positions_summary['modelTheta'] * positions_summary['multiplier'] * positions_summary['position']
-    positions_summary['VegaPosition'] = positions_summary['modelVega'] * positions_summary['multiplier'] * positions_summary['position']
-    positions_summary=positions_summary.sort_values(by=['right', 'localSymbol'] , ascending=[False, True])
+    positions_summary['1SD'] = positions_summary['prices_lastUndPrice'] * positions_summary['ImplVolATM'] / (365.0/((positions_summary['DTE']) ) )**0.5
+    positions_summary['lastUndPrice_less1SD']=positions_summary['prices_lastUndPrice'] - positions_summary['1SD']
+    positions_summary['lastUndPrice_plus1SD']=positions_summary['prices_lastUndPrice'] + positions_summary['1SD']
+    positions_summary['prices_midPrice']= ( positions_summary['prices_bidPrice'] + positions_summary['prices_askPrice'] ) / 2
+    positions_summary['ValCurrent'] = positions_summary['prices_midPrice'] * np.sign(positions_summary['portfolio_position'])
+    positions_summary['costUnit'] = positions_summary['portfolio_averageCost'] * np.sign(positions_summary['portfolio_position']) / positions_summary['portfolio_multiplier']
+    positions_summary['Dshort'] = positions_summary['prices_modelDelta'] * positions_summary['portfolio_multiplier']
+    positions_summary['DshortPosition'] = positions_summary['prices_modelDelta'] * positions_summary['portfolio_multiplier'] * positions_summary['portfolio_position']
+    positions_summary['GammaPosition'] = positions_summary['prices_modelGamma'] * positions_summary['portfolio_multiplier'] * positions_summary['portfolio_position']
+    positions_summary['ThetaPosition'] = positions_summary['prices_modelTheta'] * positions_summary['portfolio_multiplier'] * positions_summary['portfolio_position']
+    positions_summary['VegaPosition'] = positions_summary['prices_modelVega'] * positions_summary['portfolio_multiplier'] * positions_summary['portfolio_position']
+    positions_summary=positions_summary.sort_values(by=['portfolio_right','portfolio_symbol','portfolio_expiry',
+                                                        'portfolio_strike'] , ascending=[False, True, True, True])
 
     # agregar por spreads
-    spread_summary = positions_summary.groupby(by=['right'])['ValCurrent','costUnit','marketValue','DshortPosition'].sum()
+    spread_summary = positions_summary.groupby(by=['portfolio_right'])['ValCurrent','costUnit','marketValuefromPrices','DshortPosition'].sum()
     # agregar total
-    total_summary = positions_summary[['DshortPosition','GammaPosition','ThetaPosition','VegaPosition','marketValue']].sum()
-    total_summary_risk = positions_summary[['lastUndPrice','ImplVolATM','multiplier']].mean()
-    total_summary_risk['Pts1SD1D'] = total_summary_risk['lastUndPrice'] * total_summary_risk['ImplVolATM'] / np.sqrt(365.0)
-    total_summary_risk['Pts1SD5D'] = total_summary_risk['lastUndPrice'] * total_summary_risk['ImplVolATM'] / np.sqrt(365.0/5.0)
+    total_summary = positions_summary[['DshortPosition','GammaPosition','ThetaPosition','VegaPosition','marketValuefromPrices']].sum()
+    total_summary_risk = positions_summary[['prices_lastUndPrice','ImplVolATM','portfolio_multiplier']].mean()
+    total_summary_risk['Pts1SD1D'] = total_summary_risk['prices_lastUndPrice'] * total_summary_risk['ImplVolATM'] / np.sqrt(365.0)
+    total_summary_risk['Pts1SD5D'] = total_summary_risk['prices_lastUndPrice'] * total_summary_risk['ImplVolATM'] / np.sqrt(365.0/5.0)
     total_summary=total_summary.append(total_summary_risk)
 
     # impacto en el margen de la operacion
@@ -665,12 +696,13 @@ def get_strategy_start_date(symbol,expiry,accountid,scenarioMode,simulName):
         ret1 += dt.timedelta(hours=1)
         return ret1
     except (IndexError, AttributeError) :
-        print "There are no rows for the TIC strategy in the ABT H5"
+        log.info("There are no rows for the TIC strategy in the ABT H5")
         store_abt.close()
 
     # 2.- si la estrategia no existe en la ABT se toma la fecha de inicio la fecha de la primera operacion
     ret1 = ra.extrae_fecha_inicio_estrategia(symbol=symbol,expiry=expiry,accountid=accountid,
                                              scenarioMode=scenarioMode,simulName=simulName)
+    ret1=ret1.replace(minute=59, second=59) # el datetime de valoracion siemrpe ha ser el ultimo minuto para asegurar coger todos los trades
     return ret1
 
 
@@ -689,7 +721,7 @@ def run_analytics(symbol, expiry, secType,accountid,valuation_dt,scenarioMode,si
     :return:
     """
     start = get_strategy_start_date(symbol, expiry,accountid,scenarioMode,simulName)
-    print "start " , start
+    log.info("Starting date to use: [%s] " % (str(start)) )
     end = valuation_dt
     delta = dt.timedelta(hours=1)
     d = start
@@ -712,7 +744,7 @@ if __name__=="__main__":
     fecha_valoracion = dt.datetime(year=2016, month=9, day=20, hour=15, minute=59, second=59)
     #fecha_valoracion=dt.datetime.now()
     run_analytics(symbol="SPY", expiry="20161021", secType="OPT", accountid=accountid,
-                  valuation_dt=fecha_valoracion,scenarioMode="Y",simulName="spy1016dls",appendh5=0)
+                  valuation_dt=fecha_valoracion,scenarioMode="N",simulName="spy1016dls",appendh5=0)
     #run_analytics(symbol="ES", expiry="20161118", secType="FOP", accountid=accountid,
     #             valuation_dt=fecha_valoracion,scenarioMode="N",simulName="NA",appendh5=1)
 

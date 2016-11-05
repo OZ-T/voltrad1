@@ -7,11 +7,13 @@ import numpy as np
 import pandas_datareader.data as web
 from opt_pricing_methods import bsm_mcs_euro
 import sys
-
+from volsetup.logger import logger
 
 globalconf = config.GlobalConfig()
+log = logger("Run Analytics module")
 
-def extrae_options_chain(year,month,day,hour,symbol,expiry,secType):
+
+def extrae_options_chain(valuation_dttm,symbol,expiry,secType):
     """
         extraer de la hdf5 los datos de cotizaciones para una fecha
     :param year:
@@ -22,7 +24,7 @@ def extrae_options_chain(year,month,day,hour,symbol,expiry,secType):
     :param secType:
     :return:
     """
-
+    log.info("extrae_options_chain: [%s] " % (str(valuation_dttm)))
     # TODO remove
     #store = globalconf.open_ib_h5_store()
     store = globalconf.open_ib_h5_store_original()
@@ -35,17 +37,41 @@ def extrae_options_chain(year,month,day,hour,symbol,expiry,secType):
     #        dataframe = dataframe.append(df1)
     sym1= store.get_node("/"+symbol)
     where1=['symbol==' + symbol, 'expiry==' + expiry,
-            'secType==' + secType, 'current_date==' + str(year) + str(month) + str(day),
-            'current_datetime<=' + str(year) + str(month) + str(day)+str(hour)+"5959"]
+            'secType==' + secType, 'current_date==' + str(valuation_dttm.year) +  str(valuation_dttm.month).zfill(2)
+            + str(valuation_dttm.day).zfill(2), 'current_datetime<=' + str(valuation_dttm.year)
+            + str(valuation_dttm.month).zfill(2) + str(valuation_dttm.day).zfill(2)+str(valuation_dttm.hour).zfill(2)+"5959"]
     df1 = store.select(sym1._v_pathname, where=where1)
-    print "Number of rows loaded from h5 option chain file: " , len(df1) , where1
+    log.info("Number of rows loaded from h5 option chain file: [%d] where=[%s]" % ( len(df1) , str(where1)))
     df1['load_dttm'] = pd.to_datetime(df1['current_datetime'], errors='coerce')  # DEPRECATED remove warning coerce=True)
     df1['current_datetime_txt'] = df1.index.strftime("%Y-%m-%d %H:%M:%S")
     dataframe = dataframe.append(df1)
     store.close()
+
+    #cadena_opcs.columns
+    dataframe[[u'CallOI',u'PutOI', u'Volume', u'askDelta', u'askGamma',
+                   u'askImpliedVol', u'askOptPrice', u'askPrice', u'askPvDividend',
+                   u'askSize', u'askTheta', u'askUndPrice', u'askVega', u'bidDelta',
+                   u'bidGamma', u'bidImpliedVol', u'bidOptPrice', u'bidPrice',
+                   u'bidPvDividend', u'bidSize', u'bidTheta', u'bidUndPrice', u'bidVega',
+                   u'closePrice', u'highPrice', u'lastDelta', u'lastGamma', u'lastImpliedVol',
+                   u'lastOptPrice', u'lastPrice', u'lastPvDividend', u'lastSize',
+                   u'lastTheta', u'lastUndPrice', u'lastVega', u'lowPrice',
+                   u'modelDelta', u'modelGamma', u'modelImpliedVol', u'modelOptPrice',
+                   u'modelPvDividend', u'modelTheta', u'modelUndPrice', u'modelVega',
+                   u'multiplier', u'strike']] = dataframe[[u'CallOI',u'PutOI', u'Volume', u'askDelta', u'askGamma',
+                   u'askImpliedVol', u'askOptPrice', u'askPrice', u'askPvDividend',
+                   u'askSize', u'askTheta', u'askUndPrice', u'askVega', u'bidDelta',
+                   u'bidGamma', u'bidImpliedVol', u'bidOptPrice', u'bidPrice',
+                   u'bidPvDividend', u'bidSize', u'bidTheta', u'bidUndPrice', u'bidVega',
+                   u'closePrice', u'highPrice', u'lastDelta', u'lastGamma', u'lastImpliedVol',
+                   u'lastOptPrice', u'lastPrice', u'lastPvDividend', u'lastSize',
+                   u'lastTheta', u'lastUndPrice', u'lastVega', u'lowPrice',
+                   u'modelDelta', u'modelGamma', u'modelImpliedVol', u'modelOptPrice',
+                   u'modelPvDividend', u'modelTheta', u'modelUndPrice', u'modelVega',
+                   u'multiplier', u'strike']].apply(pd.to_numeric)
+    dataframe['load_dttm'] = dataframe['load_dttm'].apply(pd.to_datetime)
+    dataframe = dataframe.add_prefix("prices_")
     return dataframe
-
-
 
 def create_opt_chain_abt(year="2016"):
     store = globalconf.open_ib_h5_store()
@@ -121,7 +147,7 @@ def extrae_account_snapshot(year,month,day):
     return dataframe
 
 
-def extrae_account_snapshot_new(year,month,day,hour,accountid,scenarioMode,simulName):
+def extrae_account_snapshot_new(valuation_dttm,accountid,scenarioMode,simulName):
     """
     Extrae los snapshots horarios de account para una fecha
     :param year:
@@ -129,6 +155,7 @@ def extrae_account_snapshot_new(year,month,day,hour,accountid,scenarioMode,simul
     :param day:
     :return:
     """
+    log.info("extrae_account_snapshot_new para : [%s] " % (str(valuation_dttm)))
     df2 = pd.DataFrame()
     if scenarioMode == "N":
         #accountid = globalconf.get_accountid()
@@ -136,20 +163,20 @@ def extrae_account_snapshot_new(year,month,day,hour,accountid,scenarioMode,simul
         node=store.get_node("/" + accountid)
         df1 = store.select(node._v_pathname)
         #df2 = df1[df1['current_date'] == str(year)+str(month).zfill(2)+str(day).zfill(2)]
-        df2 = df1[(df1.index <= datetime(year=year, month=month, day=day, hour=hour, minute=59)) &
-                  (df1['current_date'] == str(year) + str(month).zfill(2) + str(day).zfill(2))]
-        # BUG pytables?? si hago el filtro de abajo (usando str(df1['current_date']) en vez de df1['current_date'] )
-        # salen cero registros!!!!
-        #       (str(df1['current_date']) == str(year) + str(month).zfill(2) + str(day).zfill(2))]
-        #df2.to_excel("df2.xlsx")
-        #df1.to_excel("df1.xlsx")
+        df2 = df1[(df1.index <= valuation_dttm) & (df1['current_date'] == str(valuation_dttm.year)
+                                                   + str(valuation_dttm.month).zfill(2) + str(valuation_dttm.day).zfill(2))]
         store.close()
     elif scenarioMode == "Y":
         df1 = globalconf.account_dataframe_simulation(simulName=simulName)
         df1['current_date'] = df1['current_date'].apply(lambda x: str(x))
-        df1 = df1.set_index("current_datetime",drop=0)
-        df2 = df1[(df1.index <= datetime(year=year, month=month, day=day, hour=hour, minute=59)) &
-                  (str(df1['current_date']) == str(year) + str(month).zfill(2) + str(day).zfill(2))]
+        df1 = df1.set_index("current_datetime",drop=1)
+        df2 = df1[(df1.index <= valuation_dttm) & (df1['current_date'] == str(valuation_dttm.year)
+                                                   + str(valuation_dttm.month).zfill(2) + str(valuation_dttm.day).zfill(2))]
+
+    # se queda con la ultima foto cargada del dia (la h5 accounts se actualiza cada hora RTH)
+    df2 = df2.reset_index().drop_duplicates(subset='current_date', keep='last').set_index('current_datetime',drop=0)
+    df2['load_dttm'] = df2.index
+    df2 = df2.add_prefix("account_")
     return df2
 
 def extrae_account_delta(year,month,day,hour,minute):
@@ -243,25 +270,24 @@ def extrae_account_delta_new(year, month, day, hour, minute,accountid,scenarioMo
     return dataframe
 
 
-def extrae_portfolio_positions(year,month,day,hour,symbol,expiry,secType,
+def extrae_portfolio_positions(valuation_dttm,symbol,expiry,secType,
                                accountid,scenarioMode,simulName):
     """
     Saca la foto del subportfolio tic (para un instrumento y expiracion) a una fecha dada
 
-    :param year:
-    :param month:
-    :param day:
+    :param valuation_dttm:
     :param symbol:
     :param expiry:
     :param secType:
     :return:
     """
+    log.info("extrae_portfolio_positions para : [%s] " % (str(valuation_dttm)) )
     dataframe = pd.DataFrame()
     if scenarioMode == "N":
         store=globalconf.portfolio_store()
-        for hora in store.get_node("/"+str(year)+"/"+month+"/"+str(day)):
+        for hora in store.get_node("/"+str(valuation_dttm.year)+"/"+valuation_dttm.strftime("%B")[:3]+"/"+str(valuation_dttm.day)):
             #print datetime.strptime(hora._v_pathname, '/%Y/%b/%d/%H').hour , hour
-            if int(datetime.strptime(hora._v_pathname, '/%Y/%b/%d/%H').hour) <= hour:
+            if int(datetime.strptime(hora._v_pathname, '/%Y/%b/%d/%H').hour) <= valuation_dttm.hour:
                 for minuto in store.get_node(hora._v_pathname):
                     df1=store.select(minuto._v_pathname,where=['symbol=='+symbol,'expiry=='+expiry,
                                                                'secType=='+secType,'accountName=='+accountid])
@@ -273,7 +299,28 @@ def extrae_portfolio_positions(year,month,day,hour,symbol,expiry,secType,
         df1['current_date'] = df1['current_date'].apply(lambda x: str(x))
         df1['expiry'] = df1['expiry'].apply(lambda x: str(x))
         df1['current_datetime'] = df1['current_datetime'].apply(lambda x: datetime.strptime(str(x), '%Y%m%d%H%M%S'))
+        df1=df1.loc[ (df1.current_datetime <= valuation_dttm) & ( df1.current_date == valuation_dttm.strftime("%Y%m%d") ) ]
         dataframe = dataframe.append(df1)
+
+    #dataframe = dataframe[[u'averageCost', u'conId', u'expiry', u'localSymbol', u'marketPrice', u'marketValue',
+    #                       u'multiplier', u'position', u'realizedPNL',
+    #                       u'right', u'strike', u'symbol', u'unrealizedPNL', u'current_datetime',
+    #                       u'load_dttm']]
+
+    dataframe = dataframe[[u'averageCost', u'expiry', u'marketValue',u'multiplier', u'position', u'right',
+                           u'strike', u'symbol', u'unrealizedPNL', u'current_datetime',u'load_dttm']]
+    #   unrealizedPNL = marketValue - (position * averageCost)
+    #   marketValue = marketPrice * multiplier * position
+    # se queda con la ultima foto cargada del dia (la h5 accounts se actualiza cada hora RTH)
+    dataframe = dataframe.reset_index().drop_duplicates(subset='index', keep='last').set_index('index')
+    dataframe['load_dttm'] = dataframe['load_dttm'].apply(pd.to_datetime)
+    dataframe[[u'averageCost', u'marketValue', u'multiplier', u'position',
+               u'strike', u'unrealizedPNL']] = dataframe[[u'averageCost', u'marketValue',
+                                                          u'multiplier',  u'position',
+                                                          u'strike', u'unrealizedPNL']].apply(pd.to_numeric)
+    # el precio neto son las primas netas de comisiones tal y como se contabiliza en el portfolio en cada dttm
+    dataframe['precio_neto']=dataframe['averageCost'] * dataframe['position']
+    dataframe = dataframe.add_prefix("portfolio_")
     return dataframe
 
 def extrae_fecha_inicio_estrategia(symbol,expiry,accountid,scenarioMode,simulName):
@@ -299,20 +346,19 @@ def extrae_fecha_inicio_estrategia(symbol,expiry,accountid,scenarioMode,simulNam
         ret1 = datetime.now() + timedelta(days=99999)
     return ret1
 
-def extrae_detalle_operaciones(year,month,day,hour,symbol,expiry,secType,accountid,scenarioMode,simulName):
+def extrae_detalle_operaciones(valuation_dttm,symbol,expiry,secType,accountid,scenarioMode,simulName):
     """
     Extrae el detalle de todas las ordenes ejecutadas para un simbolo y expiracion
     desde una fecha hacia atras
-    :param year:
-    :param month:
-    :param day:
+    :param valuation_dttm:
     :param symbol:
     :param expiry:
     :param secType:
     :return:
     """
+
     #valuation_dttm = datetime.strptime(str(year)+str(month)+str(day)+" 23:59", '%Y%b%d %H:%M')
-    valuation_dttm = datetime.strptime(str(year) + str(month) + str(day) + " " + str(hour) + ":59", '%Y%m%d %H:%M')
+    #valuation_dttm = datetime.strptime(str(year) + str(month) + str(day) + " " + str(hour) + ":59", '%Y%m%d %H:%M')
     #valuation_dttm_txt = str(year)+str(month)+str(day)+"235959"
     dataframe = pd.DataFrame()
 
@@ -335,8 +381,6 @@ def extrae_detalle_operaciones(year,month,day,hour,symbol,expiry,secType,account
         # en cada trade se toma la foto del portfolio y de la account para tener de comisiones coste base y margin por
         # trade
 
-
-
         #print "extrae_detalle_operaciones " , df1
         dataframe = dataframe.append(df1)
         store.close()
@@ -345,9 +389,26 @@ def extrae_detalle_operaciones(year,month,day,hour,symbol,expiry,secType,account
         df1 = df1.set_index("index", drop=1)
         df1['expiry'] = df1['expiry'].apply(lambda x: datetime.strptime(str(x), '%Y%m%d'))
         df1['current_date'] = df1['current_date'].apply(lambda x: str(x))
-        df1['current_datetime'] = df1['current_datetime'].apply(lambda x: datetime.strptime(str(x), '%Y%m%d%H%M%S'))
+        df1 = df1[df1.current_datetime <= valuation_dttm]
+        df1['load_dttm'] = df1['current_datetime'].apply(lambda x: datetime.strptime(str(x), '%Y%m%d%H%M%S'))
         dataframe = dataframe.append(df1)
 
+
+    #dataframe.to_excel("operaciones.xlsx")
+    dataframe=dataframe[['localSymbol','avgprice','expiry','conId','current_datetime','symbol','load_dttm',
+                             'multiplier','price','qty','right','side','strike','times','shares']]
+    dataframe[['avgprice','multiplier','price','qty','strike','shares']]= \
+                dataframe[['avgprice','multiplier','price','qty','strike','shares']].apply(pd.to_numeric)
+
+    dataframe[['expiry','current_datetime','load_dttm','times']] = \
+                dataframe[['expiry','current_datetime','load_dttm','times']].apply(pd.to_datetime)
+    #dataframe.columns
+    #dataframe.index
+    # elimina duplicados causados por posibles recargas manuales de los ficheros h5 desde IB API
+    dataframe=dataframe.reset_index().drop_duplicates(subset='index',keep='last').set_index('index')
+    # el precio bruto son las primas brutas de comisiones de las ordenes ejecutadas
+    dataframe['precio_bruto'] = dataframe['avgprice'] * dataframe['multiplier'] * dataframe['shares']
+    dataframe=dataframe.add_prefix("orders_")
     return dataframe
 
 
