@@ -399,7 +399,7 @@ def extrae_detalle_operaciones(valuation_dttm,symbol,expiry,secType,accountid,sc
         df1 = globalconf.orders_dataframe_simulation(simulName=simulName)
         df1 = df1.set_index("index", drop=1)
         df1['expiry'] = df1['expiry'].apply(lambda x: datetime.strptime(str(x), '%Y%m%d'))
-        df1['current_date'] = df1['current_date'].apply(lambda x: str(x))
+        df1['current_date'] = df1['current_datetime'].apply(lambda x: str(x)[:8])
         df1['load_dttm'] = df1['current_datetime'].apply(lambda x: datetime.strptime(str(x), '%Y%m%d%H%M%S'))
         df1 = df1[df1.load_dttm <= valuation_dttm]
         dataframe = dataframe.append(df1)

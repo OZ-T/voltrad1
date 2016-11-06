@@ -21,7 +21,7 @@ def prev_weekday_close(adate):
     _offsets = (3, 1, 1, 1, 1, 1, 2)
     return ( adate - dt.timedelta(days=_offsets[adate.weekday()]) ).replace(hour=23,minute=59, second=59)
 
-log = logger("Shark TIC Analytics")
+log = logger("Blablio TIC Analytics")
 
 datos_toxls=pd.DataFrame()
 
@@ -98,26 +98,6 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
                                            accountid = accountid,
                                            scenarioMode = scenarioMode, simulName = simulName)
         posiciones_trades_dates=posiciones_trades_dates.append(temp_portfolio)
-
-
-    ###################################################################################################################
-    # ACCOUNT
-    ###################################################################################################################
-    #account=ra.extrae_account_snapshot_new(valuation_dttm=fecha_valoracion,
-    #                                       accountid=accountid,scenarioMode=scenarioMode, simulName=simulName)
-    # foto de la cuenta en el cierre del dia anterior a la fecha de valoracion
-    #account=account.append(ra.extrae_account_snapshot_new(valuation_dttm=fecha_val_tminus1,
-    #                                                      accountid=accountid, #cierre del dia anterior
-    #                                                      scenarioMode = scenarioMode, simulName = simulName))
-
-    #account_trades_dates = pd.DataFrame()
-    # foto de la cuenta en las fechas de los trades
-    #for x in lista_dttm_con_trades:
-    #    log.info("Extraer account para fecha trade: [%s] " % (str(x)))
-    #    temp_account =ra.extrae_account_snapshot_new(valuation_dttm=x ,
-    #                                                   accountid = accountid,
-    #                                                   scenarioMode = scenarioMode, simulName = simulName)
-    #    account_trades_dates=account_trades_dates.append(temp_account)
 
     ###################################################################################################################
     # OPTIONS CHAIN
@@ -360,7 +340,8 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
     positions_summary['unrealizedPNLfromPrices'] = positions_summary['marketValuefromPrices'] \
                                                    - positions_summary['portfolio_precio_neto']
 
-    positions_summary['portfolio_expiry'] = positions_summary['portfolio_expiry'].apply(pd.to_datetime)
+    #positions_summary['portfolio_expiry'] = positions_summary['portfolio_expiry'].apply(pd.to_datetime)
+    positions_summary['portfolio_expiry'] = pd.to_datetime(positions_summary['portfolio_expiry'],format="%Y%m%d")
 
     #caclulo dias a expiracion en el trade
     positions_summary['DTE'] = (positions_summary['portfolio_expiry'] - fecha_valoracion ).astype('timedelta64[D]').astype(int)
@@ -509,7 +490,7 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
     dte= positions_summary[['DTE']].mean().item()
 
     #margen_neto= (trade_summary_margin_cash - trade_summary_margin_cash.shift())['FullInitMarginReq_USD_actual'].dropna().item()
-    margen_neto = (trade_summary_margin_cash)['FullInitMarginReq_USD_actual'].dropna().item()
+    margen_neto = (trade_summary_margin_cash)['FullInitMarginReq_USD_actual'].dropna().sum()
     comisiones=trade_summary_margin_cash['Comisiones'].dropna().sum()
 
     impacto_cash = trade_summary_margin_cash['Impacto_encash_ultimo_periodo1h'].dropna().sum()
@@ -632,7 +613,8 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
     elif scenarioMode == "Y":
         loc1 = simulName
     store.append("/" + loc1, row_datos, data_columns=True,
-                 min_itemsize={'portfolio': 500})
+                 min_itemsize={'portfolio': 500,
+                               'DToperaciones': 500})
     store.close()
 
 def get_ivol_series(date_ini,date_end):
@@ -707,10 +689,10 @@ if __name__=="__main__":
     #run_shark_analytics(i_symbol='SPY',i_year=2016,i_month_num=9,i_day_t0=2,i_day_tminus1=1,i_expiry='20161021',i_secType='OPT')
     globalconf = config.GlobalConfig()
     accountid = globalconf.get_accountid()
-    fecha_valoracion = dt.datetime(year=2016, month=9, day=21, hour=20, minute=59, second=59)
-    #fecha_valoracion=dt.datetime.now()
+    #fecha_valoracion = dt.datetime(year=2016, month=10, day=17, hour=21, minute=59, second=59)
+    fecha_valoracion=dt.datetime.now()
     run_analytics(symbol="SPY", expiry="20161021", secType="OPT", accountid=accountid,
-                  valuation_dt=fecha_valoracion,scenarioMode="Y",simulName="spy1016dls",appendh5=0,toxls=1,timedelta1=1)
+                  valuation_dt=fecha_valoracion,scenarioMode="Y",simulName="spy1016wild",appendh5=1,toxls=0,timedelta1=1)
     #run_analytics(symbol="ES", expiry="20161118", secType="FOP", accountid=accountid,
     #             valuation_dt=fecha_valoracion,scenarioMode="N",simulName="NA",appendh5=1)
 
