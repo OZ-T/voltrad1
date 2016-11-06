@@ -23,6 +23,8 @@ def prev_weekday_close(adate):
 
 log = logger("Shark TIC Analytics")
 
+datos_toxls=pd.DataFrame()
+
 # Analizar TIC activas para un subyacente y vencimiento dados para una datetime de valoracion dada
 #   1.- se obtiene del chain option del h5 historico para la datetime de valoracion, los precios (opciones y subyacente),
 #       IV, griegas, volumenes, OI,...
@@ -34,8 +36,8 @@ log = logger("Shark TIC Analytics")
 #   5.- se obtiene del h5 account los impactos (deltas) en Cash (comisiones, primas cobradas) y margin en cada uno de los datetimes
 #       en que se ha realizado operaciones (este historico se obtiene en el punto 4 anterior)
 #
-def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMode,simulName,appendh5):
-    log.info("Running for valuation date: [%s] " % (str(i_date)) )
+def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMode,simulName,appendh5,toxls):
+    log.info(" ------------- Running for valuation date: [%s] ------------- " % (str(i_date)) )
 
     # fechas en que se calcula la foto de la estrategia
     fecha_valoracion=i_date
@@ -76,6 +78,7 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
     else:
         # scenario case
         x=max(lista_dttm_con_trades)
+        log.info("Extraer posiciones para fecha trade: [%s] " % (str(x)))
         posiciones = ra.extrae_portfolio_positions(valuation_dttm=x,
                                                    symbol=i_symbol, expiry=i_expiry, secType=i_secType,
                                                    accountid=accountid,
@@ -89,6 +92,7 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
 
     posiciones_trades_dates = pd.DataFrame()
     for x in lista_dttm_con_trades:
+        log.info("Extraer posiciones para fecha trade: [%s] " % (str(x)))
         temp_portfolio =ra.extrae_portfolio_positions(valuation_dttm=x ,
                                            symbol=i_symbol,expiry=i_expiry,secType=i_secType,
                                            accountid = accountid,
@@ -99,20 +103,21 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
     ###################################################################################################################
     # ACCOUNT
     ###################################################################################################################
-    account=ra.extrae_account_snapshot_new(valuation_dttm=fecha_valoracion,
-                                           accountid=accountid,scenarioMode=scenarioMode, simulName=simulName)
+    #account=ra.extrae_account_snapshot_new(valuation_dttm=fecha_valoracion,
+    #                                       accountid=accountid,scenarioMode=scenarioMode, simulName=simulName)
     # foto de la cuenta en el cierre del dia anterior a la fecha de valoracion
     #account=account.append(ra.extrae_account_snapshot_new(valuation_dttm=fecha_val_tminus1,
     #                                                      accountid=accountid, #cierre del dia anterior
     #                                                      scenarioMode = scenarioMode, simulName = simulName))
 
-    account_trades_dates = pd.DataFrame()
+    #account_trades_dates = pd.DataFrame()
     # foto de la cuenta en las fechas de los trades
-    for x in lista_dttm_con_trades:
-        temp_account =ra.extrae_account_snapshot_new(valuation_dttm=x ,
-                                                       accountid = accountid,
-                                                       scenarioMode = scenarioMode, simulName = simulName)
-        account_trades_dates=account_trades_dates.append(temp_account)
+    #for x in lista_dttm_con_trades:
+    #    log.info("Extraer account para fecha trade: [%s] " % (str(x)))
+    #    temp_account =ra.extrae_account_snapshot_new(valuation_dttm=x ,
+    #                                                   accountid = accountid,
+    #                                                   scenarioMode = scenarioMode, simulName = simulName)
+    #    account_trades_dates=account_trades_dates.append(temp_account)
 
     ###################################################################################################################
     # OPTIONS CHAIN
@@ -188,6 +193,7 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
     # en cada date de todas las operaciones que se han realizado desde el inicio de la estrategia
     cadena_opcs_orders= pd.DataFrame()
     for x in lista_dttm_con_trades:
+        log.info("Extraer options chain para fecha trade: [%s] " % (str(x)))
         temporal1 =ra.extrae_options_chain(valuation_dttm=x,
                                            symbol=i_symbol,expiry=i_expiry,secType=i_secType)
         cadena_opcs_orders=cadena_opcs_orders.append(temporal1)
@@ -317,6 +323,9 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
                                              * (positions_summary['prices_bidPrice'] \
                                                 + positions_summary['prices_askPrice']) / 2.0
 
+    positions_summary['orders_precio_bruto']= np.sign(positions_summary['portfolio_position']) \
+                                               * positions_summary['orders_precio_bruto']
+
     positions_summary = positions_summary[['portfolio_averageCost',
                                            'portfolio_expiry',
                                            'portfolio_position',
@@ -330,7 +339,7 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
                                            'portfolio_load_dttm',
                                            'marketValueGross',
                                            'orders_precio_bruto',
-                                           'portfolio_precio_neto'
+                                           'portfolio_precio_neto',
                                            'prices_lastUndPrice',
                                            'prices_modelImpliedVol',
                                            'prices_bidPrice',
@@ -345,8 +354,7 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
     # que se contabiliza a nivel de portfolio en el caso base (portfolio_marketValue)
     positions_summary['marketValuefromPrices'] =  positions_summary['marketValueGross'] \
                                                  + np.sign(positions_summary['portfolio_position']) \
-                                                 * ( np.sign(positions_summary['portfolio_position'])
-                                                     * positions_summary['orders_precio_bruto'] \
+                                                 * ( positions_summary['orders_precio_bruto'] \
                                                     - (positions_summary['portfolio_precio_neto']) )
 
     positions_summary['unrealizedPNLfromPrices'] = positions_summary['marketValuefromPrices'] \
@@ -357,7 +365,7 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
     #caclulo dias a expiracion en el trade
     positions_summary['DTE'] = (positions_summary['portfolio_expiry'] - fecha_valoracion ).astype('timedelta64[D]').astype(int)
     ## hay que calcular aqui la IV de las opciones ATM en el momento del trade, se saca de la cadena de opciones
-    positions_summary['ImplVolATM'] = cadena_opcs.ix[(cadena_opcs['strike'] - cadena_opcs['prices_lastUndPrice']).abs().argsort()[:4] ]['prices_modelImpliedVol'].mean()
+    positions_summary['ImplVolATM'] = cadena_opcs.ix[(cadena_opcs['prices_strike'] - cadena_opcs['prices_lastUndPrice']).abs().argsort()[:4] ]['prices_modelImpliedVol'].mean()
     # calcular 1SD con el horizonte de dias DTE
     positions_summary['1SD'] = positions_summary['prices_lastUndPrice'] * positions_summary['ImplVolATM'] / (365.0/((positions_summary['DTE']) ) )**0.5
     positions_summary['lastUndPrice_less1SD']=positions_summary['prices_lastUndPrice'] - positions_summary['1SD']
@@ -392,27 +400,16 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
     #ops
     temp_margin=pd.DataFrame()
     temp_premium=pd.DataFrame()
-    for x in oper_series1:
+    for x in lista_dttm_con_trades:
         #temporal1 =ra.extrae_account_delta_new(year=x.year, month=x.strftime("%B")[:3],day=x.day,hour=x.hour,minute=x.minute)
-        temporal1 =ra.extrae_account_delta_new(year=x.year, month=x.month,day=x.day,hour=x.hour,
-                                               minute=x.minute,accountid=accountid,
+        t_margin,t_prem =ra.extrae_account_delta_new(valuation_dttm=x,accountid=accountid,
                                                scenarioMode = scenarioMode,simulName=simulName)
-        temporal1['load_dttm'] = temporal1['current_datetime_txt']
-        temporal1=temporal1.set_index('load_dttm')
-        t_margin=temporal1[['RegTMargin_USD','MaintMarginReq_USD','InitMarginReq_USD',
-                                'FullMaintMarginReq_USD','FullInitMarginReq_USD']].apply(pd.to_numeric)
-        t_margin.diff()
-        t_margin['fecha_operacion']=str(x)
         temp_margin = temp_margin.append(t_margin)
         # cash primas y comisiones
         # impacto en comisiones de las operaciones
         # dado un datetime donde se han ejecutado operaciones hace la delta de las posiciones cash de la cuenta y eso
         # resulta en el valor de las comisiones de ese conjunto de operaciones (hay que considerar el dienro recibido de)
         # la venta de opciones y tambien si se tiene posiciones en divisa los cambios ????
-        t_prem =temporal1[['TotalCashBalance_BASE','TotalCashBalance_EUR','TotalCashBalance_USD','TotalCashValue_USD',
-                          'CashBalance_EUR','CashBalance_USD','TotalCashValue_C_USD','TotalCashValue_S_USD',
-                          'CashBalance_BASE','ExchangeRate_EUR']].apply(pd.to_numeric).diff()
-        t_prem['fecha_operacion']=str(x)
         temp_premium = temp_premium.append(t_prem)
     #temporal1.to_excel("temporal1_simul.xlsx")
     # por cada fecha de operacion tendremos cuatro registros tipicamente en la tabla temp_margin
@@ -426,48 +423,55 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
 
     temp_margin=temp_margin.reset_index()[['load_dttm','FullInitMarginReq_USD']].drop_duplicates()
     temp_premium=temp_premium.reset_index()[['load_dttm','TotalCashValue_USD']].drop_duplicates()
-    temp_margin2=temp_margin.rename(columns={'FullInitMarginReq_USD':'FullInitMarginReq_USD_actual'})
-    temp_premium2=temp_premium.rename(columns={'TotalCashValue_USD':'Impacto_encash_ultimo_periodo1h'})
-    temp_premium2=temp_premium2.dropna()
+    temp_margin=temp_margin.rename(columns={'FullInitMarginReq_USD':'FullInitMarginReq_USD_actual'})
+    temp_premium=temp_premium.rename(columns={'TotalCashValue_USD':'Impacto_encash_ultimo_periodo1h'}).dropna()
 
-    temp_margin2['on']=pd.to_datetime(temp_margin2['load_dttm'], format="%Y-%m-%d %H:%M:%S")
-    temp_premium2['on']=pd.to_datetime(temp_premium2['load_dttm'], format="%Y-%m-%d %H:%M:%S")
+    #temp_margin['on']=pd.to_datetime(temp_margin['load_dttm'], format="%Y-%m-%d %H:%M:%S").dt.strftime("%Y-%m-%d %H")
+    #temp_premium['on']=pd.to_datetime(temp_premium['load_dttm'], format="%Y-%m-%d %H:%M:%S").dt.strftime("%Y-%m-%d %H")
+    temp_margin['on']=temp_margin['load_dttm'].dt.strftime("%Y-%m-%d %H")
+    temp_premium['on']=temp_premium['load_dttm'].dt.strftime("%Y-%m-%d %H")
 
-    temp_margin2['on'] = temp_margin2['on'].dt.strftime("%Y-%m-%d %H")
-    temp_premium2['on'] = temp_premium2['on'].dt.strftime("%Y-%m-%d %H")
+    temp_credbruto=trade_summary.reset_index()
+    temp_credbruto['on']=temp_credbruto['orders_times'].dt.strftime("%Y-%m-%d %H")
+    temp_credbruto=temp_credbruto.groupby(by=['on'])['on','CreditoBruto'].sum().reset_index()
 
-    temp_credbruto=trade_summary.groupby(by=['times_opt_chain'])['times_opt_chain','CreditoBruto'].sum()
-    temp_credbruto=temp_credbruto.reset_index()
-    temp_credbruto['on']=temp_credbruto['times_opt_chain'].dt.strftime("%Y-%m-%d %H")
-
-    trade_summary_margin_cash = pd.merge(temp_margin2, temp_premium2, how='left', on=['on'])
+    trade_summary_margin_cash = pd.merge(temp_margin, temp_premium, how='left', on=['on'])
     trade_summary_margin_cash = pd.merge(trade_summary_margin_cash, temp_credbruto, how='left', on=['on'])
     trade_summary_margin_cash = trade_summary_margin_cash.drop('on', 1)
+    trade_summary_margin_cash = trade_summary_margin_cash.rename(columns={'load_dttm_x': 'load_dttm'})
     trade_summary_margin_cash = trade_summary_margin_cash.drop('load_dttm_y', 1)
-    trade_summary_margin_cash = trade_summary_margin_cash.drop('times_opt_chain', 1)
-    trade_summary_margin_cash=trade_summary_margin_cash.rename(columns={'load_dttm_x':'load_dttm'})
-    trade_summary_margin_cash['Comisiones'] = np.abs(trade_summary_margin_cash['Impacto_encash_ultimo_periodo1h'] + trade_summary_margin_cash['CreditoBruto'] )
+    trade_summary_margin_cash['Comisiones'] = np.abs(trade_summary_margin_cash['Impacto_encash_ultimo_periodo1h']
+                                                     + trade_summary_margin_cash['CreditoBruto'] )
     trade_summary_margin_cash['Margen_neto'] = 0
-    trade_summary_margin_cash.loc[trade_summary_margin_cash['FullInitMarginReq_USD_actual'] <= 0, 'Margen_neto'] = 0
-    trade_summary_margin_cash.loc[trade_summary_margin_cash['FullInitMarginReq_USD_actual'] > 0, 'Margen_neto'] = trade_summary_margin_cash['FullInitMarginReq_USD_actual'] - trade_summary_margin_cash['Impacto_encash_ultimo_periodo1h']
+    trade_summary_margin_cash.loc[trade_summary_margin_cash['FullInitMarginReq_USD_actual'] <= 0,
+                                                            'Margen_neto'] = 0
+    trade_summary_margin_cash.loc[trade_summary_margin_cash['FullInitMarginReq_USD_actual'] > 0,
+                                'Margen_neto'] = trade_summary_margin_cash['FullInitMarginReq_USD_actual'] \
+                                                 - trade_summary_margin_cash['Impacto_encash_ultimo_periodo1h']
 
-    trade_summary_margin_cash['load_dttm']=pd.to_datetime(trade_summary_margin_cash['load_dttm'], format="%Y-%m-%d %H:%M:%S")
+    trade_summary_margin_cash['load_dttm']=pd.to_datetime(trade_summary_margin_cash['load_dttm'],
+                                                          format="%Y-%m-%d %H:%M:%S")
 
     trade_summary_margin_cash['BeneficioMaximoPct'] = 0
-    trade_summary_margin_cash.loc[trade_summary_margin_cash['FullInitMarginReq_USD_actual'] > 0, 'BeneficioMaximoPct'] = trade_summary_margin_cash['Impacto_encash_ultimo_periodo1h'] / trade_summary_margin_cash['Margen_neto']
+    trade_summary_margin_cash.loc[trade_summary_margin_cash['FullInitMarginReq_USD_actual'] > 0,
+                                  'BeneficioMaximoPct'] = trade_summary_margin_cash['Impacto_encash_ultimo_periodo1h'] \
+                                                          / trade_summary_margin_cash['Margen_neto']
     trade_summary_margin_cash=trade_summary_margin_cash.sort_values(by='load_dttm')
     #print "trade_summary_margin_cash " , trade_summary_margin_cash
     # calcular apalancamientos de la posicion completa
     # a continuacion es el margen neto que quedo tras la ultima operacion en la estrategia completa
-    cb_tot = trade_summary_margin_cash [(trade_summary_margin_cash['load_dttm']) ==trade_summary_margin_cash.reset_index().max()['load_dttm'] ]  ['Margen_neto']
+    cb_tot = trade_summary_margin_cash [(trade_summary_margin_cash['load_dttm']) ==
+                                        trade_summary_margin_cash.reset_index().max()['load_dttm'] ]  ['Margen_neto']
 
-    total_summary['AD1PCT'] =np.abs( total_summary['multiplier'] * ( ( (np.abs(total_summary['DshortPosition']) + total_summary['GammaPosition'] )
-                                                                       * total_summary['lastUndPrice'] / total_summary['multiplier'] ) - total_summary['GammaPosition'] )
-                                                                    / cb_tot ).values[0]
+    total_summary['AD1PCT'] =np.abs( total_summary['portfolio_multiplier'] * ( ( (np.abs(total_summary['DshortPosition'])
+                                                                        + total_summary['GammaPosition'] )
+                                                                        * total_summary['prices_lastUndPrice']
+                                                                        / total_summary['portfolio_multiplier'] )
+                                                                        - total_summary['GammaPosition'] )
+                                                                        / cb_tot ).values[0]
 
-
-    total_summary['AD1SD1D'] =np.abs( total_summary['multiplier'] * ( ( (np.abs(total_summary['DshortPosition']) + total_summary['GammaPosition'] )
-                                                                       * total_summary['lastUndPrice'] * total_summary['ImplVolATM'] / np.sqrt(365.0) )
+    total_summary['AD1SD1D'] =np.abs( total_summary['portfolio_multiplier'] * ( ( (np.abs(total_summary['DshortPosition']) + total_summary['GammaPosition'] )
+                                                                       * total_summary['prices_lastUndPrice'] * total_summary['ImplVolATM'] / np.sqrt(365.0) )
                                                                      - total_summary['GammaPosition'] ) / cb_tot ).values[0]
 
     total_summary['MaxDsAD1PCT'] = np.abs ( 3.0 * total_summary['DshortPosition'] / total_summary['AD1PCT'] )
@@ -477,54 +481,24 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
     total_summary['thetaGammaRatio'] = np.abs ( total_summary['ThetaPosition'] / total_summary['GammaPosition'] )
     total_summary['VegaThetaRatio'] = np.abs ( total_summary['VegaPosition'] / total_summary['ThetaPosition'] )
 
-    ## Resultado final
-    # date time de los datos de option chain usados en los cálculos (hora_max)
-    # underly (todos los valores son a fecha de valoracion / fecha actual):
-    #   fecha valoracion, ticker , last price,
-    # trade (todos los valores son a fecha de la operacion):
-    #   fecha de operacion, impl vol, dias a expiracion
-    #print "____________________Precios del subyacente almancenados de la fecha de valoracion _____________"
-    #print underl_prc_df
-    #print "____________________Con las siguientes se calcula la IV del subyacente (las IV de las opciones P C mas ATM) _____________"
-    #print subset_df[['modelImpliedVol','strike','load_dttm','right']]
-    #print "---------------------------------------- underlying ----------------------------------------"
-    #print ({'hora max datos':hora_max, 'fecha valoracion':fecha_valoracion , 'subycente':i_symbol, 'precio last subyacente':underl_prc,
-    #        'precio close anterior subyacente':underl_prc_tminus1, 'vol. implicita subyacente': impl_vol_suby ,'retorno subyacente': retorno_suby_dia})
-    #print "---------------------------------------- Sumario Trade TIC ----------------------------------------"
-    #print trade_summary # muestra el precio de subyacente en el momento de cada trade de la tic
-    #print "---------------------------------------- Sumario Posiciones TIC ----------------------------------------"
-    #print positions_summary
-    #print "---------------------------------------- Sumario Margin y Cash ----------------------------------------"
-    #print trade_summary_margin_cash
-    #print "---------------------------------------- Sumario TIC por Spread  a fecha valoracion ----------------------------------------"
-    # resultados por spread de la TIC
-    #print spread_summary
-    #print "---------------------------------------- Sumario TIC global a fecha valoracion ----------------------------------------"
-    # resultados globales de la TIC
-    #print total_summary
-
-    #fecha_ini=dt.date(2016,8,1)
-    #if np.min(trade_summary['times_ops']).date() >= fecha_ini:
-    #    fecha_ini=np.min(trade_summary['times_ops']).date()
-
     #ivol=get_ivol_series(date_ini=fecha_ini.strftime("%Y-%m-%d"),date_end=fecha_valoracion.date().strftime("%Y-%m-%d"))
     #col=['IV_Index_call_52wk_hi','IV_Index_call_52wk_lo','IV_Index_call_52wk_hi','IV_Index_mean_52wk_hi',
     #     'IV_Index_mean_52wk_lo','IV_Index_put_52wk_hi','IV_Index_put_52wk_lo']
     #ivol.drop(col,axis=1,inplace=True)
 
     precio_undl_inicio_strat = \
-        (trade_summary.loc[trade_summary.times_ops == np.min(trade_summary.times_ops)]['lastUndPrice']).unique()[0]
+        (trade_summary.loc[trade_summary.orders_times == np.min(trade_summary.orders_times)]['prices_lastUndPrice']).unique()[0]
     iv_atm_inicio_strat = \
-        (trade_summary.loc[trade_summary.times_ops == np.min(trade_summary.times_ops)]['ImplVolATM']).unique()[0]
+        (trade_summary.loc[trade_summary.orders_times == np.min(trade_summary.orders_times)]['ImplVolATM']).unique()[0]
 
     dte_ini = \
-        (trade_summary.loc[trade_summary.times_ops == np.min(trade_summary.times_ops)]['DTE']).unique()[0]
+        (trade_summary.loc[trade_summary.orders_times == np.min(trade_summary.orders_times)]['DTE']).unique()[0]
 
     ini_1SD15D = \
-        (trade_summary.loc[trade_summary.times_ops == np.max(trade_summary.times_ops)]['1SD15D']).unique()[0].item()
+        (trade_summary.loc[trade_summary.orders_times == np.max(trade_summary.orders_times)]['1SD15D']).unique()[0].item()
 
     ini_1SD21D = \
-        (trade_summary.loc[trade_summary.times_ops == np.max(trade_summary.times_ops)]['1SD21D']).unique()[0].item()
+        (trade_summary.loc[trade_summary.orders_times == np.max(trade_summary.orders_times)]['1SD21D']).unique()[0].item()
 
     prc_ajuste_1SD21D_up = precio_undl_inicio_strat + ini_1SD21D
     prc_ajuste_1SD21D_dn = precio_undl_inicio_strat - ini_1SD21D
@@ -534,42 +508,45 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
 
     dte= positions_summary[['DTE']].mean().item()
 
-    margen_neto= (trade_summary_margin_cash - trade_summary_margin_cash.shift())['FullInitMarginReq_USD_actual'].dropna().item()
+    #margen_neto= (trade_summary_margin_cash - trade_summary_margin_cash.shift())['FullInitMarginReq_USD_actual'].dropna().item()
+    margen_neto = (trade_summary_margin_cash)['FullInitMarginReq_USD_actual'].dropna().item()
     comisiones=trade_summary_margin_cash['Comisiones'].dropna().sum()
 
     impacto_cash = trade_summary_margin_cash['Impacto_encash_ultimo_periodo1h'].dropna().sum()
 
-    BearCallMaxDShortJL = positions_summary.loc[(positions_summary.right=="C")
-                                                  & (positions_summary.position < 0),'Dshort'].max()
-
-    BullPutMaxDShortJL = positions_summary.loc[(positions_summary.right=="P")
-                                                  & (positions_summary.position < 0),'Dshort'].min() # because delta is <0 for puts
-
-    BearCallMaxIVShort = positions_summary.loc[(positions_summary.right=="C")
-                                                  & (positions_summary.position < 0),'modelImpliedVol'].max()
-
-    BullPutMaxIVShort = positions_summary.loc[(positions_summary.right=="P")
-                                                  & (positions_summary.position < 0),'modelImpliedVol'].max()
-
-    BearCallMaxDeltaShort = positions_summary.loc[(positions_summary.right=="C")
-                                                  & (positions_summary.position < 0),'modelDelta'].max()
-
-    BullPutMaxDeltaShort = positions_summary.loc[(positions_summary.right=="P")
-                                                  & (positions_summary.position < 0),'modelDelta'].min() # because delta is <0 for puts
-
-    BearCallMaxDeltaShortPos = positions_summary.loc[(positions_summary.right=="C")
-                                                  & (positions_summary.position < 0),'DshortPosition'].max()
-
-    BullPutMaxDeltaShortPos = positions_summary.loc[(positions_summary.right=="P")
-                                                  & (positions_summary.position < 0),'DshortPosition'].min() # because delta is <0 for puts
-
-    p_n_l = positions_summary[['marketValue']].sum().item() -trade_summary[['CreditoBruto']].sum().item()
+    BearCallMaxDShortJL = positions_summary.loc[(positions_summary.portfolio_right=="C")
+                                                  & (positions_summary.portfolio_position < 0),'Dshort'].max()
+    BullPutMaxDShortJL = positions_summary.loc[(positions_summary.portfolio_right=="P")
+                                                  & (positions_summary.portfolio_position < 0),'Dshort'].min() # because delta is <0 for puts
+    BearCallMaxIVShort = positions_summary.loc[(positions_summary.portfolio_right=="C")
+                                                  & (positions_summary.portfolio_position < 0),'prices_modelImpliedVol'].max()
+    BullPutMaxIVShort = positions_summary.loc[(positions_summary.portfolio_right=="P")
+                                                  & (positions_summary.portfolio_position < 0),'prices_modelImpliedVol'].max()
+    BearCallMaxDeltaShort = positions_summary.loc[(positions_summary.portfolio_right=="C")
+                                                  & (positions_summary.portfolio_position < 0),'prices_modelDelta'].max()
+    BullPutMaxDeltaShort = positions_summary.loc[(positions_summary.portfolio_right=="P")
+                                                  & (positions_summary.portfolio_position < 0),'prices_modelDelta'].min() # because delta is <0 for puts
+    BearCallMaxDeltaShortPos = positions_summary.loc[(positions_summary.portfolio_right=="C")
+                                                  & (positions_summary.portfolio_position < 0),'DshortPosition'].max()
+    BullPutMaxDeltaShortPos = positions_summary.loc[(positions_summary.portfolio_right=="P")
+                                                  & (positions_summary.portfolio_position < 0),'DshortPosition'].min() # because delta is <0 for puts
+    # this is only for the base case
+    p_n_l = positions_summary[['portfolio_marketValue']].sum().item() -trade_summary[['CreditoBruto']].sum().item()
     coste_base = trade_summary[['CreditoBruto']].sum().item()
-    #print p_n_l , dte
-    #print "margen_neto " , margen_neto.item()
+
+    marketValueGross = positions_summary[['marketValueGross']].sum().item()
+    portfolio_precio_neto = positions_summary[['portfolio_precio_neto']].sum().item()
+    orders_precio_bruto = positions_summary[['orders_precio_bruto']].sum().item()
+    portfolio_marketValue = positions_summary[['portfolio_marketValue']].sum().item()
+    portfolio_unrealizedPNL = positions_summary[['portfolio_unrealizedPNL']].sum().item()
+    marketValuefromPrices = positions_summary[['marketValuefromPrices']].sum().item()
+    unrealizedPNLfromPrices = positions_summary[['unrealizedPNLfromPrices']].sum().item()
+
+
+
     #sumario_subyacente
     max_profit = abs(coste_base)/margen_neto
-    pnl_margin_ratio = p_n_l / margen_neto
+    pnl_margin_ratio = unrealizedPNLfromPrices / margen_neto
     puntos_desde_last_close = (underl_prc-underl_prc_tminus1)
     linea_mercado = (1-( (pnl_margin_ratio) / (max_profit) ))
     e_v = (max_profit)-(pnl_margin_ratio)
@@ -577,6 +554,13 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
     row_datos = pd.DataFrame({'subyacente':i_symbol,
                               'expiry':i_expiry,
                               'accountid':accountid,
+                              'portfolio_unrealizedPNL': portfolio_unrealizedPNL,
+                              'marketValuefromPrices': marketValuefromPrices,
+                              'marketValueGross':marketValueGross,
+                              'portfolio_precio_neto':portfolio_precio_neto,
+                              'orders_precio_bruto':orders_precio_bruto,
+                              'portfolio_marketValue':portfolio_marketValue,
+                              'unrealizedPNLfromPrices':unrealizedPNLfromPrices,
                               'ini_1SD15D':ini_1SD15D,
                               'ini_1SD21D':ini_1SD21D,
                               'prc_ajuste_1SD21D_up':prc_ajuste_1SD21D_up,
@@ -608,18 +592,17 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
                               'e_v': e_v,
                               'comisiones':comisiones,
                               'impacto_cash':impacto_cash,
-                              'portfolio': positions_summary[["localSymbol","right","position",
-                                                              "marketValue"]].reset_index().drop('index',axis=1).to_json(orient='records'),
+                              'portfolio': positions_summary[["portfolio_symbol","portfolio_strike","portfolio_right","portfolio_position",
+                                                              "portfolio_marketValue"]].reset_index().drop('index',axis=1).to_json(orient='records'),
                               'retorno_subyacente': retorno_suby_dia,
-                              'lastUndPrice':total_summary['lastUndPrice'],
+                              'lastUndPrice':total_summary['prices_lastUndPrice'],
                               'DshortPosition':total_summary['DshortPosition'],
                               'GammaPosition':total_summary['GammaPosition'],
                               'ThetaPosition':total_summary['ThetaPosition'],
                               'VegaPosition':total_summary['VegaPosition'],
-                              'marketValue':total_summary['marketValue'],
-                              'lastUndPrice':total_summary['lastUndPrice'],
+                              'lastUndPrice':total_summary['prices_lastUndPrice'],
                               'ImplVolATM':total_summary['ImplVolATM'],
-                              'multiplier':total_summary['multiplier'],
+                              'multiplier':total_summary['portfolio_multiplier'],
                               'Pts1SD1D':total_summary['Pts1SD1D'],
                               'Pts1SD5D':total_summary['Pts1SD5D'],
                               'AD1PCT':total_summary['AD1PCT'],
@@ -632,9 +615,14 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
                               'VegaThetaRatio':total_summary['VegaThetaRatio'],
                               'DTMaxdatost_1':hora_max_tminus1.strftime("%Y-%m-%d %H:%M:%S"),
                               'DTMaxdatost': hora_max.strftime("%Y-%m-%d %H:%M:%S"),
-                              'DToperaciones':str(lista_dias_con_trades),
+                              'DToperaciones':str(lista_dttm_con_trades),
                               'MargenNeto': margen_neto
                               },index=[hora_max.strftime("%Y-%m-%d %H:%M:%S")])
+    if toxls ==1:
+        global datos_toxls
+        datos_toxls=datos_toxls.append(row_datos)
+
+
     if appendh5 != 1:
         return
     globalconf = config.GlobalConfig()
@@ -646,31 +634,6 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
     store.append("/" + loc1, row_datos, data_columns=True,
                  min_itemsize={'portfolio': 500})
     store.close()
-
-    #trade_summary=trade_summary.dropna()
-    #writer = ExcelWriter('dailyanalytics'+fecha_valoracion.strftime("%Y-%m-%d")+'.xlsx')
-    #underl_prc_df.to_excel(writer,sheet_name='Precios Suby.')
-    #ivol.to_excel(writer,sheet_name='IVolatility')
-    #subset_df[['modelImpliedVol','strike','load_dttm','right']].to_excel(writer,sheet_name='Calculo IV ATM')
-    #sumario_subyacente.to_excel(writer,sheet_name='Sumario Suby.')
-    #trade_summary.to_excel(writer,sheet_name='Sumario Trades')
-    #positions_summary.to_excel(writer,sheet_name='Sumario Posiciones')
-    #trade_summary_margin_cash.to_excel(writer,sheet_name='Sumario Margin Primas')
-    #spread_summary.to_excel(writer,sheet_name='Sumario Spreads')
-    #total_summary.to_frame(name='Conceptos').to_excel(writer,sheet_name='Sumario estrategia')
-    #writer.save()
-
-    #writer = ExcelWriter('dailyanalytics.xlsx')
-    #underl_prc_df.to_excel(writer,sheet_name='Precios Suby.')
-    #ivol.to_excel(writer,sheet_name='IVolatility')
-    #subset_df[['modelImpliedVol','strike','load_dttm','right']].to_excel(writer,sheet_name='Calculo IV ATM')
-    #sumario_subyacente.to_excel(writer,sheet_name='Sumario Suby.')
-    #trade_summary.to_excel(writer,sheet_name='Sumario Trades')
-    #positions_summary.to_excel(writer,sheet_name='Sumario Posiciones')
-    #trade_summary_margin_cash.to_excel(writer,sheet_name='Sumario Margin Primas')
-    #spread_summary.to_excel(writer,sheet_name='Sumario Spreads')
-    #total_summary.to_frame(name='Conceptos').to_excel(writer,sheet_name='Sumario estrategia')
-    #writer.save()
 
 def get_ivol_series(date_ini,date_end):
     globalconf = config.GlobalConfig()
@@ -706,7 +669,7 @@ def get_strategy_start_date(symbol,expiry,accountid,scenarioMode,simulName):
     return ret1
 
 
-def run_analytics(symbol, expiry, secType,accountid,valuation_dt,scenarioMode,simulName,appendh5):
+def run_analytics(symbol, expiry, secType,accountid,valuation_dt,scenarioMode,simulName,appendh5,toxls,timedelta1):
     """
         Run analytics main method.
     :param symbol:
@@ -723,7 +686,7 @@ def run_analytics(symbol, expiry, secType,accountid,valuation_dt,scenarioMode,si
     start = get_strategy_start_date(symbol, expiry,accountid,scenarioMode,simulName)
     log.info("Starting date to use: [%s] " % (str(start)) )
     end = valuation_dt
-    delta = dt.timedelta(hours=1)
+    delta = dt.timedelta(hours=timedelta1)
     d = start
     diff = 0
     weekend = set([5, 6])
@@ -732,8 +695,11 @@ def run_analytics(symbol, expiry, secType,accountid,valuation_dt,scenarioMode,si
         if ( d.hour in _rth ) & ( d.weekday() not in weekend ) :
             diff += 1
             run_shark_analytics(i_symbol=symbol, i_date=d,i_expiry=expiry,i_secType=secType,
-                                accountid=accountid,scenarioMode=scenarioMode,simulName=simulName,appendh5=appendh5)
+                                accountid=accountid,scenarioMode=scenarioMode,simulName=simulName,appendh5=appendh5,toxls=toxls)
         d += delta
+
+    if toxls == 1:
+        datos_toxls.to_excel(symbol+"_"+valuation_dt.strftime("%Y%m%d_%H")+"_scn"+scenarioMode+".xlsx");
 
 
 if __name__=="__main__":
@@ -741,10 +707,10 @@ if __name__=="__main__":
     #run_shark_analytics(i_symbol='SPY',i_year=2016,i_month_num=9,i_day_t0=2,i_day_tminus1=1,i_expiry='20161021',i_secType='OPT')
     globalconf = config.GlobalConfig()
     accountid = globalconf.get_accountid()
-    fecha_valoracion = dt.datetime(year=2016, month=9, day=20, hour=15, minute=59, second=59)
+    fecha_valoracion = dt.datetime(year=2016, month=9, day=21, hour=20, minute=59, second=59)
     #fecha_valoracion=dt.datetime.now()
     run_analytics(symbol="SPY", expiry="20161021", secType="OPT", accountid=accountid,
-                  valuation_dt=fecha_valoracion,scenarioMode="N",simulName="spy1016dls",appendh5=0)
+                  valuation_dt=fecha_valoracion,scenarioMode="Y",simulName="spy1016dls",appendh5=0,toxls=1,timedelta1=1)
     #run_analytics(symbol="ES", expiry="20161118", secType="FOP", accountid=accountid,
     #             valuation_dt=fecha_valoracion,scenarioMode="N",simulName="NA",appendh5=1)
 

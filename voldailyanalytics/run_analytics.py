@@ -233,18 +233,15 @@ def extrae_account_delta(year,month,day,hour,minute):
     return dataframe
 
 
-def extrae_account_delta_new(year, month, day, hour, minute,accountid,scenarioMode,simulName):
+def extrae_account_delta_new(valuation_dttm,accountid,scenarioMode,simulName):
     """
     Extrae la delta de las variables de account dado un datetime.
     Se trata que el inicio y fin de la delta este lo mas cerca posible de la datetime que se recibe como input
 
-    :param year:
-    :param month:
-    :param day:
-    :param hour:
-    :param minute:
+    :param valuation_dttm:
     :return:
     """
+    log.info("extrae_account_delta_new para : [%s] " % (str(valuation_dttm)))
     dataframe = pd.DataFrame()
     if scenarioMode == "N":
         store = globalconf.account_store_new()
@@ -255,19 +252,33 @@ def extrae_account_delta_new(year, month, day, hour, minute,accountid,scenarioMo
         df1 = globalconf.account_dataframe_simulation(simulName=simulName)
         df1['current_date'] = df1['current_date'].apply(lambda x: str(x))
         df1 = df1.set_index("current_datetime", drop=0)
-    df1=df1.sort_values(by=['current_datetime'] , ascending=[True])
-    dfprev = df1[df1.index < datetime(year, month, day, hour, minute, 0)]
+    #df1=df1.sort_values(by=['current_datetime'] , ascending=[True])
+    df1.sort_index(inplace=True,ascending=[True])
+    dfprev = df1[df1.index < valuation_dttm.replace(minute=0, second=0)]
     #dfprev = df1[df1['current_datetime'] < str(year)+str(month).zfill(2)+str(day).zfill(2)+str(hour).zfill(2)+str(minute).zfill(2)]
     dfprev = dfprev.ix[-1:]
-
-    dfpost = df1[df1.index > datetime(year, month, day, hour, minute, 0)]
+    dfpost = df1[df1.index > valuation_dttm.replace(minute=59, second=59)]
     #dfpost = df1[df1['current_datetime'] > str(year)+str(month).zfill(2)+str(day).zfill(2)+str(hour).zfill(2)+str(minute).zfill(2)]
     dfpost = dfpost.ix[:1]
     dataframe = dataframe.append(dfprev)
     dataframe = dataframe.append(dfpost)
+
+    dataframe['load_dttm'] = valuation_dttm #  dataframe['current_datetime_txt']
+    dataframe = dataframe.set_index('load_dttm')
+    dataframe['fecha_operacion'] = str(valuation_dttm)
+    t_margin = dataframe[['RegTMargin_USD', 'MaintMarginReq_USD', 'InitMarginReq_USD',
+                          'FullMaintMarginReq_USD',
+                          'FullInitMarginReq_USD']].apply(pd.to_numeric).diff().dropna(subset=['FullInitMarginReq_USD'])
+
+
+    t_prem = dataframe[['TotalCashBalance_BASE', 'TotalCashBalance_EUR', 'TotalCashBalance_USD', 'TotalCashValue_USD',
+                        'CashBalance_EUR', 'CashBalance_USD', 'TotalCashValue_C_USD', 'TotalCashValue_S_USD',
+                        'CashBalance_BASE',
+                        'ExchangeRate_EUR']].apply(pd.to_numeric).diff().dropna(subset=['TotalCashValue_USD'])
+
     if scenarioMode == "N":
         store.close()
-    return dataframe
+    return t_margin , t_prem
 
 
 def extrae_portfolio_positions(valuation_dttm,symbol,expiry,secType,
@@ -389,8 +400,8 @@ def extrae_detalle_operaciones(valuation_dttm,symbol,expiry,secType,accountid,sc
         df1 = df1.set_index("index", drop=1)
         df1['expiry'] = df1['expiry'].apply(lambda x: datetime.strptime(str(x), '%Y%m%d'))
         df1['current_date'] = df1['current_date'].apply(lambda x: str(x))
-        df1 = df1[df1.current_datetime <= valuation_dttm]
         df1['load_dttm'] = df1['current_datetime'].apply(lambda x: datetime.strptime(str(x), '%Y%m%d%H%M%S'))
+        df1 = df1[df1.load_dttm <= valuation_dttm]
         dataframe = dataframe.append(df1)
 
 
