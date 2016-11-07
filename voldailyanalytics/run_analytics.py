@@ -16,6 +16,7 @@ log = logger("Run Analytics module")
 def extrae_options_chain(valuation_dttm,symbol,expiry,secType):
     """
         extraer de la hdf5 los datos de cotizaciones para una fecha
+        imputa valores ausente con el metodo ffill de pandas dataframe dentro del dia
     :param year:
     :param month:
     :param day:
@@ -70,6 +71,13 @@ def extrae_options_chain(valuation_dttm,symbol,expiry,secType):
                    u'modelPvDividend', u'modelTheta', u'modelUndPrice', u'modelVega',
                    u'multiplier', u'strike']].apply(pd.to_numeric)
     dataframe['load_dttm'] = dataframe['load_dttm'].apply(pd.to_datetime)
+    # imputar valores ausentes con el valor justo anterior (para este dia)
+    #dataframe = dataframe.ffill() PERO aqui hay varios strikes !!! ESTO NO VALE
+    dataframe = dataframe.drop_duplicates(subset=['right', 'strike', 'load_dttm'], keep='last')
+
+    dataframe = dataframe.sort_values(by=['right', 'strike', 'load_dttm'], ascending=[True, True, True]).groupby(
+                                ['right', 'strike', 'load_dttm'], as_index=False).apply(lambda group: group.ffill())
+    dataframe= dataframe.replace([-1],[0])
     dataframe = dataframe.add_prefix("prices_")
     return dataframe
 

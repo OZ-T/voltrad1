@@ -515,15 +515,20 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
     p_n_l = positions_summary[['portfolio_marketValue']].sum().item() -trade_summary[['CreditoBruto']].sum().item()
     coste_base = trade_summary[['CreditoBruto']].sum().item()
 
-    marketValueGross = positions_summary[['marketValueGross']].sum().item()
-    portfolio_precio_neto = positions_summary[['portfolio_precio_neto']].sum().item()
-    orders_precio_bruto = positions_summary[['orders_precio_bruto']].sum().item()
-    portfolio_marketValue = positions_summary[['portfolio_marketValue']].sum().item()
-    portfolio_unrealizedPNL = positions_summary[['portfolio_unrealizedPNL']].sum().item()
-    marketValuefromPrices = positions_summary[['marketValuefromPrices']].sum().item()
-    unrealizedPNLfromPrices = positions_summary[['unrealizedPNLfromPrices']].sum().item()
-
-
+    #marketValueGross = positions_summary[['marketValueGross']].sum().item()
+    #portfolio_precio_neto = positions_summary[['portfolio_precio_neto']].sum().item()
+    #orders_precio_bruto = positions_summary[['orders_precio_bruto']].sum().item()
+    #portfolio_marketValue = positions_summary[['portfolio_marketValue']].sum().item()
+    #portfolio_unrealizedPNL = positions_summary[['portfolio_unrealizedPNL']].sum().item()
+    #marketValuefromPrices = positions_summary[['marketValuefromPrices']].sum().item()
+    #unrealizedPNLfromPrices = positions_summary[['unrealizedPNLfromPrices']].sum().item()
+    marketValueGross = positions_summary['marketValueGross'].sum()
+    portfolio_precio_neto = positions_summary['portfolio_precio_neto'].sum()
+    orders_precio_bruto = positions_summary['orders_precio_bruto'].sum()
+    portfolio_marketValue = positions_summary['portfolio_marketValue'].sum()
+    portfolio_unrealizedPNL = positions_summary['portfolio_unrealizedPNL'].sum()
+    marketValuefromPrices = positions_summary['marketValuefromPrices'].sum()
+    unrealizedPNLfromPrices = positions_summary['unrealizedPNLfromPrices'].sum()
 
     #sumario_subyacente
     max_profit = abs(coste_base)/margen_neto
@@ -573,8 +578,16 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
                               'e_v': e_v,
                               'comisiones':comisiones,
                               'impacto_cash':impacto_cash,
-                              'portfolio': positions_summary[["portfolio_symbol","portfolio_strike","portfolio_right","portfolio_position",
-                                                              "portfolio_marketValue"]].reset_index().drop('index',axis=1).to_json(orient='records'),
+                              'portfolio':
+                              positions_summary[['portfolio_strike',
+                                                 'portfolio_right',
+                                                 'prices_bidPrice',
+                                                 'prices_askPrice']].rename(columns={'portfolio_strike': 'Str',
+                                                                                     'portfolio_right': 'T',
+                                                                                     'prices_bidPrice': 'Bid',
+                                                                                     'prices_askPrice': 'Ask'})
+                                                                    .reset_index().drop('index',axis=1)
+                                                                    .to_json(orient='records'),
                               'retorno_subyacente': retorno_suby_dia,
                               'lastUndPrice':total_summary['prices_lastUndPrice'],
                               'DshortPosition':total_summary['DshortPosition'],
@@ -624,7 +637,7 @@ def get_ivol_series(date_ini,date_end):
     df1 = store.select(lvl1._v_pathname)
     return df1.ix[date_ini:date_end]
 
-def get_strategy_start_date(symbol,expiry,accountid,scenarioMode,simulName):
+def get_strategy_start_date(symbol,expiry,accountid,scenarioMode,simulName,timedelta1):
     globalconf = config.GlobalConfig()
     # 1.- Comprobar primero si hay ya registros en la ABT para la estrategia
     store_abt = globalconf.open_ib_abt_strategy_tic(scenarioMode)
@@ -638,7 +651,7 @@ def get_strategy_start_date(symbol,expiry,accountid,scenarioMode,simulName):
         ret1=pd.to_datetime((df1_abt.loc[df1_abt.DTMaxdatost == np.max(df1_abt.DTMaxdatost)]['DTMaxdatost']).unique()[0])
         store_abt.close()
         # add one hour to run from the next hour
-        ret1 += dt.timedelta(hours=1)
+        ret1 += dt.timedelta(hours=timedelta1)
         return ret1
     except (IndexError, AttributeError) :
         log.info("There are no rows for the TIC strategy in the ABT H5")
@@ -665,9 +678,10 @@ def run_analytics(symbol, expiry, secType,accountid,valuation_dt,scenarioMode,si
                         The real historical market data is always used in both cases though
     :return:
     """
-    start = get_strategy_start_date(symbol, expiry,accountid,scenarioMode,simulName)
+    start = get_strategy_start_date(symbol, expiry,accountid,scenarioMode,simulName,timedelta1)
     log.info("Starting date to use: [%s] " % (str(start)) )
-    end = valuation_dt
+    expiry_dt = dt.datetime.strptime(expiry, '%Y%m%d')
+    end = min(valuation_dt,expiry_dt)
     delta = dt.timedelta(hours=timedelta1)
     d = start
     diff = 0
@@ -692,7 +706,7 @@ if __name__=="__main__":
     #fecha_valoracion = dt.datetime(year=2016, month=10, day=17, hour=21, minute=59, second=59)
     fecha_valoracion=dt.datetime.now()
     run_analytics(symbol="SPY", expiry="20161021", secType="OPT", accountid=accountid,
-                  valuation_dt=fecha_valoracion,scenarioMode="Y",simulName="spy1016wild",appendh5=1,toxls=0,timedelta1=1)
+                  valuation_dt=fecha_valoracion,scenarioMode="Y",simulName="spy1016wild",appendh5=1,toxls=0,timedelta1=24)
     #run_analytics(symbol="ES", expiry="20161118", secType="FOP", accountid=accountid,
     #             valuation_dt=fecha_valoracion,scenarioMode="N",simulName="NA",appendh5=1)
 
