@@ -187,7 +187,7 @@ class syncEWrapper(EWrapper):
             preffix = "Halted"
         else:
             preffix = str(type)
-        if not (preffix == ""):
+        if not (preffix == "") and not (price > 1e200):
             self.requests[tickerId].add_out_data(tickerId, preffix, price)
 
     def check_if_done(self,reqId):
