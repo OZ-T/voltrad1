@@ -3,9 +3,9 @@ import os
 import pandas as pd
 import ConfigParser
 import h5py as h5
-
 from sys import platform
-
+import sqlalchemy
+from sqlalchemy import Table, Column, Integer, String, ForeignKey
 
 class GlobalConfig(object):
     def __init__(self):
@@ -218,6 +218,28 @@ class GlobalConfig(object):
         name = self.config['db']['hdf5_account_db']
         path = self.config['paths']['data_folder']
         return pd.HDFStore(path + name)
+
+    def connect_sqldb(self):
+        '''Returns a connection and a metadata object'''
+        # We connect with the help of the PostgreSQL URL
+        # postgresql://federer:grandestslam@localhost:5432/tennis
+        user = self.config['sqldb']['user']
+        password = self.config['sqldb']['password']
+        host = self.config['sqldb']['host']
+        db = self.config['sqldb']['db']
+        port = self.config['sqldb']['port']
+        url = 'postgresql://{}:{}@{}:{}/{}'
+        url = url.format(user, password, host, port, db)
+
+        # The return value of create_engine() is our connection object
+        con = sqlalchemy.create_engine(url, client_encoding='utf8')
+
+        # We then bind the connection to MetaData()
+        meta = sqlalchemy.MetaData(bind=con, reflect=True)
+
+        return con, meta
+
+
 
 if __name__ == "__main__":
     object = GlobalConfig();

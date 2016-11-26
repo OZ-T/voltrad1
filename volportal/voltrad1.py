@@ -44,8 +44,14 @@ class H5AbtOptChain(Resource):
         df1 = store.select(nodeh5._v_pathname,where=['index < TODO '])
         return df1.to_json(orient='records')
 
-        return ""
 
+class H5Gekko(Resource):
+    def get(self):
+        dir=os.path.abspath(DATA_DIR)
+        xls = pd.ExcelFile(dir+'/gekkomock.xlsx')
+        df1 = xls.parse('test')
+
+        return df1.to_json(orient='records')
 
 class H5Table(Resource):
     def get(self,name,start,end,node):
@@ -81,6 +87,9 @@ api.add_resource(H5AbtOptChain, '/tic/h5abtoptchain/<node>/<date_ini>/<date_end>
 api.add_resource(H5Dir, '/tic/h5dir') #http://localhost:9001/h5dir
 api.add_resource(H5Table, '/tic/h5table/<name>/<int:start>/<int:end>/<node>') # http://localhost:9001/h5table/optchain_ivol_hist_db_new/395/396/IVOL
 # otro ejemplo https://blablio.tech/tic/h5table/economic_calendar_db/0/3/2016
+
+#Gekko index API service
+api.add_resource(H5Gekko, '/tic/gekko')
 
 @app.route("/analytics")
 def analytics():

@@ -85,7 +85,7 @@ def run_reader():
     barSizeSetting = "30 mins"
     useRTH = 1
     formatDate = 1
-    wait_secs = 9
+    wait_secs = 6
     df1 = pd.DataFrame()
     for reqId, request in list_results.iteritems():
         log.info("Requestid [%d]: Chain size [%d]" % ( reqId , len( request.optionsChain ) ))

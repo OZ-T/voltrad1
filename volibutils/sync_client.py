@@ -187,6 +187,7 @@ class syncEWrapper(EWrapper):
             preffix = "Halted"
         else:
             preffix = str(type)
+        # 20161113 dls: do not store bad prices (gt 1e200)
         if not (preffix == "") and not (price > 1e200):
             self.requests[tickerId].add_out_data(tickerId, preffix, price)
 
