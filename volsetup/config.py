@@ -230,13 +230,10 @@ class GlobalConfig(object):
         port = self.config['sqldb']['port']
         url = 'postgresql://{}:{}@{}:{}/{}'
         url = url.format(user, password, host, port, db)
-
         # The return value of create_engine() is our connection object
         con = sqlalchemy.create_engine(url, client_encoding='utf8')
-
         # We then bind the connection to MetaData()
         meta = sqlalchemy.MetaData(bind=con, reflect=True)
-
         return con, meta
 
 
@@ -245,5 +242,6 @@ if __name__ == "__main__":
     object = GlobalConfig();
     #datacols = (object.config['use_case_ib_options']['data_columns']).split(',')
     #print(datacols)
-    print(object.get_tickers_optchain_ib())
-    print(object.get_tickers_optchain_yahoo())
+    #print(object.get_tickers_optchain_ib())
+    #print(object.get_tickers_optchain_yahoo())
+    print( object.connect_sqldb())

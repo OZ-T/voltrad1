@@ -26,14 +26,15 @@ OPT_NUM_FIELDS_LST = [u'CallOI',u'PutOI', u'Volume', u'askDelta', u'askGamma',
 
 
 # leer del h5 del yahoo biz calendar
-def read_biz_calendar(valuation_dttm):
+def read_biz_calendar(start_dttm,valuation_dttm):
     log.info("read_biz_calendar: [%s] " % (str(valuation_dttm)))
     year="2016"
     store = globalconf.open_economic_calendar_h5_store()
     sym1= store.get_node("/"+year)
     dataframe = pd.DataFrame()
     df1 = store.select(sym1._v_pathname)
-    log.info("Number of rows loaded from h5 economic calendar: [%d]" % ( len(df1)))
+    store_txt = store.filename
+    log.info("Number of rows loaded from h5 economic calendar[%s]: [%d]" % ( str(store_txt), len(df1)))
     dataframe = dataframe.append(df1)
     store.close()
 
@@ -57,6 +58,9 @@ def read_biz_calendar(valuation_dttm):
     dataframe.set_index(keys=['event_datetime'], drop=True, inplace=True)
     dataframe = dataframe[['Actual','Briefing_Forecast','For','Market_Expects',
                            'Prior','Revised_From','Statistic','load_dttm']]
+
+    dataframe = dataframe[ (dataframe.index <= valuation_dttm) & (dataframe.index >= start_dttm) ]
+    log.info("Number of rows filtered from h5 economic calendar: [%d]" % (len(dataframe)))
     return dataframe
 
 
@@ -75,9 +79,7 @@ def extrae_options_chain(valuation_dttm,symbol,expiry,secType):
     :return:
     """
     log.info("extrae_options_chain: [%s] " % (str(valuation_dttm)))
-    # TODO remove
-    #store = globalconf.open_ib_h5_store()
-    store = globalconf.open_ib_h5_store_original()
+    store = globalconf.open_ib_h5_store()
     #print "extrae_options_chain year=[%s] month=[%s] day=[%s]" % (str(year),month,str(day))
     dataframe = pd.DataFrame()
     #for hora in store.get_node("/" + str(year) + "/" + month + "/" + str(day)):
@@ -117,10 +119,9 @@ def extrae_options_chain2(start_dttm,end_dttm,symbol,expiry,secType):
         extraer de la hdf5 los datos de cotizaciones entre dos fechas
         imputa valores ausente con el metodo ffill de pandas dataframe dentro del dia
     """
-    log.info("extrae_options_chain2: start [%s] end [%s] " % (str(start_dttm) , str(end_dttm)))
-    # TODO remove
-    #store = globalconf.open_ib_h5_store()
-    store = globalconf.open_ib_h5_store_original()
+    store = globalconf.open_ib_h5_store()
+    store_txt = store.filename
+    log.info("extrae_options_chain2 [%s]: start [%s] end [%s] " % (str(store_txt), str(start_dttm), str(end_dttm)))
     dataframe = pd.DataFrame()
     sym1= store.get_node("/"+symbol)
     where1=['symbol==' + symbol,
@@ -148,6 +149,11 @@ def extrae_options_chain2(start_dttm,end_dttm,symbol,expiry,secType):
                                         ['right','strike','expiry'], #,'load_dttm'],
                                       as_index=False).apply(lambda group: group.ffill())
     dataframe= dataframe.replace([-1],[0])
+
+    localtz = timezone('Europe/Madrid')
+    dataframe.index = dataframe.index.map(lambda x: localtz.localize(x))
+    dataframe.index = dataframe.index.map(lambda x: x.replace(tzinfo=None))
+
     return dataframe
 
 

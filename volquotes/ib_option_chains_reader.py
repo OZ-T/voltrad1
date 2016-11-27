@@ -129,8 +129,8 @@ def run_reader():
     for name in names:
         # now we can perform a lookup on a 'view' of the dataframe
         print ("Storing " + name + " in ABT ...")
-        joe = dataframe.loc[dataframe.symbol == name]
-        joe.sort(columns=['symbol', 'current_datetime', 'expiry', 'strike', 'right'], inplace=True)
+        joe = dataframe[dataframe.symbol == name]
+        joe=joe.sort_values(by=['symbol', 'current_datetime', 'expiry', 'strike', 'right'])
         # joe.to_excel(name+".xlsx")
         f.append("/" + name, joe, data_columns=True)
     f.close()
