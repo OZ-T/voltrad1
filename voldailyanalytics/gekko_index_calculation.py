@@ -31,41 +31,66 @@ def keep_some_strikes2(ds,pct,right1):
     ds=ds.ix[(ds.strike - (1 + pct) * ds.lastUndPrice).abs().argsort()[:1]]
     return ds.ix[(ds.expiry == min(ds.expiry)) & (ds.right == right1)]
 
+# habría que agrupar por la fecha del indice para quedarse sólamente con la cotización de la expiración que cumpla esas condiciones
+def keep_closer_expiry(ds,right1):
+    # cuando se acerca la expiracion hay que pasar al expiry siguiente con algunos dias de ANTELACION
+    # si no tenemos varias expiraiones en los datos no aplico el primer filtro porque me quedaria con cero si quedan menos de 10 días para vencimiento
+    if len(ds) > 2:
+        ds = ds.ix[(ds.index + timedelta(days=10) <= ds.expiry.apply(lambda x: datetime.strptime(x, '%Y%m%d'))) ]
+    ds = ds.ix[(ds.expiry == min(ds.expiry)) & (ds.right == right1)]
+    return ds
 
 if __name__ == "__main__":
     now = datetime.now()
-    start1 = datetime(year=2016, month=1, day=1, hour=21, minute=59, second=59)
+    start1 = datetime(year=2016, month=1, day=1, hour=21, minute=0, second=0)
+    end1 = datetime(year=2016, month=8, day=9, hour=15, minute=59, second=59)
     df1, df2 = read_h5_source_data(start1=start1,end1=now)
+    con , meta = globalconf.connect_sqldb()
 
     # el precio mas probable en cada datetime del subyacente
     und_prc = df2[['lastUndPrice', ]].groupby(df2.index, as_index=True).apply(lambda group: group.mean())
 
-    df2 = df2[['askImpliedVol', 'bidImpliedVol', 'expiry', 'modelImpliedVol', 'right', 'strike', 'symbol']]
+    df2 = df2[['askImpliedVol', 'bidImpliedVol', 'expiry', 'modelImpliedVol', 'right', 'strike',
+               'symbol','askOptPrice','askSize','bidOptPrice','bidSize']]
     full_df = pd.merge(df2, und_prc, how='left', left_index=True,right_index=True)
 
     # filtrar los strikes ATM C y P , el P 8% por debajo y el C 6% por encima
     atm_df=full_df.groupby( [full_df.index,'right','expiry'],
                             as_index=False).apply(lambda group: keep_some_strikes(group,0.0)).reset_index().drop('level_0',1)
-    # cuando se acerca la expiracion hay que pasar al expiry siguiente con algunos dias de ANTELACION
-    # TODO : habría que agrupar por la fecha del indice para quedarse sólamente con la cotización de la expiración que cumpla esas condiciones
-    atm_df = atm_df.ix[(atm_df.level_1 + timedelta(days=10) <= atm_df.expiry.apply(lambda x: datetime.strptime(x, '%Y%m%d'))) ]
-    atm_df=atm_df.ix[(atm_df.expiry == max(atm_df.expiry)) & (atm_df.right == 'C')]
+
     atm_df = atm_df.rename(columns={'level_1': 'index'})
-    atm_df=atm_df[['index','askImpliedVol','bidImpliedVol','modelImpliedVol','lastUndPrice']].set_index('index').add_prefix('atm_')
+    atm_df=atm_df[['index','askImpliedVol','bidImpliedVol','modelImpliedVol','lastUndPrice','expiry'
+        ,'right','askOptPrice','askSize','bidOptPrice','bidSize']].set_index('index')
+
+    #atm_df.to_sql(name='atm_df',con=con, if_exists = 'replace')
+
+    atm_df = atm_df.groupby(atm_df.index,as_index=False).apply(lambda group: keep_closer_expiry(group,
+                                                    right1='C')).reset_index().drop(['level_0','expiry','right'],1)
+    atm_df = atm_df.rename(columns={'level_1': 'index'}).set_index('index').add_prefix('atm_')
     # filtrar solo los puts
     otm_put_df=full_df.groupby( [full_df.index,'right','expiry'],
                             as_index=False).apply(lambda group: keep_some_strikes(group,-PCT_DOWN_CHAIN)).reset_index().drop('level_0',1)
-    otm_put_df = otm_put_df.ix[(otm_put_df.level_1 + timedelta(days=10) <= otm_put_df.expiry.apply(lambda x: datetime.strptime(x, '%Y%m%d'))) ]
-    otm_put_df = otm_put_df.ix[(otm_put_df.expiry == max(otm_put_df.expiry)) & (otm_put_df.right == 'P')]
+
     otm_put_df = otm_put_df.rename(columns={'level_1': 'index'})
-    otm_put_df = otm_put_df[['index','askImpliedVol','bidImpliedVol','modelImpliedVol']].set_index('index').add_prefix('otm_put_')
+    otm_put_df = otm_put_df[['index','askImpliedVol','bidImpliedVol','modelImpliedVol','expiry'
+        ,'right','askOptPrice','askSize','bidOptPrice','bidSize']].set_index('index')
+
+    otm_put_df = otm_put_df.groupby(otm_put_df.index,as_index=False).apply(lambda group: keep_closer_expiry(group,
+                                                    right1='P')).reset_index().drop(['level_0','expiry','right'],1)
+    otm_put_df = otm_put_df.rename(columns={'level_1': 'index'}).set_index('index').add_prefix('otm_put_')
+
     # filtrar solo los calls
     otm_call_df=full_df.groupby( [full_df.index,'right','expiry'],
                             as_index=False).apply(lambda group: keep_some_strikes2(group,+PCT_UP_CHAIN,'C')).reset_index().drop('level_0',1)
-    otm_call_df = otm_call_df.ix[(otm_call_df.level_1 + timedelta(days=10) <= otm_call_df.expiry.apply(lambda x: datetime.strptime(x, '%Y%m%d'))) ]
-    otm_call_df = otm_call_df.ix[(otm_call_df.expiry == max(otm_call_df.expiry)) & (otm_call_df.right == 'C')]
+
     otm_call_df = otm_call_df.rename(columns={'level_1': 'index'})
-    otm_call_df = otm_call_df[['index','askImpliedVol','bidImpliedVol','modelImpliedVol']].set_index('index').add_prefix('otm_call_')
+    otm_call_df = otm_call_df[['index','askImpliedVol','bidImpliedVol','modelImpliedVol','expiry'
+        ,'right','askOptPrice','askSize','bidOptPrice','bidSize']].set_index('index')
+
+    otm_call_df = otm_call_df.groupby(otm_call_df.index,as_index=False).apply(lambda group: keep_closer_expiry(group,
+                                                    right1='C')).reset_index().drop(['level_0','expiry','right'],1)
+    otm_call_df = otm_call_df.rename(columns={'level_1': 'index'}).set_index('index').add_prefix('otm_call_')
+
     # juntarlos y poner los datos en columnas
     final_df = pd.merge(atm_df, otm_put_df, how='left', left_index=True, right_index=True)
     final_df = pd.merge(final_df, otm_call_df, how='left', left_index=True, right_index=True)
@@ -81,10 +106,10 @@ if __name__ == "__main__":
     #out1.to_excel("out1.xlsx")
 
     # juntar con el dataframe de los eventos join
-    # TODO : Fix error in the join
     #final_df=out1.join(out2, how='outer')
     #final_df=out1.merge(out2, how='outer', left_index=True, right_index=True)
     final_df = pd.merge(out1, out2, how='outer', left_index=True, right_index=True)
+    final_df = final_df.sort_index(inplace=False,ascending=[True])
 
     con , meta = globalconf.connect_sqldb()
 
