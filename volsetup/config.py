@@ -6,6 +6,7 @@ import h5py as h5
 from sys import platform
 import sqlalchemy
 from sqlalchemy import Table, Column, Integer, String, ForeignKey
+from datetime import datetime, timedelta
 
 class GlobalConfig(object):
     def __init__(self):
@@ -137,6 +138,12 @@ class GlobalConfig(object):
         name=self.config['use_case_ib_options']['hdf5_db_nm']
         path=self.config['paths']['data_folder']
         return pd.HDFStore(path + name)
+
+    def open_ib_h5_store_value_error(self):
+        name=self.config['use_case_ib_options']['hdf5_db_nm'] + datetime.now().strftime('%Y%m%d%H%M%S')
+        path=self.config['paths']['data_folder']
+        return pd.HDFStore(path + name)
+
 
     def open_ib_h5_store_original(self):
         name="optchain_ib_hist_db_original.h5"

@@ -120,7 +120,7 @@ def run_reader():
 
     dataframe['index'] = dataframe['current_datetime'].apply(lambda x: dt.datetime.strptime(x, '%Y%m%d%H%M%S'))
 
-    dataframe.sort(columns=['index'], inplace=True)
+    dataframe=dataframe.sort_values(by=['index'], inplace=False)
     # set the index to be this and don't drop
     dataframe.set_index(keys=['index'], drop=True, inplace=True)
     # get a list of names
@@ -132,7 +132,15 @@ def run_reader():
         joe = dataframe[dataframe.symbol == name]
         joe=joe.sort_values(by=['symbol', 'current_datetime', 'expiry', 'strike', 'right'])
         # joe.to_excel(name+".xlsx")
-        f.append("/" + name, joe, data_columns=True)
+        try:
+            f.append("/" + name, joe, data_columns=True)
+        except ValueError:
+            # if some value error store data in an anciliary h5 file to be merged manually afterwards
+            # handle this kind of errors:
+            #  ValueError: cannot match existing table structure for [Halted] on appending data
+            aux = globalconf.open_ib_h5_store_value_error()
+            aux.append("/" + name, joe, data_columns=True)
+            aux.close()
     f.close()
 
 if __name__=="__main__":

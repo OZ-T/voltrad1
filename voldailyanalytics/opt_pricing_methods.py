@@ -15,5 +15,5 @@ def bsm_mcs_euro(s0,k,t,r,sigma,num_simulations,type):
     return return1
 
 if __name__ == "__main__":
-    c0=bsm_mcs_euro(s0=100, k=105, t=1.0, r=0.05, sigma=0.2, num_simulations=100000,type='C')
+    c0=bsm_mcs_euro(s0=100, k=105, t=1.0, r=0.005, sigma=0.2, num_simulations=100000,type='C')
     print("Value of the European Call Option is %5.3f" % (c0))

@@ -137,13 +137,17 @@ def extrae_options_chain2(start_dttm,end_dttm,symbol,expiry,secType):
     log.info("Number of rows loaded from h5 option chain file: [%d] where=[%s]" % ( len(df1) , str(where1)))
     df1['load_dttm'] = pd.to_datetime(df1['current_datetime'], errors='coerce')  # DEPRECATED remove warning coerce=True)
     df1['current_datetime_txt'] = df1.index.strftime("%Y-%m-%d %H:%M:%S")
+    log.info("append data frame ... ")
     dataframe = dataframe.append(df1)
+    log.info("close store h5 ... ")
     store.close()
 
     dataframe[OPT_NUM_FIELDS_LST] = dataframe[OPT_NUM_FIELDS_LST].apply(pd.to_numeric)
     dataframe['load_dttm'] = dataframe['load_dttm'].apply(pd.to_datetime)
     # imputar valores ausentes con el valor justo anterior (para este dia)
+    log.info("drop_duplicates ... ")
     dataframe = dataframe.drop_duplicates(subset=['right','strike','expiry','load_dttm'], keep='last')
+    log.info("sort_values ... ")
     dataframe = dataframe.sort_values(by=['right','strike','expiry','load_dttm'],
                                       ascending=[True, True, True, True]).groupby(
                                         ['right','strike','expiry'], #,'load_dttm'],
@@ -151,6 +155,7 @@ def extrae_options_chain2(start_dttm,end_dttm,symbol,expiry,secType):
     dataframe= dataframe.replace([-1],[0])
 
     localtz = timezone('Europe/Madrid')
+    log.info("localize tz ... ")
     dataframe.index = dataframe.index.map(lambda x: localtz.localize(x))
     dataframe.index = dataframe.index.map(lambda x: x.replace(tzinfo=None))
 
