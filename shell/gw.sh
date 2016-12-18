@@ -1,6 +1,7 @@
 #!/bin/sh
 export DISPLAY=:1
-ROOTDIR=$( cd "$( dirname "$0" )" && pwd )
+#ROOTDIR=$( cd "$( dirname "$0" )" && pwd )
+ROOTDIR=/tmp
 INSTANCE=$2
 WORKINGDIR=$ROOTDIR/$INSTANCE
 
