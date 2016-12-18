@@ -4,7 +4,7 @@ export DISPLAY=:1
 ROOTDIR=/tmp
 INSTANCE=$2
 WORKINGDIR=$ROOTDIR/$INSTANCE
-
+mkdir $WORKINGDIR
 #JAVA_HOME=/algoeye/jdk1.8.0_05
 #PATH=$JAVA_HOME/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 #JAVA=$JAVA_HOME/bin/java
