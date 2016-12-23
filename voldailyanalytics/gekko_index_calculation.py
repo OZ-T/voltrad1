@@ -172,9 +172,19 @@ def ttest_mean_stat_signif():
     con, meta = globalconf.connect_sqldb()
     df=pd.read_sql_table('gekko_data',con=con)
 
-    cat1 = df[df['durableorders'] == 1]
-    cat2 = df[df['durableorders'] == 0]
-    ttest = ttest_ind(cat1['atm_modelImpliedVol'], cat2['atm_modelImpliedVol'])
+
+    # hacer ffil de las cotizaciones de opciones
+    res1 = [k for k in df.columns if 'atm_' in k]
+    res2 = [k for k in df.columns if 'otm_' in k]
+    events_lst = df.columns - (res1 + res2) - ['index']
+    df=df[df['optionrollover'] == 0]
+    for x in events_lst:
+        cat1 = df[df[x] == 1]
+        cat2 = df[df[x] == 0]
+        for y in (res1+res2):
+            ttest = ttest_ind(cat1[y], cat2[y])
+            if ttest.pvalue <= 0.05:
+                print x,y,ttest
 
     # TODO: hacer el ttest por cada variable pero elimiar antes los registros con optionrollover == 1
     # y los registros que son de apertura del mercado (hora 16:00)
@@ -184,12 +194,10 @@ def ttest_mean_stat_signif():
     # para aquellas que el p-valor salga significativo calcular la media y eso es la "predicción" de la modifición
     # del movimiento del subyacente, del movimiento de la IV , del movimiento del precio de las opciones OTM, etc.
 
-    print ttest
-
 if __name__ == "__main__":
-    incremental_feed_abt()
+    #incremental_feed_abt()
     #ols_analysis_abt()
-    #ttest_mean_stat_signif()
+    ttest_mean_stat_signif()
 
 
 
