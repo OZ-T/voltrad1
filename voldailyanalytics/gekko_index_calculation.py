@@ -178,20 +178,22 @@ def ttest_mean_stat_signif():
     res2 = [k for k in df.columns if 'otm_' in k]
     events_lst = set(df.columns) - set(res1 + res2) - set(['index'])
     #print events_lst
+    # hacer el ttest por cada variable pero elimiar antes los registros con optionrollover == 1
     df=df[df['optionrollover'] == 0]
+    # TODO : y los registros que son de apertura del mercado (hora 16:00)
     for x in events_lst:
         cat1 = df[df[x] == 1]
         cat2 = df[df[x] == 0]
+        # hacer el t-test en un bucle para todas las variables que no sean atm_ y otm_
+        # EJEMPLO Ttest_indResult(statistic=0.096742317171181577, pvalue=0.92295547692306734)
+        # la variable objetivo que sean las que son otm_ y/o atm_ (bucle anidado
         for y in (res1+res2):
             ttest = ttest_ind(cat1[y], cat2[y])
             if ttest.pvalue <= 0.05:
                 print x,y,ttest
 
-    # TODO: hacer el ttest por cada variable pero elimiar antes los registros con optionrollover == 1
-    # y los registros que son de apertura del mercado (hora 16:00)
-    #hacer el t-test en un bucle para todas las variables que no sean atm_ y otm_
-    # EJEMPLO Ttest_indResult(statistic=0.096742317171181577, pvalue=0.92295547692306734)
-    # la variable objetivo que sean las que son otm_ y/o atm_ (bucle anidado
+
+
     # para aquellas que el p-valor salga significativo calcular la media y eso es la "predicción" de la modifición
     # del movimiento del subyacente, del movimiento de la IV , del movimiento del precio de las opciones OTM, etc.
 
