@@ -176,7 +176,8 @@ def ttest_mean_stat_signif():
     # hacer ffil de las cotizaciones de opciones
     res1 = [k for k in df.columns if 'atm_' in k]
     res2 = [k for k in df.columns if 'otm_' in k]
-    events_lst = df.columns - (res1 + res2) - ['index']
+    events_lst = set(df.columns) - set(res1 + res2) - set(['index'])
+    #print events_lst
     df=df[df['optionrollover'] == 0]
     for x in events_lst:
         cat1 = df[df[x] == 1]
