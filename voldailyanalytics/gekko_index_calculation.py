@@ -140,16 +140,17 @@ def incremental_feed_abt():
     feed SQL ABT incrementally from source H5 files
     """
     end1 = datetime.now()
-    start1 = datetime(year=2016, month=7, day=21, hour=15, minute=59, second=59)
-
-    # TODO: recuperar el start1 del ultimo registro disponible en el SQL ABT
-    #end1 = datetime(year=2016, month=8, day=9, hour=15, minute=59, second=59)
-    df1, df2 = read_h5_source_data(start1=start1,end1=end1)
+    #start1 = datetime(year=2016, month=7, day=21, hour=15, minute=59, second=59)
+    #recuperar el start1 del ultimo registro disponible en el SQL ABT
     log.info("connecting to sql db... ")
     con , meta = globalconf.connect_sqldb()
+    start1 = ra.extrae_last_date_abt_gekko(con)
+
+    #end1 = datetime(year=2016, month=8, day=9, hour=15, minute=59, second=59)
+    df1, df2 = read_h5_source_data(start1=start1,end1=end1)
 
     final_df = extract_abt(events=df1,optchain=df2,start1=start1,end1=end1)
-    final_df.to_sql(name='gekko_data', con=con, if_exists='replace', chunksize=50, index=True)
+    final_df.to_sql(name='gekko_data', con=con, if_exists='append', chunksize=50, index=True)
 
 def ols_analysis_abt():
     # cross tab con estadísticas de retornos por cada estadístico
@@ -186,9 +187,9 @@ def ttest_mean_stat_signif():
     print ttest
 
 if __name__ == "__main__":
-    #incremental_feed_abt()
+    incremental_feed_abt()
     #ols_analysis_abt()
-    ttest_mean_stat_signif()
+    #ttest_mean_stat_signif()
 
 
 

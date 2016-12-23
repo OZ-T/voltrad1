@@ -126,7 +126,7 @@ def extrae_options_chain2(start_dttm,end_dttm,symbol,expiry,secType):
     sym1= store.get_node("/"+symbol)
     where1=['symbol==' + symbol,
             'secType==' + secType,
-            'current_date>='     + str(start_dttm.year)
+            'current_date>'     + str(start_dttm.year)
                                  + str(start_dttm.month).zfill(2)
                                  + str(start_dttm.day).zfill(2),
             'current_date<=' + str(end_dttm.year)
@@ -160,6 +160,16 @@ def extrae_options_chain2(start_dttm,end_dttm,symbol,expiry,secType):
     dataframe.index = dataframe.index.map(lambda x: x.replace(tzinfo=None))
 
     return dataframe
+
+
+def extrae_last_date_abt_gekko(con):
+    """
+    :param con:
+    :return:
+    """
+    query = 'select max(index) as maxdate from gekko_data'
+    ret1 = pd.read_sql_query(query, con=con)
+    return ret1.maxdate[0].replace(tzinfo=None)
 
 
 def create_opt_chain_abt(year="2016"):
