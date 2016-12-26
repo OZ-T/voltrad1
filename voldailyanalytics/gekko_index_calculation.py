@@ -144,7 +144,7 @@ def incremental_feed_abt():
     #recuperar el start1 del ultimo registro disponible en el SQL ABT
     log.info("connecting to sql db... ")
     con , meta = globalconf.connect_sqldb()
-    start1 = ra.extrae_last_date_abt_gekko(con)
+    start1 = ra.extrae_last_date_abt(con=con,table='gekko_data',field='index')
 
     #end1 = datetime(year=2016, month=8, day=9, hour=15, minute=59, second=59)
     df1, df2 = read_h5_source_data(start1=start1,end1=end1)

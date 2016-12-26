@@ -162,12 +162,12 @@ def extrae_options_chain2(start_dttm,end_dttm,symbol,expiry,secType):
     return dataframe
 
 
-def extrae_last_date_abt_gekko(con):
+def extrae_last_date_abt(con,table,field):
     """
     :param con:
     :return:
     """
-    query = 'select max(index) as maxdate from gekko_data'
+    query = 'select max(' + field + ') as maxdate from ' + table
     ret1 = pd.read_sql_query(query, con=con)
     return ret1.maxdate[0].replace(tzinfo=None)
 
