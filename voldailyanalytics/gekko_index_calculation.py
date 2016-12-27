@@ -141,16 +141,16 @@ def incremental_feed_abt():
     """
     end1 = datetime.now()
     #start1 = datetime(year=2016, month=7, day=21, hour=15, minute=59, second=59)
-    start1 = datetime(year=2016, month=10, day=21, hour=15, minute=59, second=59)
-
-    # TODO: recuperar el start1 del ultimo registro disponible en el SQL ABT
-    #end1 = datetime(year=2016, month=8, day=9, hour=15, minute=59, second=59)
-    df1, df2 = read_h5_source_data(start1=start1,end1=end1)
+    #recuperar el start1 del ultimo registro disponible en el SQL ABT
     log.info("connecting to sql db... ")
     con , meta = globalconf.connect_sqldb()
+    start1 = ra.extrae_last_date_abt(con=con,table='gekko_data',field='index')
+
+    #end1 = datetime(year=2016, month=8, day=9, hour=15, minute=59, second=59)
+    df1, df2 = read_h5_source_data(start1=start1,end1=end1)
 
     final_df = extract_abt(events=df1,optchain=df2,start1=start1,end1=end1)
-    final_df.to_sql(name='gekko_data', con=con, if_exists='replace', chunksize=50, index=True)
+    final_df.to_sql(name='gekko_data', con=con, if_exists='append', chunksize=50, index=True)
 
 def ols_analysis_abt():
     # cross tab con estadísticas de retornos por cada estadístico
@@ -176,14 +176,24 @@ def ttest_mean_stat_signif():
     # hacer ffil de las cotizaciones de opciones
     res1 = [k for k in df.columns if 'atm_' in k]
     res2 = [k for k in df.columns if 'otm_' in k]
-    events_lst = df.columns - (res1 + res2) - ['index']
+    events_lst = set(df.columns) - set(res1 + res2) - set(['index'])
+    #print events_lst
+    # hacer el ttest por cada variable pero elimiar antes los registros con optionrollover == 1
     df=df[df['optionrollover'] == 0]
+<<<<<<< HEAD
     df_out = pd.DataFrame()
+=======
+    # TODO : y los registros que son de apertura del mercado (hora 16:00)
+>>>>>>> 9e2ddfd5a10c512f4936135971c6ee69e4414033
     for x in events_lst:
         cat1 = df[df[x] == 1]
         cat2 = df[df[x] == 0]
+        # hacer el t-test en un bucle para todas las variables que no sean atm_ y otm_
+        # EJEMPLO Ttest_indResult(statistic=0.096742317171181577, pvalue=0.92295547692306734)
+        # la variable objetivo que sean las que son otm_ y/o atm_ (bucle anidado
         for y in (res1+res2):
             ttest = ttest_ind(cat1[y], cat2[y])
+<<<<<<< HEAD
             if ttest.pvalue <= 0.05:    
                 #print x,y,ttest
                 df1=pd.DataFrame({'event':x,'result':y,'ttest':ttest.statistic,
@@ -195,6 +205,13 @@ def ttest_mean_stat_signif():
     #hacer el t-test en un bucle para todas las variables que no sean atm_ y otm_
     # EJEMPLO Ttest_indResult(statistic=0.096742317171181577, pvalue=0.92295547692306734)
     # la variable objetivo que sean las que son otm_ y/o atm_ (bucle anidado
+=======
+            if ttest.pvalue <= 0.05:
+                print x,y,ttest
+
+
+
+>>>>>>> 9e2ddfd5a10c512f4936135971c6ee69e4414033
     # para aquellas que el p-valor salga significativo calcular la media y eso es la "predicción" de la modifición
     # del movimiento del subyacente, del movimiento de la IV , del movimiento del precio de las opciones OTM, etc.
 

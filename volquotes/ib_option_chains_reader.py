@@ -128,13 +128,14 @@ def run_reader():
 
     for name in names:
         # now we can perform a lookup on a 'view' of the dataframe
-        print ("Storing " + name + " in ABT ...")
+        log.info("Storing " + name + " in ABT ...")
         joe = dataframe[dataframe.symbol == name]
         joe=joe.sort_values(by=['symbol', 'current_datetime', 'expiry', 'strike', 'right'])
         # joe.to_excel(name+".xlsx")
         try:
             f.append("/" + name, joe, data_columns=True)
-        except ValueError:
+        except ValueError as e:
+            log.warning("ValueError raised [" + e + "]  Creating ancilliary file ...")
             # if some value error store data in an anciliary h5 file to be merged manually afterwards
             # handle this kind of errors:
             #  ValueError: cannot match existing table structure for [Halted] on appending data

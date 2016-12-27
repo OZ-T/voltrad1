@@ -23,6 +23,8 @@ def prev_weekday_close(adate):
 
 log = logger("Blablio TIC Analytics")
 
+globalconf = config.GlobalConfig()
+
 datos_toxls=pd.DataFrame()
 
 # Analizar TIC activas para un subyacente y vencimiento dados para una datetime de valoracion dada
@@ -36,7 +38,7 @@ datos_toxls=pd.DataFrame()
 #   5.- se obtiene del h5 account los impactos (deltas) en Cash (comisiones, primas cobradas) y margin en cada uno de los datetimes
 #       en que se ha realizado operaciones (este historico se obtiene en el punto 4 anterior)
 #
-def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMode,simulName,appendh5,toxls):
+def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMode,simulName,appendh5,appendsql,toxls):
     log.info(" ------------- Running for valuation date: [%s] ------------- " % (str(i_date)) )
 
     # fechas en que se calcula la foto de la estrategia
@@ -617,28 +619,29 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
         datos_toxls=datos_toxls.append(row_datos)
 
 
-    if appendh5 != 1:
-        return
-    globalconf = config.GlobalConfig()
-    store = globalconf.open_ib_abt_strategy_tic(scenarioMode=scenarioMode)
-    if scenarioMode == "N":
-        loc1 = i_symbol
-    elif scenarioMode == "Y":
-        loc1 = simulName
-    store.append("/" + loc1, row_datos, data_columns=True,
-                 min_itemsize={'portfolio': 500,
-                               'DToperaciones': 500})
-    store.close()
+    if appendh5 == 1:
+        store = globalconf.open_ib_abt_strategy_tic(scenarioMode=scenarioMode)
+        if scenarioMode == "N":
+            loc1 = i_symbol
+        elif scenarioMode == "Y":
+            loc1 = simulName
+        store.append("/" + loc1, row_datos, data_columns=True,
+                     min_itemsize={'portfolio': 500,
+                                   'DToperaciones': 500})
+        store.close()
+
+    if appendsql == 1:
+        con, meta = globalconf.connect_sqldb()
+
 
 def get_ivol_series(date_ini,date_end):
-    globalconf = config.GlobalConfig()
     store = globalconf.open_ivol_h5_db()
     lvl1 = store.get_node("/IVOL")
     df1 = store.select(lvl1._v_pathname)
     return df1.ix[date_ini:date_end]
 
-def get_strategy_start_date(symbol,expiry,accountid,scenarioMode,simulName,timedelta1):
-    globalconf = config.GlobalConfig()
+def get_strategy_start_date(con,symbol,expiry,accountid,scenarioMode,simulName,timedelta1):
+
     # 1.- Comprobar primero si hay ya registros en la ABT para la estrategia
     store_abt = globalconf.open_ib_abt_strategy_tic(scenarioMode)
     try:
@@ -664,7 +667,7 @@ def get_strategy_start_date(symbol,expiry,accountid,scenarioMode,simulName,timed
     return ret1
 
 
-def run_analytics(symbol, expiry, secType,accountid,valuation_dt,scenarioMode,simulName,appendh5,toxls,timedelta1):
+def run_analytics(symbol, expiry, secType,accountid,valuation_dt,scenarioMode,simulName,appendh5,appendsql,toxls,timedelta1):
     """
         Run analytics main method.
     :param symbol:
@@ -678,7 +681,10 @@ def run_analytics(symbol, expiry, secType,accountid,valuation_dt,scenarioMode,si
                         The real historical market data is always used in both cases though
     :return:
     """
-    start = get_strategy_start_date(symbol, expiry,accountid,scenarioMode,simulName,timedelta1)
+    log.info("connecting to sql db... ")
+    con , meta = globalconf.connect_sqldb()
+
+    start = get_strategy_start_date(con,symbol, expiry,accountid,scenarioMode,simulName,timedelta1)
     log.info("Starting date to use: [%s] " % (str(start)) )
     expiry_dt = dt.datetime.strptime(expiry, '%Y%m%d')
     end = min(valuation_dt,expiry_dt)
@@ -691,7 +697,8 @@ def run_analytics(symbol, expiry, secType,accountid,valuation_dt,scenarioMode,si
         if ( d.hour in _rth ) & ( d.weekday() not in weekend ) :
             diff += 1
             run_shark_analytics(i_symbol=symbol, i_date=d,i_expiry=expiry,i_secType=secType,
-                                accountid=accountid,scenarioMode=scenarioMode,simulName=simulName,appendh5=appendh5,toxls=toxls)
+                                accountid=accountid,scenarioMode=scenarioMode,
+                                simulName=simulName,appendh5=appendh5,appendsql=appendsql,toxls=toxls)
         d += delta
 
     if toxls == 1:
@@ -701,12 +708,11 @@ def run_analytics(symbol, expiry, secType,accountid,valuation_dt,scenarioMode,si
 if __name__=="__main__":
     #i_secType OPT para SPY FOP para ES
     #run_shark_analytics(i_symbol='SPY',i_year=2016,i_month_num=9,i_day_t0=2,i_day_tminus1=1,i_expiry='20161021',i_secType='OPT')
-    globalconf = config.GlobalConfig()
     accountid = globalconf.get_accountid()
     #fecha_valoracion = dt.datetime(year=2016, month=10, day=17, hour=21, minute=59, second=59)
     fecha_valoracion=dt.datetime.now()
     run_analytics(symbol="SPY", expiry="20161021", secType="OPT", accountid=accountid,
-                  valuation_dt=fecha_valoracion,scenarioMode="Y",simulName="spy1016wild",appendh5=1,toxls=0,timedelta1=24)
+                  valuation_dt=fecha_valoracion,scenarioMode="Y",simulName="spy1016wild",appendh5=0,appendsql=1,toxls=0,timedelta1=24)
     #run_analytics(symbol="ES", expiry="20161118", secType="FOP", accountid=accountid,
     #             valuation_dt=fecha_valoracion,scenarioMode="N",simulName="NA",appendh5=1)
 
