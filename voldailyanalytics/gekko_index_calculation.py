@@ -178,14 +178,18 @@ def ttest_mean_stat_signif():
     res2 = [k for k in df.columns if 'otm_' in k]
     events_lst = df.columns - (res1 + res2) - ['index']
     df=df[df['optionrollover'] == 0]
+    df_out = pd.DataFrame()
     for x in events_lst:
         cat1 = df[df[x] == 1]
         cat2 = df[df[x] == 0]
         for y in (res1+res2):
             ttest = ttest_ind(cat1[y], cat2[y])
             if ttest.pvalue <= 0.05:    
-                print x,y,ttest
-
+                #print x,y,ttest
+                df1=pd.DataFrame({'event':x,'result':y,'ttest':ttest.statistic,
+                                  'p_value':ttest.pvalue},[0])
+                df_out=df_out.append(df1)
+    print df_out
     # TODO: hacer el ttest por cada variable pero elimiar antes los registros con optionrollover == 1
     # y los registros que son de apertura del mercado (hora 16:00)
     #hacer el t-test en un bucle para todas las variables que no sean atm_ y otm_
