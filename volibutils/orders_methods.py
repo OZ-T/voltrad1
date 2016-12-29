@@ -23,11 +23,8 @@ def bs_resolve(x):
     if x==0:
         raise Exception("trying to trade with zero")
 
-def place_plain_order(expiry,symbol,right,strike,orderType,quantity,lmtPrice):
+def place_plain_order(client,expiry,symbol,right,strike,orderType,quantity,lmtPrice):
     log.info("placing order ")
-    clientid1 = int(globalconf.config['ib_api']['clientid_orders'])
-    client.connect(clientid1=clientid1)
-
     ibcontract = IBcontract()
     ibcontract.secType = "FOP"
     ibcontract.expiry=expiry
@@ -49,12 +46,9 @@ def place_plain_order(expiry,symbol,right,strike,orderType,quantity,lmtPrice):
     orderid1 = client.place_new_IB_order(ibcontract, iborder, orderid=None)
     log.info("orderid [%s] " % (str(orderid1)))
 
-    client.disconnect()
 
-def place_spread_order(expiry,symbol,right,strike,orderType,quantity,lmtPrice):
+def place_spread_order(client,expiry,symbol,right,strike,orderType,quantity,lmtPrice):
     log.info("placing order ")
-    clientid1 = int(globalconf.config['ib_api']['clientid_orders'])
-    client.connect(clientid1=clientid1)
 
     leg1 = sy.ComboLeg()
     leg2 = sy.ComboLeg()
@@ -101,20 +95,14 @@ def place_spread_order(expiry,symbol,right,strike,orderType,quantity,lmtPrice):
     orderid1 = client.place_new_IB_order(ibcontract, iborder, orderid=None)
     log.info("orderid [%s] " % (str(orderid1)))
 
-    client.disconnect()
 
-
-
-def list_open_orders():
+def list_open_orders(client):
     log.info("list orders ")
-    clientid1 = int(globalconf.config['ib_api']['clientid_orders'])
-    client.connect(clientid1=clientid1)
 
     order_structure = client.get_open_orders()
     log.info("order structure [%s]" % (str(order_structure)))
-    client.disconnect()
 
-def modify_open_order():
+def modify_open_order(client):
     # http://interactivebrokers.github.io/tws-api/modifying_orders.html#gsc.tab=0
     """
     Modification of an open order through the API can be achieved by the same client which placed the original order.
@@ -130,23 +118,23 @@ def modify_open_order():
 
     pass
 
-def cancel_open_order():
+def cancel_open_order(client):
     pass
 
-def cancel_all_open_orders():
+def cancel_all_open_orders(client):
     pass
 
-def list_prices_before_trade():
-    clientid1 = int(globalconf.config['ib_api']['clientid_orders'])
-    client.connect(clientid1=clientid1)
-
+def list_prices_before_trade(client):
     ctrt = { 1000:RequestOptionData('ES','FOP','20170120',2200.0,'C','50','GLOBEX','USD',1000)}
     ctrt_prc = client.getMktData(ctrt)
     log.info("price [%s]" % (str(ctrt_prc)))
-    client.disconnect()
-
 
 if __name__=="__main__":
-    place_plain_order("20170120","ES","C",2200.0,"LMT",2,5.0)
+    clientid1 = int(globalconf.config['ib_api']['clientid_orders'])
+    client.connect(clientid1=clientid1)
+
+    place_plain_order(client=client,expiry="20170120",symbol="ES",right="C",strike=2200.0,orderType="LMT",quantity=,lmtPrice=5.0)
     list_open_orders()
     #list_prices_before_trade()
+
+    client.disconnect()
