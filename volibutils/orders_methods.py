@@ -134,7 +134,7 @@ if __name__=="__main__":
     client.connect(clientid1=clientid1)
 
     place_plain_order(client=client,expiry="20170120",symbol="ES",right="C",strike=2200.0,orderType="LMT",quantity=2,lmtPrice=5.0)
-    list_open_orders()
-    #list_prices_before_trade()
+    list_open_orders(client=client)
+    list_prices_before_trade(client=client)
 
     client.disconnect()
