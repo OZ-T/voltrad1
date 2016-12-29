@@ -64,6 +64,25 @@ class syncEWrapper(EWrapper):
         setattr(self, "summary_account_data", {})
         setattr(self, "flag_account_data_finished", False)
 
+    def init_nextvalidid(self):
+        setattr(self, "data_brokerorderid", None)
+
+    def init_openorders(self):
+        setattr(self, "data_order_structure", {})
+        setattr(self, "flag_order_structure_finished", False)
+
+    def add_order_data(self, orderdetails):
+        if "data_order_structure" not in dir(self):
+            orderdata={}
+        else:
+            orderdata=self.data_order_structure
+
+        orderid=orderdetails['orderid']
+        orderdata[orderid]=orderdetails
+
+        setattr(self, "data_order_structure", orderdata)
+
+
     def add_news_data(self, msgId, msgType, message, origExch ):
         if "data_news_data" not in dir(self):
             newsdata={}
@@ -277,8 +296,25 @@ class syncEWrapper(EWrapper):
                           clientId,
                           whyHeld):
         self.print_this_func_info()
-    def openOrder(self, orderId, contract, order, orderState):
+
+    def openOrder(self, orderID, contract, order, orderState):
+        """
+        Tells us about any orders we are working now
+        """
         self.print_this_func_info()
+        ## Get a selection of interesting things about the order
+        orderdetails=dict(symbol=contract.symbol , expiry=contract.expiry,  qty=int(order.totalQuantity) ,
+                       side=order.action , orderid=int(orderID), clientid=order.clientId )
+
+        self.add_order_data(orderdetails)
+
+    def openOrderEnd(self):
+        """
+        Finished getting open orders
+        """
+        setattr(self, "flag_order_structure_finished", True)
+
+
 
     def updatePortfolio(self, contract,
                               position,
@@ -349,7 +385,16 @@ class syncEWrapper(EWrapper):
 
 
     def nextValidId(self, orderId):
+        """
+        Give the next valid order id
+
+        Note this doesn't 'burn' the ID; if you call again without executing the next ID will be the same
+        """
+
         self.print_this_func_info()
+        self.data_brokerorderid = orderId
+
+
     def contractDetails(self, reqId, contractDetails):
         self.print_this_func_info()
         opt1 = contractDetails.summary
@@ -915,8 +960,81 @@ class IBClient():
             key1 = str(self.config.config['ib_api']['accountid'])
             summarylist = { key1 : dict1 }
 
-
         return acclist , summarylist
+
+    def get_open_orders(self):
+        """
+        Returns a list of any open orders
+        """
+        self.myEWrapper.init_openorders()
+        self.myEWrapper.init_error()
+
+        start_time=time.time()
+        self.myEClientSocket.reqAllOpenOrders()
+        iserror=False
+        finished=False
+
+        while not finished and not iserror:
+            finished=self.myEWrapper.flag_order_structure_finished
+            iserror=self.myEWrapper.flag_iserror
+            if (time.time() - start_time) > int(self.config.config['ib_api']['max_wait']) :
+                ## You should have thought that IB would teldl you we had finished
+                finished=True
+            pass
+
+        order_structure=self.myEWrapper.data_order_structure
+        if iserror:
+            self.log.error (self.myEWrapper.error_msg)
+            self.log.error ("Problem getting open orders")
+
+        return order_structure
+
+
+    def get_next_brokerorderid(self):
+        """
+        Get the next brokerorderid
+        """
+        self.myEWrapper.init_error()
+        self.myEWrapper.init_nextvalidid()
+        start_time=time.time()
+        ## Note for more than one ID change '1'
+        self.myEClientSocket.reqIds(1)
+        finished=False
+        brokerorderid=None
+        iserror=False
+        while not finished and not iserror:
+            brokerorderid=self.myEWrapper.data_brokerorderid
+            finished=brokerorderid is not None
+            iserror=self.myEWrapper.flag_iserror
+            if (time.time() - start_time) > int(self.config.config['ib_api']['max_wait']):
+                finished=True
+            pass
+
+        if brokerorderid is None or iserror:
+            self.log.error(self.myEWrapper.error_msg)
+            self.log.error("Problem getting next broker orderid")
+            return None
+
+        return brokerorderid
+
+
+
+    def place_new_IB_order(self,ibcontract, iborder, orderid):
+        if orderid is None:
+            self.log.info("Getting orderid from IB")
+            orderid=self.get_next_brokerorderid()
+        if orderid is not None:
+            self.log.info("Using order id of %d" % orderid)
+
+        # Place the order
+        self.myEClientSocket.placeOrder(
+                orderid,                                    # orderId,
+                ibcontract,                                   # contract,
+                iborder                                       # order
+            )
+
+        return orderid
+
 
 def run_test_opt_chain():
     old_stdout = sys.stdout

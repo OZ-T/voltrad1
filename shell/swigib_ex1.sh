@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 cd /tmp
 export PYTHONPATH=/home/david/python
 DATE=`date +%d-%m-%y` 
