@@ -19,7 +19,7 @@ def bs_resolve(x):
     if x==0:
         raise Exception("trying to trade with zero")
 
-def place_spread_order(secType,expiry,symbol,right,strike,orderType,quantity,lmtPrice):
+def place_spread_order(expiry,symbol,right,strike,orderType,quantity,lmtPrice):
     globalconf = config.GlobalConfig()
     log=logger("ib place order")
     log.info("placing order ")
