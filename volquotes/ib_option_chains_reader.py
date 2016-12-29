@@ -137,7 +137,7 @@ def run_reader():
         try:
             f.append("/" + name, joe, data_columns=True)
         except ValueError as e:
-            log.warn("ValueError raised [" + e + "]  Creating ancilliary file ...")
+            log.warn("ValueError raised [" + str(e) + "]  Creating ancilliary file ...")
             # if some value error store data in an anciliary h5 file to be merged manually afterwards
             # handle this kind of errors:
             #  ValueError: cannot match existing table structure for [Halted] on appending data
