@@ -46,9 +46,16 @@ def run_get_orders():
 
         for name in names:
             # now we can perform a lookup on a 'view' of the dataframe
+            log.info("Storing " + name + " in ABT ...")
             joe = dataframe.loc[dataframe['account'] == name]
             joe.sort(columns=['current_datetime'], inplace=True)
-            f.append("/" + name, joe, data_columns=joe.columns)
+            try:
+                f.append("/" + name, joe, data_columns=joe.columns)
+            except ValueError as e:
+                log.warning("ValueError raised [" + e + "]  Creating ancilliary file ...")
+                aux = globalconf.open_orders_store_value_error()
+                aux.append("/" + name, joe, data_columns=True)
+                aux.close()
         f.close()
 
     else:

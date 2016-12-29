@@ -144,6 +144,11 @@ class GlobalConfig(object):
         path=self.config['paths']['data_folder']
         return pd.HDFStore(path + name)
 
+    def open_orders_store_value_error(self):
+        name=self.config['db']['hdf5_orders_db'] + datetime.now().strftime('%Y%m%d%H%M%S')
+        path=self.config['paths']['data_folder']
+        return pd.HDFStore(path + name)
+
 
     def open_ib_h5_store_original(self):
         name="optchain_ib_hist_db_original.h5"
