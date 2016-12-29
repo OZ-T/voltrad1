@@ -133,7 +133,7 @@ if __name__=="__main__":
     clientid1 = int(globalconf.config['ib_api']['clientid_orders'])
     client.connect(clientid1=clientid1)
 
-    place_plain_order(client=client,expiry="20170120",symbol="ES",right="C",strike=2200.0,orderType="LMT",quantity=,lmtPrice=5.0)
+    place_plain_order(client=client,expiry="20170120",symbol="ES",right="C",strike=2200.0,orderType="LMT",quantity=2,lmtPrice=5.0)
     list_open_orders()
     #list_prices_before_trade()
 
