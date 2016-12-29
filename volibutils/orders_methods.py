@@ -66,9 +66,14 @@ def cancel_all_open_orders():
     pass
 
 def list_prices_before_trade():
-    pass
+    client.connect()
+    ctrt = { 1000:RequestOptionData('ES','FOP','20170120',2200.0,'C','50','GLOBEX','USD',1000)}
+    ctrt_prc = client.getMktData(ctrt)
+    log.info("price [%s]" % (str(ctrt_prc)))
+    client.disconnect()
+
 
 if __name__=="__main__":
-    place_spread_order("20170120","ES","C",2200.0,"MKT",2,5.0)
+    place_spread_order("20170120","ES","C",2200.0,"LMT",2,5.0)
     list_open_orders()
-
+    #list_prices_before_trade()
