@@ -44,7 +44,9 @@ def run_reader():
                                                    str(row['underl_expiry']),0,'','', row['underl_ex'] , row['underl_curr'] , int(index) ) })
 
     client = ib.IBClient(globalconf)
-    client.connect()
+    clientid1 = int(globalconf.config['ib_api']['clientid_data'])
+    client.connect(clientid1=clientid1)
+
     #causa error en ubuntu : porque pone a isDOne la primera ::
     #   print("Get time from server [%s] isConnected? [%s] " % ( str(client.getTime()) , str(client.isConnected() )  ) )
 

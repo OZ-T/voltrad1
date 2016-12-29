@@ -40,7 +40,9 @@ def run_reader():
     globalconf = config.GlobalConfig()
     underly_def = globalconf.get_tickers_optchain_ib()
     client = IBClient(globalconf)
-    client.connect()
+    clientid1 = int(globalconf.config['ib_api']['clientid_data'])
+    client.connect(clientid1=clientid1)
+
     dt_now=datetime.now() #- timedelta(days=4)
     endDateTime =  dt_now.strftime('%Y%m%d %H:%M:%S')
 

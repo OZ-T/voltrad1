@@ -34,7 +34,7 @@ class IB_API:
         object = config.GlobalConfig();
         port1= int(object.config['ib_api']['port'])
         host1 = str(object.config['ib_api']['host'])
-        clientid1 = int(object.config['ib_api']['clientid'])
+        clientid1 = int(object.config['ib_api']['clientid_data'])
         print ("Calling connection port=%d host=%s clientid=%d" % (port1 , host1 , clientid1))
         self.connection = ibConnection(port=port1,host=host1,clientId=clientid1)
         # Register data handlers

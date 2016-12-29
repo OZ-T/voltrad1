@@ -628,12 +628,12 @@ class IBClient():
         self.start_time = 0
         self.log = logger("IBClient")
 
-    def connect(self):
+    def connect(self, clientid1):
         port1= int(self.config.config['ib_api']['port'])
         host1 = str(self.config.config['ib_api']['host'])
         #clientid1 = int(self.config.config['ib_api']['clientid'])
         # This change is to allow more than one client in the VPS
-        clientid1 = random.randint(1, 2000)
+        #clientid1 = random.randint(1, 2000)
         self.log.info("Calling connection port=%d host=%s clientid=%d" % (port1 , host1 , clientid1))
         self.myEClientSocket.eConnect(host1, port1 , clientid1)
 
@@ -1050,7 +1050,9 @@ def run_test_opt_chain():
 
     globalconf = config.GlobalConfig()
     client = IBClient(globalconf)
-    client.connect()
+    clientid1 = int(globalconf.config['ib_api']['clientid_data'])
+    client.connect(clientid1=clientid1)
+
     print(client.getTime())
 
     underl = {
@@ -1129,7 +1131,9 @@ def run_test_get_time():
 
     globalconf = config.GlobalConfig()
     client = IBClient(globalconf)
-    client.connect()
+    clientid1 = int(globalconf.config['ib_api']['clientid_data'])
+    client.connect(clientid1=clientid1)
+
     dataframe = pd.DataFrame({'ibtime':client.getTime()},index=[0])
 
     client.disconnect()
@@ -1148,7 +1152,9 @@ def run_test_get_orders():
 
     globalconf = config.GlobalConfig()
     client = IBClient(globalconf)
-    client.connect()
+    clientid1 = int(globalconf.config['ib_api']['clientid_data'])
+    client.connect(clientid1=clientid1)
+
 
     ## Get the executions (gives you everything for last business day)
     execlist = client.get_executions(10)
@@ -1166,7 +1172,9 @@ def run_test_get_orders():
 def run_test_get_news():
     globalconf = config.GlobalConfig()
     client = IBClient(globalconf)
-    client.connect()
+    clientid1 = int(globalconf.config['ib_api']['clientid_data'])
+    client.connect(clientid1=clientid1)
+
     newslist = client.get_news(33)
     print ("newslist = [%s]" % ( str(newslist) ))
     client.disconnect()
@@ -1174,7 +1182,8 @@ def run_test_get_news():
 def run_test_get_historical():
     globalconf = config.GlobalConfig()
     client = IBClient(globalconf)
-    client.connect()
+    clientid1 = int(globalconf.config['ib_api']['clientid_data'])
+    client.connect(clientid1=clientid1)
     ticker = RequestUnderlyingData('ES', 'FUT', '20160916', 0, '', '', 'GLOBEX', 'XXX', 1000)
     endDateTime = "20160815 23:59:59"
     durationStr="30 D"

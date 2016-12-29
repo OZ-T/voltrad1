@@ -38,7 +38,9 @@ def run_reader():
     globalconf = config.GlobalConfig()
     underly_def = globalconf.get_tickers_historical_ib()
     client = IBClient(globalconf)
-    client.connect()
+    clientid1 = int(globalconf.config['ib_api']['clientid_data'])
+    client.connect(clientid1=clientid1)
+
     dt_now=datetime.now()
     endDateTime =  dt_now.strftime('%Y%m%d %H:%M:%S')
     # lo mas que se puede pedir para barras de 30 min es un mes historico

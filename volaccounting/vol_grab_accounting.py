@@ -13,7 +13,8 @@ def run_get_portfolio_data():
     log.info("Getting portfolio and account data from IB ... ")
     globalconf = config.GlobalConfig()
     client = ib.IBClient(globalconf)
-    client.connect()
+    clientid1 = int(globalconf.config['ib_api']['clientid_data'])
+    client.connect(clientid1=clientid1)
     months = globalconf.months
     now = dt.datetime.now()  # Get current time
     c_month = months[now.month]  # Get current month
