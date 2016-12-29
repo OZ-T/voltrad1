@@ -14,6 +14,9 @@ from datetime import datetime
 from copy import deepcopy
 from volsetup.logger import logger
 
+import random
+
+
 ## This is the reqId IB API sends when a fill is received
 FILL_CODE=-1
 
@@ -628,7 +631,9 @@ class IBClient():
     def connect(self):
         port1= int(self.config.config['ib_api']['port'])
         host1 = str(self.config.config['ib_api']['host'])
-        clientid1 = int(self.config.config['ib_api']['clientid'])
+        #clientid1 = int(self.config.config['ib_api']['clientid'])
+        # This change is to allow more than one client in the VPS
+        clientid1 = random.randint(1, 2000)
         self.log.info("Calling connection port=%d host=%s clientid=%d" % (port1 , host1 , clientid1))
         self.myEClientSocket.eConnect(host1, port1 , clientid1)
 
