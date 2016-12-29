@@ -11,6 +11,10 @@ from swigibpy import Contract as IBcontract
 from swigibpy import Order as IBOrder
 import time
 
+log=logger("order methods")
+globalconf = config.GlobalConfig()
+client = ib.IBClient(globalconf)
+
 def bs_resolve(x):
     if x<0:
         return 'SELL'
@@ -20,20 +24,16 @@ def bs_resolve(x):
         raise Exception("trying to trade with zero")
 
 def place_spread_order(expiry,symbol,right,strike,orderType,quantity,lmtPrice):
-    globalconf = config.GlobalConfig()
-    log=logger("ib place order")
     log.info("placing order ")
-    client = ib.IBClient(globalconf)
     client.connect()
-
     ibcontract = IBcontract()
     ibcontract.secType = "FOP"
     ibcontract.expiry=expiry
     ibcontract.symbol=symbol
-    ibcontract.exchange="SMART"
+    ibcontract.exchange="GLOBEX"
     ibcontract.right=right
     ibcontract.strike=strike
-    ibcontract.multiplier="100"
+    ibcontract.multiplier="50"
     ibcontract.currency="USD"
 
     iborder = IBOrder()
@@ -45,13 +45,35 @@ def place_spread_order(expiry,symbol,right,strike,orderType,quantity,lmtPrice):
     iborder.transmit = True
 
     orderid1 = client.place_new_IB_order(ibcontract, iborder, orderid=None)
-    print orderid1
-    ## Short wait so dialog is in order, not neccessary
-    time.sleep(5)
+    log.info("orderid [%s] " % (str(orderid1)))
 
+    client.disconnect()
+
+def list_open_orders():
+    log.info("list orders ")
+    client.connect()
     order_structure = client.get_open_orders()
+    log.info("order structure [%s]" % (str(order_structure)))
+    client.disconnect()
 
-    print order_structure
+def modify_open_order():
+    pass
+
+def cancel_open_order():
+    pass
+
+def cancel_all_open_orders():
+    pass
+
+def list_prices_before_trade():
+    client.connect()
+    ctrt = { 1000:RequestOptionData('ES','FOP','20170120',2200.0,'C','50','GLOBEX','USD',1000)}
+    ctrt_prc = client.getMktData(ctrt)
+    log.info("price [%s]" % (str(ctrt_prc)))
+    client.disconnect()
+
 
 if __name__=="__main__":
-    place_spread_order("20170120","ES","C",2200.0,"MKT",1,0.0)
+    place_spread_order("20170120","ES","C",2200.0,"LMT",2,5.0)
+    list_open_orders()
+    #list_prices_before_trade()

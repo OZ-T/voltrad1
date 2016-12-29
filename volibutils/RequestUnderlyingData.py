@@ -88,3 +88,11 @@ class RequestUnderlyingData():
         else:
             outdata=self.output_data
         return outdata
+
+
+    def __str__(self):
+        return str(self.get_in_data()) + " " + str(self.get_out_data())
+
+    def __repr__(self):
+        return str(self.get_in_data()) + " " + str(self.get_out_data())
+
