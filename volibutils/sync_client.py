@@ -393,7 +393,7 @@ class syncEWrapper(EWrapper):
 
         Note this doesn't 'burn' the ID; if you call again without executing the next ID will be the same
         """
-
+        #self.log.info("nextValidId [%s]" % (str(orderId)))
         self.print_this_func_info()
         self.data_brokerorderid = orderId
 
