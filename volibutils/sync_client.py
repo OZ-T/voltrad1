@@ -22,7 +22,7 @@ FILL_CODE=-1
 
 
 class syncEWrapper(EWrapper):
-    def __init__(self):
+    def __init__(self,config1=None):
         ## variables to store requested data
         self.isDone = False
         self.isSnapshot = False
@@ -30,7 +30,10 @@ class syncEWrapper(EWrapper):
         self.bar  = None
         self.requests = {}
         self.req_chains = {}
-        self.log=logger("syncEWrapper")
+        if config1 is None:
+            self.log = logger("syncEWrapper")
+        else:
+            self.log=config1.log
         super(syncEWrapper, self).__init__()
 
     def print_this_func_info(self):
@@ -82,7 +85,7 @@ class syncEWrapper(EWrapper):
 
         orderid=orderdetails['orderid']
         orderdata[orderid]=orderdetails
-
+        self.log.info("add_order_data orderdetails [%s]" % ( str(orderdetails) ))
         setattr(self, "data_order_structure", orderdata)
 
 
@@ -298,13 +301,26 @@ class syncEWrapper(EWrapper):
                           lastFillPrice,
                           clientId,
                           whyHeld):
+        info1={
+                  "orderId":orderId,
+                  "status":status,
+                  "filled":filled,
+                  "remaining":remaining,
+                  "avgFillPrice":avgFillPrice,
+                  "permId":permId,
+                  "parentId":parentId,
+                  "lastFillPrice":lastFillPrice,
+                  "clientId":clientId,
+                  "whyHeld":whyHeld }
         self.print_this_func_info()
+        self.log.info("orderStatus [%s]" % ( str(info1) ))
 
     def openOrder(self, orderID, contract, order, orderState):
         """
         Tells us about any orders we are working now
         """
         self.print_this_func_info()
+        self.log.info("openOrder orderId [%s] order [%s]" % ( str(orderID), str(order) ))
         ## Get a selection of interesting things about the order
         orderdetails=dict(symbol=contract.symbol , expiry=contract.expiry,  qty=int(order.totalQuantity) ,
                        side=order.action , orderid=int(orderID), clientid=order.clientId )
@@ -402,7 +418,7 @@ class syncEWrapper(EWrapper):
         self.print_this_func_info()
         opt1 = contractDetails.summary
         temp1 = {"symbol":opt1.symbol,"secType":opt1.secType,"expiry":opt1.expiry,"strike":opt1.strike,"right":opt1.right,
-                  "multiplier":opt1.multiplier,"exchange":opt1.exchange,"currency":opt1.currency}
+                  "multiplier":opt1.multiplier,"exchange":opt1.exchange,"currency":opt1.currency,"conId":opt1.conId}
         #print ("contractDetails reqId=[%d] contractdetails=[%s]" % ( reqId , str(temp1)) )
         if reqId in self.req_chains:
             self.req_chains[reqId].optionsChain.append(temp1)
@@ -418,7 +434,7 @@ class syncEWrapper(EWrapper):
         #print("contractDetailsEnd reqId=[%d] contractdetails=[%s]" % ( reqId , str(self.req_chains[reqId].optionsChain) ))
 
     def commissionReport(self, commissionReport):
-        self.log.info("CommisionReport is being called ...")
+        self.log.info("CommisionReport is being called ... [%s] " % ( str(commissionReport) ))
         setattr(self, "flag_comm_data_finished", True)
 
     def position(self,account,contract,position):
@@ -623,10 +639,11 @@ class IBClient():
     """
     def __init__(self,config1):
         self.config = config1
-        self.myEWrapper = syncEWrapper()
+        self.myEWrapper = syncEWrapper(config1)
         self.myEClientSocket = EPosixClientSocket(self.myEWrapper)
         self.start_time = 0
-        self.log = logger("IBClient")
+        #self.log = logger("IBClient")
+        self.log = config1.log
 
     def connect(self, clientid1):
         port1= int(self.config.config['ib_api']['port'])
@@ -1050,9 +1067,7 @@ def run_test_opt_chain():
 
     globalconf = config.GlobalConfig()
     client = IBClient(globalconf)
-    clientid1 = int(globalconf.config['ib_api']['clientid_data'])
-    client.connect(clientid1=clientid1)
-
+    client.connect()
     print(client.getTime())
 
     underl = {
