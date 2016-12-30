@@ -7,10 +7,13 @@ from sys import platform
 import sqlalchemy
 from sqlalchemy import Table, Column, Integer, String, ForeignKey
 from datetime import datetime, timedelta
+from volsetup.logger import logger
 
 class GlobalConfig(object):
-    def __init__(self):
+
+    def __init__(self,level=logger.DEBUG):
         # first try to find config file in user home (ubuntu)
+        self.log = logger("voltrad1", level)
         path1=os.path.expanduser("~")
         self.linux_user1=""
         if "linux" in platform.lower():

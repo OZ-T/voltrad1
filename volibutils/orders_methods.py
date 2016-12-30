@@ -11,8 +11,8 @@ from swigibpy import Contract as IBcontract
 from swigibpy import Order as IBOrder
 import time
 
-log=logger("order methods")
-globalconf = config.GlobalConfig()
+globalconf = config.GlobalConfig(level=logger.ERROR)
+log = globalconf.log
 client = ib.IBClient(globalconf)
 
 def bs_resolve(x):
@@ -47,41 +47,49 @@ def place_plain_order(client,expiry,symbol,right,strike,orderType,quantity,lmtPr
     log.info("orderid [%s] " % (str(orderid1)))
 
 
-def place_spread_order(client,expiry,symbol,right,strike,orderType,quantity,lmtPrice):
+def place_or_modif_spread_order(client,expiry,symbol,right,strike_l,strike_s,orderType,quantity,lmtPrice,orderId):
+    """
+    Place new order or modify existing order
+
+    :param client:
+    :param expiry:
+    :param symbol:
+    :param right:
+    :param strike_l:
+    :param strike_s:
+    :param orderType:
+    :param quantity:
+    :param lmtPrice:
+    :return:
+    """
     log.info("placing order ")
 
-    leg1 = sy.ComboLeg()
-    leg2 = sy.ComboLeg()
+    underl = {
+            1001:RequestOptionData(symbol,'FOP',expiry,strike_l,right,'50','GLOBEX','USD',1001),
+            1002: RequestOptionData(symbol, 'FOP',expiry, strike_s, right, '50', 'GLOBEX', 'USD', 1002)
+    }
+    action1 = {1001:"BUY",1002:"SELL"}
+    list_results = client.getOptionsChain(underl)
+    legs = []
+    log.info("Number of requests [%d]" % (len(list_results)) )
+    for reqId, request in list_results.iteritems():
+        log.info ("Requestid [%d]: Option[%s] Results [%d]" % ( reqId , str(request.get_in_data()), len(request.optionsChain) ))
+        for opt1 in request.optionsChain:
+            leg1 = sy.ComboLeg()
+            leg1.conId = opt1['conId']
+            leg1.ratio = 1
+            leg1.action = action1[reqId]
+            leg1.exchange = opt1['exchange']
+            legs.append(leg1)
+
     #sy.Contract.comboLegs
 
-    #Contract   contract = new     Contract();
-    #contract.Symbol = "DBK";
-    #contract.SecType = "BAG";
-    #contract.Currency = "EUR";
-    #contract.Exchange = "DTB";
-    #ComboLeg    leg1 = new    ComboLeg();
-    #leg1.ConId = 197397509; // DBK    JUN    15    '18 C
-    #leg1.Ratio = 1;
-    #leg1.Action = "BUY";
-    #leg1.Exchange = "DTB";
-    #ComboLeg    leg2 = new    ComboLeg();
-    #leg2.ConId = 197397584; // DBK    JUN    15    '18 P
-    #leg2.Ratio = 1;
-    #leg2.Action = "SELL";
-    #leg2.Exchange = "DTB";
-    #contract.ComboLegs = new    List < ComboLeg > ();
-    #contract.ComboLegs.Add(leg1);
-    #contract.ComboLegs.Add(leg2);
-
     ibcontract = IBcontract()
-    ibcontract.comboLegs = sy.ComboLegList([leg1, leg2])
+    ibcontract.comboLegs = sy.ComboLegList(legs)
 
-    ibcontract.symbol = "EOE"  # abitrary value only combo orders
+    ibcontract.symbol = symbol
     ibcontract.secType = "BAG"  # BAG is the security type for COMBO order
-
     ibcontract.exchange="GLOBEX"
-    ibcontract.right=right
-    ibcontract.multiplier="50"
     ibcontract.currency="USD"
 
     iborder = IBOrder()
@@ -89,20 +97,22 @@ def place_spread_order(client,expiry,symbol,right,strike,orderType,quantity,lmtP
     iborder.lmtPrice = lmtPrice
     iborder.orderType = orderType
     iborder.totalQuantity = abs(quantity)
-    iborder.tif = 'DAY'
+    iborder.tif = 'GTC'
     iborder.transmit = True
 
-    orderid1 = client.place_new_IB_order(ibcontract, iborder, orderid=None)
-    log.info("orderid [%s] " % (str(orderid1)))
+    orderid1 = client.place_new_IB_order(ibcontract, iborder, orderid=orderId)
+
+    print("orderid [%s] " % (str(orderid1)))
 
 
 def list_open_orders(client):
     log.info("list orders ")
 
     order_structure = client.get_open_orders()
-    log.info("order structure [%s]" % (str(order_structure)))
+    for idx, x in order_structure.iteritems():
+        print("[%s]" % (str(x)))
 
-def modify_open_order(client):
+def modify_open_order(client,orderId):
     # http://interactivebrokers.github.io/tws-api/modifying_orders.html#gsc.tab=0
     """
     Modification of an open order through the API can be achieved by the same client which placed the original order.
@@ -124,17 +134,65 @@ def cancel_open_order(client):
 def cancel_all_open_orders(client):
     pass
 
-def list_prices_before_trade(client):
-    ctrt = { 1000:RequestOptionData('ES','FOP','20170120',2200.0,'C','50','GLOBEX','USD',1000)}
+def list_prices_before_trade(client,symbol,expiry,query):
+    ctrt = {}
+    for idx, x in enumerate(query):
+        ctrt[idx] = RequestOptionData(symbol,'FOP',expiry,float(x[1:]),x[:1],'50','GLOBEX','USD',idx)
+
     ctrt_prc = client.getMktData(ctrt)
-    log.info("price [%s]" % (str(ctrt_prc)))
+    #log.info("[%s]" % (str(ctrt_prc)))
+    for id, req1 in ctrt_prc.iteritems():
+        subset_dic = {k: req1.get_in_data()[k] for k in ('strike', 'right', 'expiry','symbol')}
+        subset_dic2 = {k: req1.get_out_data()[id][k] for k in ('bidPrice', 'bidSize', 'askPrice', 'askSize') }
+        print subset_dic,subset_dic2
+
+def list_spread_prices_before_trade(client,symbol,expiry,query):
+    underl = {}
+
+    for idx, x in enumerate(query):
+        underl[idx] = RequestOptionData(symbol,'FOP',expiry,float(x[1:]),x[:1],'50','GLOBEX','USD',idx,comboLegs=None)
+    action1 = {0:"BUY",1:"SELL"}
+    list_results = client.getOptionsChain(underl)
+    legs = []
+    log.info("Number of requests [%d]" % (len(list_results)) )
+    for reqId, request in list_results.iteritems():
+        log.info ("Requestid [%d]: Option[%s] Results [%d]" % ( reqId , str(request.get_in_data()), len(request.optionsChain) ))
+        for opt1 in request.optionsChain:
+            leg1 = sy.ComboLeg()
+            leg1.conId = opt1['conId']
+            leg1.ratio = 1
+            leg1.action = action1[reqId]
+            leg1.exchange = opt1['exchange']
+            legs.append(leg1)
+
+    ibcontract = IBcontract()
+    ibcontract.comboLegs = sy.ComboLegList(legs)
+    ibcontract.symbol = symbol
+    ibcontract.secType = "BAG"  # BAG is the security type for COMBO order
+    ibcontract.exchange="GLOBEX"
+    ibcontract.currency="USD"
+
+    ctrt = {}
+    ctrt[100] = RequestOptionData(symbol,'FOP',expiry,float(x[1:]),x[:1],'50','GLOBEX','USD',100,comboLegs=None,contract=ibcontract)
+
+
+    ctrt_prc = client.getMktData(ctrt)
+    #log.info("[%s]" % (str(ctrt_prc)))
+    for id, req1 in ctrt_prc.iteritems():
+        subset_dic = {k: req1.get_in_data()[k] for k in ('secType','symbol')}
+        subset_dic2 = {k: req1.get_out_data()[id][k] for k in ('bidPrice', 'bidSize', 'askPrice', 'askSize') }
+        print subset_dic,subset_dic2
+
+
 
 if __name__=="__main__":
     clientid1 = int(globalconf.config['ib_api']['clientid_orders'])
     client.connect(clientid1=clientid1)
-
-    place_plain_order(client=client,expiry="20170120",symbol="ES",right="C",strike=2200.0,orderType="LMT",quantity=2,lmtPrice=5.0)
+    #list_prices_before_trade(client=client,symbol="ES",expiry="20170120",query=['C2300.0','C2350.0','P2100.0','P2150.0'])
+    list_spread_prices_before_trade(client=client,symbol="ES",expiry="20170120",query=['C2300.0','C2350.0'])
+    #place_plain_order(client=client,expiry="20170120",symbol="ES",right="C",strike=2200.0,orderType="LMT",quantity=2,lmtPrice=5.0)
+    place_or_modif_spread_order(client=client,expiry="20170120",symbol="ES",right="C",strike_l=2300.0,
+                       strike_s=2350.0,orderType="LMT",quantity=-1,lmtPrice=3.7,orderId=None)
     list_open_orders(client=client)
-    list_prices_before_trade(client=client)
 
     client.disconnect()

@@ -1,14 +1,20 @@
 import logging
 
+
+
 class logger(object):
-    def __init__(self,name1):
+    DEBUG=logging.DEBUG
+    ERROR=logging.ERROR
+
+    def __init__(self,name1,level=DEBUG):
         # create logger
         self.logger = logging.getLogger(name1)
-        self.logger.setLevel(logging.DEBUG)
-
+        #self.logger.setLevel(logging.DEBUG)
+        self.logger.setLevel(level)
         # create console handler and set level to debug
         self.ch = logging.StreamHandler()
-        self.ch.setLevel(logging.DEBUG)
+        #self.ch.setLevel(logging.DEBUG)
+        self.ch.setLevel(level)
 
         # create formatter
         self.formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
