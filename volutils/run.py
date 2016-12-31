@@ -13,7 +13,7 @@ from volsetup import config
 globalconf = config.GlobalConfig()
 config_file= globalconf.config['paths']['config_folder'] + "commandlist.yaml"
 
-TRACE=False
+TRACE=True
 
     
 def get_all_config():
