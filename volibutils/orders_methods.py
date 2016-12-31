@@ -12,7 +12,7 @@ from swigibpy import Order as IBOrder
 import time
 
 def init_func():
-    globalconf = config.GlobalConfig(level=logger.ERROR)
+    globalconf = config.GlobalConfig(level=logger.DEBUG)
     log = globalconf.log
     client = ib.IBClient(globalconf)
     clientid1 = int(globalconf.config['ib_api']['clientid_orders'])
