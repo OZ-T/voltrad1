@@ -15,6 +15,7 @@ config_file= globalconf.config['paths']['config_folder'] + "commandlist.yaml"
 
 TRACE=True
 
+REPL=True
     
 def get_all_config():
     try:
@@ -42,7 +43,7 @@ def get_config(funcname):
         
     return full_funcname, type_casting
     
-def fill_args_and_run_func(func, full_funcname, type_casting=dict()):
+def fill_args_and_run_func(func, full_funcname, type_casting=dict(),args1=None):
     """
     Prints the docstring of func, then asks for all of its arguments with defaults
     
@@ -83,49 +84,54 @@ def fill_args_and_run_func(func, full_funcname, type_casting=dict()):
     
     args=[]
     kwargs=dict()
-    for (argname, argdefault) in zip(func_arguments,func_defaults):
-        
-        is_kwarg=argdefault is not None
-        type_to_cast_to=type_casting.get(argname,None)
-        needs_casting=type_to_cast_to is not None
-        
-        acceptable=False
-        while not acceptable:
-            if is_kwarg:
-                default_string=" (default: '%s')" % str(argdefault)
-            else:
-                default_string=""
-                
-            if needs_casting:
-                type_string=" (type: %s)" % str(type_to_cast_to)
-            else:
-                type_string=""
-                 
-            arg_value = input("Argument %s %s %s?" % (argname, default_string, type_string))
 
-            if arg_value=="":
+    if REPL:
+        if args1 is not None:
+            args=args.append(args1)
+    else:
+        for (argname, argdefault) in zip(func_arguments,func_defaults):
+
+            is_kwarg=argdefault is not None
+            type_to_cast_to=type_casting.get(argname,None)
+            needs_casting=type_to_cast_to is not None
+
+            acceptable=False
+            while not acceptable:
                 if is_kwarg:
-                    arg_value=argdefault
-                    acceptable=True
+                    default_string=" (default: '%s')" % str(argdefault)
                 else:
-                    print("No default - need a value. Please type something!")
-                    acceptable=False
-            else:
-                ## A value has been typed - check if needs type casting
-                
+                    default_string=""
+
                 if needs_casting:
-                    try:
-                        ## Cast the type
-                        type_func=eval("%s" % type_to_cast_to)
-                        arg_value=type_func(arg_value)
+                    type_string=" (type: %s)" % str(type_to_cast_to)
+                else:
+                    type_string=""
+
+                arg_value = input("Argument %s %s %s?" % (argname, default_string, type_string))
+
+                if arg_value=="":
+                    if is_kwarg:
+                        arg_value=argdefault
                         acceptable=True
-                    except:
-                        print("\nCouldn't cast value %s to type %s: retype or check %s\n" %
-                               (arg_value, type_to_cast_to, config_file))
+                    else:
+                        print("No default - need a value. Please type something!")
                         acceptable=False
                 else:
-                    ## no type casting required
-                    acceptable=True
+                    ## A value has been typed - check if needs type casting
+
+                    if needs_casting:
+                        try:
+                            ## Cast the type
+                            type_func=eval("%s" % type_to_cast_to)
+                            arg_value=type_func(arg_value)
+                            acceptable=True
+                        except:
+                            print("\nCouldn't cast value %s to type %s: retype or check %s\n" %
+                                   (arg_value, type_to_cast_to, config_file))
+                            acceptable=False
+                    else:
+                        ## no type casting required
+                        acceptable=True
 
         if is_kwarg:
             kwargs[argname]=arg_value
@@ -170,7 +176,12 @@ if __name__ == '__main__':
 
     if TRACE:
         print("Running %s imported from %s" % (funcname, funcsource))
-    
+
+    args1 = None
+    if REPL:
+        print("REPL arguments passed [%s]" % ( str(sys.argv[2:]) ))
+        args1=sys.argv[2:]
+
     ## imports have to be done in main
     try:
         mod = importlib.import_module(funcsource)
@@ -182,6 +193,6 @@ if __name__ == '__main__':
     if func is None:
         raise Exception("NOT FOUND: function %s in module %s  specified for function reference %s \n Check file %s" % (funcname, mod, func_reference_name, config_file))
         
-    fill_args_and_run_func(func, full_funcname, type_casting)
+    fill_args_and_run_func(func, full_funcname, type_casting,args1=args1)
     
     
