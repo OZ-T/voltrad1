@@ -85,7 +85,7 @@ def fill_args_and_run_func(func, full_funcname, type_casting=dict(),args1=None):
     args=[]
     kwargs=dict()
 
-    if REPL and args1 is not None:
+    if REPL and ( args1 is not None ) :
         print("REPL %s" % (str(args1)) )
         args.extend(args1)
     else:
@@ -178,7 +178,7 @@ if __name__ == '__main__':
         print("Running %s imported from %s" % (funcname, funcsource))
 
     args1 = None
-    if REPL:
+    if REPL and ( len(sys.argv) > 2 ) :
         print("REPL arguments passed %s" % ( str(sys.argv[2:]) ))
         args1=sys.argv[2:]
 
