@@ -85,7 +85,7 @@ def fill_args_and_run_func(func, full_funcname, type_casting=dict(),args1=None):
     args=[]
     kwargs=dict()
 
-    if REPL and args1 is not None:
+    if REPL and (args1 is not None) :
         print("REPL %s" % (str(args1)) )
         args.extend(args1)
     else:
