@@ -8,8 +8,10 @@ import inspect
 from yaml import load as yload
 import importlib
 import sys
-    
-config_file="commandlist.yaml"    
+from volsetup import config
+
+globalconf = config.GlobalConfig()
+config_file= globalconf.config['paths']['config_folder'] + "commandlist.yaml"
 
 TRACE=False
 
