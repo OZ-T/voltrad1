@@ -13,7 +13,7 @@ from volsetup import config
 from datetime import datetime
 from copy import deepcopy
 from volsetup.logger import logger
-
+import numpy as np
 import random
 
 
@@ -322,8 +322,25 @@ class syncEWrapper(EWrapper):
         self.print_this_func_info()
         self.log.info("openOrder orderId [%s] order [%s]" % ( str(orderID), str(order) ))
         ## Get a selection of interesting things about the order
-        orderdetails=dict(symbol=contract.symbol , expiry=contract.expiry,  qty=int(order.totalQuantity) ,
-                       side=order.action , orderid=int(orderID), clientid=order.clientId )
+        orderdetails=dict(
+            symbol=contract.symbol ,
+            strike=contract.strike,
+            expiry=contract.expiry,
+            comboLegsDescrip=contract.comboLegsDescrip,
+            conId=contract.conId,
+            right=contract.right,
+            secType=contract.secType,
+            qty=int(order.totalQuantity) ,
+            side=order.action ,
+            orderType=order.orderType,
+            tif=order.tif,
+            orderid=int(orderID),
+            clientid=order.clientId,
+            commission=orderState.commission if orderState.commission < 1e200 else np.nan,
+            initMargin=orderState.initMargin if orderState.initMargin < 1e200 else np.nan,
+            maintMargin=orderState.maintMargin if orderState.maintMargin < 1e200 else np.nan,
+            status=orderState.status
+        )
 
         self.add_order_data(orderdetails)
 

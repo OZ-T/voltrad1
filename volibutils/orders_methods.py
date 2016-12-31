@@ -34,14 +34,6 @@ def bs_resolve(x):
 def place_plain_order(expiry,symbol,right,strike,orderType,quantity,lmtPrice):
     """
     Place a sinlge option order
-    :param expiry:
-    :param symbol:
-    :param right:
-    :param strike:
-    :param orderType:
-    :param quantity:
-    :param lmtPrice:
-    :return:
     """
     client, log = init_func()
     log.info("placing order ")
@@ -70,17 +62,6 @@ def place_plain_order(expiry,symbol,right,strike,orderType,quantity,lmtPrice):
 def place_or_modif_spread_order(expiry,symbol,right,strike_l,strike_s,orderType,quantity,lmtPrice,orderId):
     """
     Place new option spread order or modify existing order
-
-    :param client:
-    :param expiry:
-    :param symbol:
-    :param right:
-    :param strike_l:
-    :param strike_s:
-    :param orderType:
-    :param quantity:
-    :param lmtPrice:
-    :return:
     """
     client, log = init_func()
     log.info("placing order ")
@@ -129,14 +110,24 @@ def place_or_modif_spread_order(expiry,symbol,right,strike_l,strike_s,orderType,
 def list_open_orders():
     """
     List all currently open orders for this client
-    :return:
     """
     client, log = init_func()
     log.info("list orders ")
 
     order_structure = client.get_open_orders()
+    df1 = pd.DataFrame()
     for idx, x in order_structure.iteritems():
-        print("[%s]" % (str(x)))
+        temp=pd.DataFrame.from_dict(x, orient='index').transpose()
+        df1=df1.append(temp)
+    df1=df1.set_index(['orderid'],drop=True)
+
+    pd.set_option('display.max_rows', 500)
+    pd.set_option('display.max_columns', 500)
+    pd.set_option('display.width', 1000)
+    print(df1)
+
+
+
     end_func(client=client)
 
 def modify_open_order(orderId):
@@ -156,8 +147,7 @@ def modify_open_order(orderId):
 
 def cancel_open_order():
     """
-
-    :return:
+    TODO
     """
     client, log = init_func()
     end_func(client=client)
@@ -165,8 +155,7 @@ def cancel_open_order():
 
 def cancel_all_open_orders():
     """
-
-    :return:
+    TODO
     """
     client, log = init_func()
     end_func(client=client)
@@ -175,10 +164,6 @@ def cancel_all_open_orders():
 def list_prices_before_trade(symbol,expiry,query):
     """
     List prices before trade
-    :param symbol:
-    :param expiry:
-    :param query:
-    :return:
     """
     query1 = query.split(",")
     client, log = init_func()
@@ -197,11 +182,6 @@ def list_prices_before_trade(symbol,expiry,query):
 def list_spread_prices_before_trade(symbol,expiry,query):
     """
     List option spread prices before trade
-    :param client:
-    :param symbol:
-    :param expiry:
-    :param query:
-    :return:
     """
     query1 = query.split(",")
     client, log = init_func()

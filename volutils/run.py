@@ -13,7 +13,7 @@ from volsetup import config
 globalconf = config.GlobalConfig()
 config_file= globalconf.config['paths']['config_folder'] + "commandlist.yaml"
 
-TRACE=True
+TRACE=False
 
 REPL=True
     
@@ -54,9 +54,9 @@ def fill_args_and_run_func(func, full_funcname, type_casting=dict(),args1=None):
         print(func)
         print("Doc string for %s" % full_funcname)
 
-    print("\n")
+    #print("\n")
     print(inspect.getdoc(func))
-    print("\n")
+    #print("\n")
     func_arguments=inspect.getargspec(func).args
     func_defaults=inspect.getargspec(func).defaults
     
@@ -78,15 +78,15 @@ def fill_args_and_run_func(func, full_funcname, type_casting=dict(),args1=None):
         else:
             return argname+"="+str(argdefault)
         
-    print("\nArguments:")
+    print("Arguments:")
     print([_fshow(argname, argdefault) for (argname, argdefault) in zip(func_arguments, func_defaults)])
-    print("\n")
+    #print("\n")
     
     args=[]
     kwargs=dict()
 
     if REPL and (args1 is not None):
-        print("REPL %s" % (str(args1)) )
+        #print("REPL %s" % (str(args1)) )
         for idx, x in enumerate(func_arguments):
             type_to_cast_to=type_casting.get(x,None)
             if type_to_cast_to is not None:
@@ -95,7 +95,7 @@ def fill_args_and_run_func(func, full_funcname, type_casting=dict(),args1=None):
                     type_func = eval("%s" % type_to_cast_to)
                     args1[idx] = type_func(args1[idx])
                 except:
-                    print("\nCouldn't cast value %s to type %s: retype or check %s\n" %
+                    print("Couldn't cast value %s to type %s: retype or check %s\n" %
                           (args1[idx], type_to_cast_to, config_file))
 
         args.extend(args1)
@@ -137,7 +137,7 @@ def fill_args_and_run_func(func, full_funcname, type_casting=dict(),args1=None):
                             arg_value=type_func(arg_value)
                             acceptable=True
                         except:
-                            print("\nCouldn't cast value %s to type %s: retype or check %s\n" %
+                            print("Couldn't cast value %s to type %s: retype or check %s\n" %
                                    (arg_value, type_to_cast_to, config_file))
                             acceptable=False
                     else:
@@ -152,10 +152,10 @@ def fill_args_and_run_func(func, full_funcname, type_casting=dict(),args1=None):
     if TRACE:
         print("\nRunning %s() with args %s, kwargs %s\n" % (full_funcname, args, kwargs))
 
-    print("\n")    
+    #print("\n")
     func(*args, **kwargs)
 
-    print("\nFinished\n\n")
+    #print("Finished")
 
 if __name__ == '__main__':
     """
@@ -167,9 +167,9 @@ if __name__ == '__main__':
     if len(sys.argv)==1:
         print("Enter the name of a function located in %s" % config_file)
         all_config_data=list(get_all_config().keys())
-        print("\nAny one from:")
+        print("Any one from:")
         print(all_config_data)
-        print("\nExample . p %s" % all_config_data[0])
+        print("Example . p %s" % all_config_data[0])
         
         exit()
 
@@ -190,7 +190,7 @@ if __name__ == '__main__':
 
     args1 = None
     if REPL and ( len(sys.argv) > 2 ) :
-        print("REPL arguments passed %s" % ( str(sys.argv[2:]) ))
+        #print("REPL arguments passed %s" % ( str(sys.argv[2:]) ))
         args1=sys.argv[2:]
 
     ## imports have to be done in main

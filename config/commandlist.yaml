@@ -4,9 +4,14 @@ fill1opt:
       strike: float
       quantity: int
       lmtPrice: int
-
 fill1spread:
    pointer: volibutils.orders_methods.place_or_modif_spread_order
+   typecast:
+      strike_l: float
+      strike_s: float
+      quantity: int
+      lmtPrice: int
+      orderId: int
 lstorders:
    pointer: volibutils.orders_methods.list_open_orders
 lstprc:
