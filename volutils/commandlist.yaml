@@ -1,0 +1,17 @@
+fill1opt:
+   pointer: volibutils.orders_methods.place_plain_order
+fill1spread:
+   pointer: volibutils.orders_methods.place_or_modif_spread_order
+lstorders:
+   pointer: volibutils.orders_methods.list_open_orders
+lstprc:
+   pointer: volibutils.orders_methods.list_prices_before_trade
+lstspreadprc:
+   pointer: volibutils.orders_methods.list_spread_prices_before_trade
+manualfill:
+   pointer: manualfill.manualfill
+   typecast:
+      fill_price: float
+      orderid: int
+      fill: int
+
