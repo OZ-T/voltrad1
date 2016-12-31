@@ -1,5 +1,10 @@
 fill1opt:
    pointer: volibutils.orders_methods.place_plain_order
+   typecast:
+      strike: float
+      quantity: int
+      lmtPrice: int
+
 fill1spread:
    pointer: volibutils.orders_methods.place_or_modif_spread_order
 lstorders:

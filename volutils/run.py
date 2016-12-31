@@ -87,6 +87,17 @@ def fill_args_and_run_func(func, full_funcname, type_casting=dict(),args1=None):
 
     if REPL and (args1 is not None):
         print("REPL %s" % (str(args1)) )
+        for idx, x in enumerate(func_arguments):
+            type_to_cast_to=type_casting.get(x,None)
+            if type_to_cast_to is not None:
+                try:
+                    ## Cast the type
+                    type_func = eval("%s" % type_to_cast_to)
+                    args1[idx] = type_func(args1[idx])
+                except:
+                    print("\nCouldn't cast value %s to type %s: retype or check %s\n" %
+                          (args1[idx], type_to_cast_to, config_file))
+
         args.extend(args1)
     else:
         for (argname, argdefault) in zip(func_arguments,func_defaults):
@@ -133,10 +144,10 @@ def fill_args_and_run_func(func, full_funcname, type_casting=dict(),args1=None):
                         ## no type casting required
                         acceptable=True
 
-        if is_kwarg:
-            kwargs[argname]=arg_value
-        else:
-            args.append(arg_value)
+            if is_kwarg:
+                kwargs[argname]=arg_value
+            else:
+                args.append(arg_value)
 
     if TRACE:
         print("\nRunning %s() with args %s, kwargs %s\n" % (full_funcname, args, kwargs))
