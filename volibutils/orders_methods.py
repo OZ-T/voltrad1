@@ -12,7 +12,7 @@ from swigibpy import Order as IBOrder
 import time
 
 def init_func():
-    globalconf = config.GlobalConfig(level=logger.DEBUG)
+    globalconf = config.GlobalConfig(level=logger.ERROR)
     log = globalconf.log
     client = ib.IBClient(globalconf)
     clientid1 = int(globalconf.config['ib_api']['clientid_orders'])
@@ -180,9 +180,10 @@ def list_prices_before_trade(symbol,expiry,query):
     :param query:
     :return:
     """
+    query1 = query.split(",")
     client, log = init_func()
     ctrt = {}
-    for idx, x in enumerate(query):
+    for idx, x in enumerate(query1):
         ctrt[idx] = RequestOptionData(symbol,'FOP',expiry,float(x[1:]),x[:1],'50','GLOBEX','USD',idx)
     log.info("[%s]" % (str(ctrt)))
     ctrt_prc = client.getMktData(ctrt)
@@ -193,7 +194,7 @@ def list_prices_before_trade(symbol,expiry,query):
         print subset_dic,subset_dic2
     end_func(client=client)
 
-def list_spread_prices_before_trade(client,symbol,expiry,query):
+def list_spread_prices_before_trade(symbol,expiry,query):
     """
     List option spread prices before trade
     :param client:
@@ -202,10 +203,11 @@ def list_spread_prices_before_trade(client,symbol,expiry,query):
     :param query:
     :return:
     """
+    query1 = query.split(",")
     client, log = init_func()
     underl = {}
 
-    for idx, x in enumerate(query):
+    for idx, x in enumerate(query1):
         underl[idx] = RequestOptionData(symbol,'FOP',expiry,float(x[1:]),x[:1],'50','GLOBEX','USD',idx,comboLegs=None)
     action1 = {0:"BUY",1:"SELL"}
     list_results = client.getOptionsChain(underl)
@@ -240,8 +242,8 @@ def list_spread_prices_before_trade(client,symbol,expiry,query):
     end_func(client=client)
 
 if __name__=="__main__":
-    #list_prices_before_trade(symbol="ES",expiry="20170120",query=['C2300.0','C2350.0','P2100.0','P2150.0'])
-    #list_spread_prices_before_trade(symbol="ES",expiry="20170120",query=['C2300.0','C2350.0'])
+    #list_prices_before_trade(symbol="ES",expiry="20170120",query='C2300.0,C2350.0,P2100.0,P2150.0')
+    #list_spread_prices_before_trade(symbol="ES",expiry="20170120",query='C2300.0,C2350.0')
     #place_plain_order(expiry="20170120",symbol="ES",right="C",strike=2200.0,orderType="LMT",quantity=2,lmtPrice=5.0)
     place_or_modif_spread_order(expiry="20170120",symbol="ES",right="C",strike_l=2300.0,
                        strike_s=2350.0,orderType="LMT",quantity=-1,lmtPrice=3.7,orderId=None)

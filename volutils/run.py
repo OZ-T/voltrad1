@@ -86,8 +86,9 @@ def fill_args_and_run_func(func, full_funcname, type_casting=dict(),args1=None):
     kwargs=dict()
 
     if REPL:
+        print("REPL %s" % (str(args1)) )
         if args1 is not None:
-            args=args.append(args1)
+            args.extend(args1)
     else:
         for (argname, argdefault) in zip(func_arguments,func_defaults):
 
@@ -179,7 +180,7 @@ if __name__ == '__main__':
 
     args1 = None
     if REPL:
-        print("REPL arguments passed [%s]" % ( str(sys.argv[2:]) ))
+        print("REPL arguments passed %s" % ( str(sys.argv[2:]) ))
         args1=sys.argv[2:]
 
     ## imports have to be done in main
