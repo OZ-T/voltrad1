@@ -184,9 +184,9 @@ def list_prices_before_trade(symbol,expiry,query):
     ctrt = {}
     for idx, x in enumerate(query):
         ctrt[idx] = RequestOptionData(symbol,'FOP',expiry,float(x[1:]),x[:1],'50','GLOBEX','USD',idx)
-
+    log.info("[%s]" % (str(ctrt)))
     ctrt_prc = client.getMktData(ctrt)
-    #log.info("[%s]" % (str(ctrt_prc)))
+    log.info("[%s]" % (str(ctrt_prc)))
     for id, req1 in ctrt_prc.iteritems():
         subset_dic = {k: req1.get_in_data()[k] for k in ('strike', 'right', 'expiry','symbol')}
         subset_dic2 = {k: req1.get_out_data()[id][k] for k in ('bidPrice', 'bidSize', 'askPrice', 'askSize') }
