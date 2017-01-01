@@ -842,7 +842,7 @@ class IBClient():
         self.myEClientSocket.reqNewsBulletins(allMsgs)
 
         iserror = False
-        finished = False8
+        finished = False
 
         start_time = time.time()
 
