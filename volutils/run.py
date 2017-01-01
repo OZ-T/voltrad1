@@ -81,7 +81,7 @@ def fill_args_and_run_func(func, full_funcname, type_casting=dict(),args1=None):
     print("Arguments:")
     print([_fshow(argname, argdefault) for (argname, argdefault) in zip(func_arguments, func_defaults)])
     #print("\n")
-    
+
     args=[]
     kwargs=dict()
 
@@ -99,61 +99,13 @@ def fill_args_and_run_func(func, full_funcname, type_casting=dict(),args1=None):
                           (args1[idx], type_to_cast_to, config_file))
 
         args.extend(args1)
-    else:
-        for (argname, argdefault) in zip(func_arguments,func_defaults):
-
-            is_kwarg=argdefault is not None
-            type_to_cast_to=type_casting.get(argname,None)
-            needs_casting=type_to_cast_to is not None
-
-            acceptable=False
-            while not acceptable:
-                if is_kwarg:
-                    default_string=" (default: '%s')" % str(argdefault)
-                else:
-                    default_string=""
-
-                if needs_casting:
-                    type_string=" (type: %s)" % str(type_to_cast_to)
-                else:
-                    type_string=""
-
-                arg_value = input("Argument %s %s %s?" % (argname, default_string, type_string))
-
-                if arg_value=="":
-                    if is_kwarg:
-                        arg_value=argdefault
-                        acceptable=True
-                    else:
-                        print("No default - need a value. Please type something!")
-                        acceptable=False
-                else:
-                    ## A value has been typed - check if needs type casting
-
-                    if needs_casting:
-                        try:
-                            ## Cast the type
-                            type_func=eval("%s" % type_to_cast_to)
-                            arg_value=type_func(arg_value)
-                            acceptable=True
-                        except:
-                            print("Couldn't cast value %s to type %s: retype or check %s\n" %
-                                   (arg_value, type_to_cast_to, config_file))
-                            acceptable=False
-                    else:
-                        ## no type casting required
-                        acceptable=True
-
-            if is_kwarg:
-                kwargs[argname]=arg_value
-            else:
-                args.append(arg_value)
 
     if TRACE:
         print("\nRunning %s() with args %s, kwargs %s\n" % (full_funcname, args, kwargs))
 
     #print("\n")
-    func(*args, **kwargs)
+    if (args1 is not None) or (not func_arguments):
+        func(*args, **kwargs)
 
     #print("Finished")
 

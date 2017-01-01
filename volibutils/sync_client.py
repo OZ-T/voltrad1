@@ -826,6 +826,12 @@ class IBClient():
     def isConnected(self):
         return self.myEClientSocket.isConnected()
 
+    def cancelOrder(self,orderId):
+        return self.myEClientSocket.cancelOrder(orderId)
+
+    def reqGlobalCancel(self):
+        return self.myEClientSocket.reqGlobalCancel()
+
     def get_news(self, reqId):
         """
         Returns a list of all news today
@@ -836,7 +842,7 @@ class IBClient():
         self.myEClientSocket.reqNewsBulletins(allMsgs)
 
         iserror = False
-        finished = False
+        finished = False8
 
         start_time = time.time()
 

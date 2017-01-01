@@ -3,17 +3,24 @@ fill1opt:
    typecast:
       strike: float
       quantity: int
-      lmtPrice: int
+      lmtPrice: float
+      orderId: int
 fill1spread:
    pointer: volibutils.orders_methods.place_or_modif_spread_order
    typecast:
       strike_l: float
       strike_s: float
       quantity: int
-      lmtPrice: int
+      lmtPrice: float
       orderId: int
 lstorders:
    pointer: volibutils.orders_methods.list_open_orders
+cancel:
+   pointer: volibutils.orders_methods.cancel_open_order
+   typecast:
+      orderId: int
+cancelall:
+   pointer: volibutils.orders_methods.cancel_all_open_orders
 lstprc:
    pointer: volibutils.orders_methods.list_prices_before_trade
 lstspreadprc:

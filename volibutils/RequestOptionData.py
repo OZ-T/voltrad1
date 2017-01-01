@@ -158,7 +158,8 @@ class RequestOptionData():
                     "right":self.c.right,
                     "multiplier":self.c.multiplier,
                     "exchange":self.c.exchange,
-                    "currency":self.c.currency
+                    "currency":self.c.currency,
+                    "comboLegsDescrip":self.c.comboLegsDescrip
         }
         return indata
 
