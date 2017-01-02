@@ -7,9 +7,15 @@ import swigibpy as sy
 from volibutils.RequestOptionData import RequestOptionData
 from volibutils.RequestUnderlyingData import RequestUnderlyingData
 from volsetup.logger import logger
+from volutils import utils as utils
 
 def run_get_orders():
     log=logger("run_get_orders")
+
+    if dt.datetime.now().date() in utils.get_trading_close_holidays(dt.datetime.now().year):
+        log.info("This is a US Calendar holiday. Ending process ... ")
+        return
+
     log.info("Getting orders data from IB ... ")
     globalconf = config.GlobalConfig()
     client = ib.IBClient(globalconf)

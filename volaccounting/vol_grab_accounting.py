@@ -7,9 +7,15 @@ from volsetup.logger import logger
 import swigibpy as sy
 from volibutils.RequestOptionData import RequestOptionData
 from volibutils.RequestUnderlyingData import RequestUnderlyingData
+from volutils import utils as utils
 
 def run_get_portfolio_data():
     log=logger("run_get_portfolio_data")
+
+    if dt.datetime.now().date() in utils.get_trading_close_holidays(dt.datetime.now().year):
+        log.info("This is a US Calendar holiday. Ending process ... ")
+        return
+
     log.info("Getting portfolio and account data from IB ... ")
     globalconf = config.GlobalConfig()
     client = ib.IBClient(globalconf)
