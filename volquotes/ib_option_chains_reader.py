@@ -8,12 +8,18 @@ import swigibpy as sy
 from volibutils.RequestOptionData import RequestOptionData
 from volibutils.RequestUnderlyingData import RequestUnderlyingData
 from volsetup.logger import logger
+from volutils import utils as utils
 
 def run_reader():
     globalconf = config.GlobalConfig()
     optchain_def = globalconf.get_tickers_optchain_ib()
     source1 = globalconf.config['use_case_ib_options']['source']
     log=logger("ib optchain realtime reader")
+
+    if dt.datetime.now().date() in utils.get_trading_close_holidays(dt.datetime.now().year):
+        log.info("This is a US Calendar holiday. Ending process ... ")
+        return
+
     log.info("Getting realtime option chains data from IB ... ")
 
     num_ticks = len(optchain_def.index)  # used to print status

@@ -1,7 +1,42 @@
 #from datetime import datetime, timedelta
 import math
-
 import datetime
+import datetime as dt
+
+from pandas.tseries.holiday import AbstractHolidayCalendar, Holiday, nearest_workday, \
+    USMartinLutherKingJr, USPresidentsDay, GoodFriday, USMemorialDay, \
+    USLaborDay, USThanksgivingDay
+
+
+class USTradingCalendar(AbstractHolidayCalendar):
+    rules = [
+        Holiday('NewYearsDay', month=1, day=1, observance=nearest_workday),
+        USMartinLutherKingJr,
+        USPresidentsDay,
+        GoodFriday,
+        USMemorialDay,
+        Holiday('USIndependenceDay', month=7, day=4, observance=nearest_workday),
+        USLaborDay,
+        USThanksgivingDay,
+        Holiday('Christmas', month=12, day=25, observance=nearest_workday)
+    ]
+
+
+def get_trading_close_holidays(year):
+    inst = USTradingCalendar()
+
+    return inst.holidays(dt.datetime(year-1, 12, 31), dt.datetime(year, 12, 31))
+
+
+
+
+
+
+
+
+
+
+
 
 class BusinessHours:
     def __init__(self, datetime1, datetime2, worktiming=[9, 17],weekends=[6, 7]):
@@ -124,7 +159,7 @@ class BusinessHours:
         return False
 
 
-if __name__=="__main__":
+if __name__=="__main__kk":
     a=datetime.datetime(year=2016, month=9, day=19,hour=22,minute=0)
     b = datetime.datetime(year=2016, month=9, day=23, hour=4,minute=20)
 
@@ -135,3 +170,15 @@ if __name__=="__main__":
 
     #c= int(math.ceil(  office_time_between(a,b,start = timedelta(hours = 15),stop = timedelta(hours = 21)).total_seconds() / 60.0 / 60.0 / 7.0 ))
     #print str(a),str(b),c,"ffffff",office_time_between(a,b,start = timedelta(hours = 15),stop = timedelta(hours = 21))
+
+
+if __name__ == '__main__':
+    print(get_trading_close_holidays(2017))
+    #    DatetimeIndex(['2016-01-01', '2016-01-18', '2016-02-15', '2016-03-25',
+    #                   '2016-05-30', '2016-07-04', '2016-09-05', '2016-11-24',
+    #                   '2016-12-26'],
+    #                  dtype='datetime64[ns]', freq=None)
+    print dt.datetime.now().date()
+    if dt.datetime.now().date() in get_trading_close_holidays(dt.datetime.now().year):
+        print "Holidayyyyy!!!!"
+
