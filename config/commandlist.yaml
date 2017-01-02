@@ -31,4 +31,9 @@ manualfill:
       fill_price: float
       orderid: int
       fill: int
-
+ticrpt:
+   pointer: volibutils.orders_methods.tbd
+chainprc:
+   pointer: volibutils.orders_methods.tbd
+portfolio:
+   pointer: volibutils.orders_methods.tbd

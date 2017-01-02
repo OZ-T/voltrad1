@@ -1,0 +1,1 @@
+http://stackoverflow.com/questions/33094297/create-trading-holiday-calendar-with-pandas
