@@ -178,7 +178,8 @@ if __name__ == '__main__':
     #                   '2016-05-30', '2016-07-04', '2016-09-05', '2016-11-24',
     #                   '2016-12-26'],
     #                  dtype='datetime64[ns]', freq=None)
-    print dt.datetime.now().date()
-    if dt.datetime.now().date() in get_trading_close_holidays(dt.datetime.now().year):
+    print dt.datetime.now().date() + dt.timedelta(days=1)
+
+    if (dt.datetime.now().date()+ dt.timedelta(days=1)) in get_trading_close_holidays(dt.datetime.now().year):
         print "Holidayyyyy!!!!"
 

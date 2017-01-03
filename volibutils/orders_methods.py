@@ -43,8 +43,10 @@ def get_contract_details(symbol,conId=None):
     with all the potential contracts and the corresponding contract ID
     """
     db1={
-        "ES":{"secType":"FOP","exchange":"GLOBEX","multiplier":"50","currency":"USD"},
-        "SPY":{"secType":"OPT","exchange":"SMART","multiplier":"100","currency":"USD"}
+        "ES":{"secType":"FOP","exchange":"GLOBEX","multiplier":"50","currency":"USD",
+              "underlType":"FUT","underlCurrency":"XXX","underlExchange":"GLOBEX"},
+        "SPY":{"secType":"OPT","exchange":"SMART","multiplier":"100","currency":"USD",
+               "underlType":"STK","underlCurrency":"USD","underlExchange":"SMART"}
     }
     #if conId is None:
     return db1[symbol]
@@ -228,6 +230,27 @@ def list_prices_before_trade(symbol,expiry,query):
         df1=df1.append(temp)
     df1 = df1.set_index(['strike','right','expiry','symbol'], drop=True)
     print(df1)
+    end_func(client=client)
+
+
+def list_option_chain(symbol,expiry,expiry_underlying):
+    """
+    List option chain before trading a TIC
+    """
+    client, log = init_func()
+
+    underl = {100:RequestUnderlyingData(symbol,
+                                        get_contract_details(symbol)["underlType"],
+                                        expiry_underlying,
+                                        0,
+                                        '',
+                                        '',
+                                        get_contract_details(symbol)["underlExchange"],
+                                        get_contract_details(symbol)["underlCurrency"],
+                                        100)}
+
+    underl_prc = client.getMktData(underl)
+
     end_func(client=client)
 
 def list_spread_prices_before_trade(symbol,expiry,query):

@@ -34,6 +34,6 @@ manualfill:
 ticrpt:
    pointer: volibutils.orders_methods.tbd
 chainprc:
-   pointer: volibutils.orders_methods.tbd
+   pointer: volibutils.orders_methods.list_option_chain
 portfolio:
    pointer: volibutils.orders_methods.tbd
