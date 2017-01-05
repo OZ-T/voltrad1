@@ -173,7 +173,8 @@ def list_open_orders():
     for idx, x in order_structure.iteritems():
         temp=pd.DataFrame.from_dict(x, orient='index').transpose()
         df1=df1.append(temp)
-    df1=df1.set_index(['orderid'],drop=True)
+    if not df1.empty:
+        df1=df1.set_index(['orderid'],drop=True)
     print(df1)
 
     end_func(client=client)
@@ -251,6 +252,9 @@ def list_option_chain(symbol,expiry,expiry_underlying):
 
     underl_prc = client.getMktData(underl)
 
+    df1 = pd.DataFrame.from_dict(underl_prc, orient='index')
+    #df1 = df1.set_index(['secType','symbol','comboLegsDescrip'], drop=True)
+    print(df1)
     end_func(client=client)
 
 def list_spread_prices_before_trade(symbol,expiry,query):
@@ -323,7 +327,7 @@ if __name__=="__main__":
     #list_prices_before_trade(symbol="ES",expiry="20170120",query='C2300.0,C2350.0,P2100.0,P2150.0')
     #list_spread_prices_before_trade(symbol="ES",expiry="20170120",query='C2300.0,C2350.0')
     #place_plain_order(expiry="20170120",symbol="ES",right="C",strike=2200.0,orderType="LMT",quantity=2,lmtPrice=5.0)
-    place_or_modif_spread_order(expiry="20170120",symbol="ES",right="C",strike_l=2300.0,
-                       strike_s=2350.0,orderType="LMT",quantity=-1,lmtPrice=3.7,orderId=-1)
-    #list_open_orders()
+    #place_or_modif_spread_order(expiry="20170120",symbol="ES",right="C",strike_l=2300.0,
+    #                   strike_s=2350.0,orderType="LMT",quantity=-1,lmtPrice=3.7,orderId=-1)
+    list_open_orders()
 
