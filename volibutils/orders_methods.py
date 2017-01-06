@@ -239,7 +239,6 @@ def list_option_chain(symbol,expiry,expiry_underlying):
     List option chain before trading a TIC
     """
     client, log = init_func()
-
     underl = {100:RequestUnderlyingData(symbol,
                                         get_contract_details(symbol)["underlType"],
                                         expiry_underlying,
@@ -249,9 +248,7 @@ def list_option_chain(symbol,expiry,expiry_underlying):
                                         get_contract_details(symbol)["underlExchange"],
                                         get_contract_details(symbol)["underlCurrency"],
                                         100)}
-
     underl_prc = client.getMktData(underl)
-
     df1 = pd.DataFrame.from_dict(underl_prc, orient='index')
     #df1 = df1.set_index(['secType','symbol','comboLegsDescrip'], drop=True)
     print(df1)
