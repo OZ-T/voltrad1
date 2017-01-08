@@ -233,7 +233,6 @@ def list_prices_before_trade(symbol,expiry,query):
     print(df1)
     end_func(client=client)
 
-
 def list_option_chain(symbol,expiry,expiry_underlying):
     """
     List option chain before trading a TIC
@@ -249,8 +248,19 @@ def list_option_chain(symbol,expiry,expiry_underlying):
                                         get_contract_details(symbol)["underlCurrency"],
                                         100)}
     underl_prc = client.getMktData(underl)
-    df1 = pd.DataFrame.from_dict(underl_prc, orient='index')
-    #df1 = df1.set_index(['secType','symbol','comboLegsDescrip'], drop=True)
+    df1 = pd.DataFrame()
+    for reqId, request in underl_prc.iteritems():
+        subset_dic = {k: request.get_in_data()[k] for k in
+                    set(["symbol","expiry","secType"]) & set(request.get_in_data().keys())}
+        subset_dic2 = {k: request.get_out_data()[k] for k in
+                    set(["closePrice", "lastPrice", "lastSize", "Volume","askSize","askPrice",
+                         "bidSize","bidPrice",'OptImplVol']) & set(request.get_out_data().keys())}
+        dict1 = subset_dic.copy()
+        dict1.update(subset_dic2)
+        temp = pd.DataFrame.from_dict(dict1, orient='index').transpose()
+        df1 = df1.append(temp)
+
+    df1 = df1.set_index(["symbol","expiry","secType"], drop=True)
     print(df1)
     end_func(client=client)
 
@@ -326,5 +336,5 @@ if __name__=="__main__":
     #place_plain_order(expiry="20170120",symbol="ES",right="C",strike=2200.0,orderType="LMT",quantity=2,lmtPrice=5.0)
     #place_or_modif_spread_order(expiry="20170120",symbol="ES",right="C",strike_l=2300.0,
     #                   strike_s=2350.0,orderType="LMT",quantity=-1,lmtPrice=3.7,orderId=-1)
-    list_open_orders()
+    list_option_chain("ES", "20160120", "20170317")
 

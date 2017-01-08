@@ -334,6 +334,37 @@ def extrae_account_delta(year,month,day,hour,minute):
     return dataframe
 
 
+def extrae_historical_underl(start_dt,end_dt,symbol):
+    log.info("extrae_historical_underl para : start_dt=%s end_dt=%s symbol=%s " % (str(start_dt),str(end_dt),symbol))
+    store = globalconf.open_historical_store()
+    dataframe = pd.DataFrame()
+    node = store.get_node("/" + symbol)
+    coord1 = "index < " + end_dt + " & index > " + start_dt
+    c = store.select_as_coordinates(node._v_pathname,coord1)
+    df1 = store.select(node._v_pathname,where=c)
+    df1.sort_index(inplace=True,ascending=[True])
+    #df1 = df1[(df1.index < end_dt) & (df1.index > start_dt)]
+    dataframe = dataframe.append(df1)
+    store.close()
+    return dataframe
+
+def extrae_historical_chain(start_dt,end_dt,symbol,strike,expiry,right):
+    contract = symbol + expiry + right + strike
+    log.info("extrae_historical_chain para : start_dt=%s end_dt=%s contract=%s " % (str(start_dt),str(end_dt),contract))
+    store = globalconf.open_historical_optchain_store()
+    dataframe = pd.DataFrame()
+    node = store.get_node("/" + contract)
+    coord1 = "index < " + end_dt + " & index > " + start_dt
+    c = store.select_as_coordinates(node._v_pathname,coord1)
+    df1 = store.select(node._v_pathname,where=c)
+    df1.sort_index(inplace=True,ascending=[True])
+    #df1 = df1[(df1.index < end_dt) & (df1.index > start_dt)]
+    dataframe = dataframe.append(df1)
+    store.close()
+    return dataframe
+
+
+
 def extrae_account_delta_new(valuation_dttm,accountid,scenarioMode,simulName):
     """
     Extrae la delta de las variables de account dado un datetime.
@@ -418,6 +449,9 @@ def extrae_portfolio_positions(valuation_dttm,symbol,expiry,secType,
     #                       u'multiplier', u'position', u'realizedPNL',
     #                       u'right', u'strike', u'symbol', u'unrealizedPNL', u'current_datetime',
     #                       u'load_dttm']]
+    if len(dataframe) == 0:
+        log.info("No option data to analyze (t). Exiting ...")
+        return
 
     dataframe = dataframe[[u'averageCost', u'expiry', u'marketValue',u'multiplier', u'position', u'right',
                            u'strike', u'symbol', u'unrealizedPNL', u'current_datetime',u'load_dttm']]

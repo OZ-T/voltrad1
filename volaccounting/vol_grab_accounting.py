@@ -1,5 +1,6 @@
 import volibutils.sync_client as ib
 from volsetup import config
+import numpy as np
 import datetime as dt
 import pickle
 import pandas as pd
@@ -10,12 +11,16 @@ from volibutils.RequestUnderlyingData import RequestUnderlyingData
 from volutils import utils as utils
 
 def print_portfolio_data():
-    log=logger("print_portfolio_data")
+    globalconf = config.GlobalConfig(level=logger.ERROR)
+    log = globalconf.log
+    #this is to try to fit in one line each row od a dataframe when printing to console
+    pd.set_option('display.max_rows', 500)
+    pd.set_option('display.max_columns', 500)
+    pd.set_option('display.width', 1000)
 
     log.info("Getting portfolio and account data from IB ... ")
-    globalconf = config.GlobalConfig()
     client = ib.IBClient(globalconf)
-    clientid1 = int(globalconf.config['ib_api']['clientid_data'])
+    clientid1 = int(globalconf.config['ib_api']['clientid_orders'])
     client.connect(clientid1=clientid1)
     months = globalconf.months
     now = dt.datetime.now()  # Get current time
@@ -34,18 +39,30 @@ def print_portfolio_data():
         dataframe = pd.DataFrame.from_dict(acclist).transpose()
         dataframe['current_date'] = dt.datetime.now().strftime('%Y%m%d')
         dataframe['current_datetime'] = dt.datetime.now().strftime('%Y%m%d%H%M%S')
-        print("dataframe = ",dataframe)
+        columns1 = [u'averageCost', u'comboLegsDescrip', u'combolegs',
+                               u'conId', u'expiry', u'localSymbol',
+                               u'marketPrice', u'marketValue', u'multiplier',
+                               u'position',u'strike', u'symbol', u'unrealizedPNL']
+        dataframe = dataframe[columns1]
+        print("Portfolio = ")
+        print(dataframe)
 
     if summarylist:
         dataframe2 = pd.DataFrame.from_dict(summarylist).transpose()
         dataframe2['current_date'] = dt.datetime.now().strftime('%Y%m%d')
         dataframe2['current_datetime'] = dt.datetime.now().strftime('%Y%m%d%H%M%S')
         # sort the dataframe
-        dataframe2.sort(columns=['AccountCode_'], inplace=True)
+        dataframe2.sort_values(by=['AccountCode_'], inplace=True)
         # set the index to be this and don't drop
         dataframe2.set_index(keys=['AccountCode_'], drop=False,inplace=True)
-        print("dataframe = ",dataframe2)
-
+        dataframe2=dataframe2[[u'CashBalance_BASE',u'Cushion_',
+                               u'FullInitMarginReq_USD',
+                               u'FullMaintMarginReq_USD',u'GrossPositionValue_USD',
+                               u'NetLiquidation_USD',u'RegTEquity_USD',
+                               u'TotalCashBalance_BASE',u'UnrealizedPnL_BASE']]
+        print("Summary = ")
+        print(dataframe2)
+        # u'DayTradesRemaining_',u'AvailableFunds_USD',
 
 def run_get_portfolio_data():
     log=logger("run_get_portfolio_data")
@@ -89,7 +106,7 @@ def run_get_portfolio_data():
         dataframe2['current_date'] = dt.datetime.now().strftime('%Y%m%d')
         dataframe2['current_datetime'] = dt.datetime.now().strftime('%Y%m%d%H%M%S')
         # sort the dataframe
-        dataframe2.sort(columns=['AccountCode_'], inplace=True)
+        dataframe2.sort_values(by=['AccountCode_'], inplace=True)
         # set the index to be this and don't drop
         dataframe2.set_index(keys=['AccountCode_'], drop=False,inplace=True)
         # get a list of names
@@ -98,7 +115,7 @@ def run_get_portfolio_data():
         for name in names:
             # now we can perform a lookup on a 'view' of the dataframe
             joe = dataframe2.loc[dataframe2['AccountCode_']==name]
-            joe.sort(columns=['current_datetime'], inplace=True)
+            joe.sort_values(by=['current_datetime'], inplace=True)
             joe.index=pd.to_datetime(joe['current_datetime'], format="%Y%m%d%H%M%S")
             joe.drop('current_datetime',axis=1,inplace=True)
             joe['current_datetime_txt'] = joe.index.strftime("%Y-%m-%d %H:%M:%S")
@@ -152,4 +169,6 @@ def run_get_portfolio_data():
         store_new.close()
 
 if __name__=="__main__":
-    run_get_portfolio_data()
+    #run_get_portfolio_data()
+    print_portfolio_data()
+
