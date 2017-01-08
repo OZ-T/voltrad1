@@ -337,7 +337,7 @@ def extrae_account_delta(year,month,day,hour,minute):
 def extrae_historical_underl(start_dt,end_dt,symbol):
     log.info("extrae_historical_underl para : start_dt=%s end_dt=%s symbol=%s " % (str(start_dt),str(end_dt),symbol))
     store = globalconf.open_historical_store()
-    dataframe = pd.DataFrame()
+    dataframe = pd.DataFrame(dtype=float)
     node = store.get_node("/" + symbol)
     coord1 = "index < " + end_dt + " & index > " + start_dt
     c = store.select_as_coordinates(node._v_pathname,coord1)

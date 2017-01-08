@@ -61,8 +61,8 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
     # se obtiene la lista de todas las datetimes en que se han realizado operaciones
     ###################################################################################################################
     temp_ts1=operaciones.reset_index().set_index('orders_times') #.tz_localize('Europe/Madrid')
-    if len(temp_ts1) == 0:
-        print "No option data to analyze (t). Exiting ..."
+    if temp_ts1.empty:
+        log.info("operaciones - No data to analyze. Exiting ...")
         return
     oper_series1=temp_ts1.index.unique().to_pydatetime()
     #lista_dttm_con_trades = set([x.date() for x in oper_series1])
@@ -96,7 +96,7 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
         posiciones['load_dttm'] = fecha_valoracion
 
     if posiciones is None:
-        print "No option data to analyze (t). Exiting ..."
+        log.info("posiciones No data to analyze. Exiting ...")
         return
 
     posiciones_trades_dates = pd.DataFrame()
@@ -121,7 +121,8 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
                                                 symbol=i_symbol,expiry=i_expiry,secType=i_secType)
 
     if cadena_opcs.empty or cadena_opcs_tminus1.empty:
-        print "No option data to analyze (t). Exiting ..."
+        log.info("No data to analyze cadena_opcs.empty=%s cadena_opcs_tminus1.empty=%s. Exiting ..."
+                 % (str(cadena_opcs.empty) , str(cadena_opcs_tminus1.empty) ))
         return
 
     ###################################################################################################################
@@ -192,7 +193,7 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
         cadena_opcs_orders=cadena_opcs_orders.append(temporal1)
 
     if cadena_opcs_orders.empty:
-        print "No option data to analyze (t-1). Exiting ..."
+        log.info("cadena_opcs_orders No data to analyze. Exiting ...")
         return
 
     cadena_opcs_orders[['prices_expiry']] = cadena_opcs_orders[['prices_expiry']].apply(pd.to_datetime)
@@ -637,10 +638,10 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
     if appendh5 == 1:
         store = globalconf.open_ib_abt_strategy_tic(scenarioMode=scenarioMode)
         if scenarioMode == "N":
-            loc1 = i_symbol
+            loc1 = i_symbol + "/" + i_expiry
         elif scenarioMode == "Y":
             loc1 = simulName
-        store.append("/" + loc1, row_datos, data_columns=True,
+        store.append("/" + loc1 , row_datos, data_columns=True,
                      min_itemsize={'portfolio': 500,
                                    'DToperaciones': 500})
         store.close()
@@ -662,7 +663,7 @@ def get_strategy_start_date(con,meta,symbol,expiry,accountid,scenarioMode,simulN
         # 1.- Comprobar primero si hay ya registros en la ABT para la estrategia
         store_abt = globalconf.open_ib_abt_strategy_tic(scenarioMode)
         try:
-            node1=symbol
+            node1 = symbol + "/" + expiry
             if scenarioMode == "Y":
                 node1=simulName
             node_abt = store_abt.get_node("/" + node1)
@@ -690,6 +691,8 @@ def get_strategy_start_date(con,meta,symbol,expiry,accountid,scenarioMode,simulN
             #df = pd.read_sql_query(sql,con,params)
             ret1 = pd.to_datetime(
                 (df1_abt.loc[df1_abt.DTMaxdatost == np.max(df1_abt.DTMaxdatost)]['DTMaxdatost']).unique()[0])
+            # add one hour to run from the next hour
+            ret1 += dt.timedelta(hours=timedelta1)
             return ret1
 
     # 2.- si la estrategia no existe en la ABT se toma la fecha de inicio la fecha de la primera operacion
@@ -760,6 +763,9 @@ if __name__=="__main__":
     #run_analytics(symbol="ES", expiry="20161021", secType="FOP", accountid=accountid,
     #              valuation_dt=fecha_valoracion,scenarioMode="N",simulName="NA",appendh5=0,appendsql=1,toxls=0,timedelta1=24)
     run_analytics(symbol="ES", expiry="20161118", secType="FOP", accountid=accountid,
+                  valuation_dt=fecha_valoracion,scenarioMode="N",simulName="NA",appendh5=1,appendsql=0,toxls=0,timedelta1=1)
+
+    run_analytics(symbol="ES", expiry="20170120", secType="FOP", accountid=accountid,
                   valuation_dt=fecha_valoracion,scenarioMode="N",simulName="NA",appendh5=1,appendsql=0,toxls=0,timedelta1=1)
 
 

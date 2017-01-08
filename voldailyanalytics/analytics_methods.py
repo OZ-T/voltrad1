@@ -31,17 +31,37 @@ def end_func(client):
         client.disconnect()
 
 
-#Coppock Curve
-def COPP(df, n):
-    M = df['Close'].diff(int(n * 11 / 10) - 1)
-    N = df['Close'].shift(int(n * 11 / 10) - 1)
+def COPP(df, n,close_nm='close'):
+    """
+    Coppock Curve
+    """
+    M = df[close_nm].diff(int(n * 11 / 10) - 1)
+    N = df[close_nm].shift(int(n * 11 / 10) - 1)
     ROC1 = M / N
-    M = df['Close'].diff(int(n * 14 / 10) - 1)
-    N = df['Close'].shift(int(n * 14 / 10) - 1)
+    M = df[close_nm].diff(int(n * 14 / 10) - 1)
+    N = df[close_nm].shift(int(n * 14 / 10) - 1)
     ROC2 = M / N
-    Copp = pd.Series(pd.ewma(ROC1 + ROC2, span = n, min_periods = n), name = 'Copp_' + str(n))
+    Copp = pd.Series(pd.Series.ewm(ROC1 + ROC2, span = n, min_periods = n,
+                     adjust=True,ignore_na=False).mean(), name = 'Copp_' + str(n))
+    #Copp = pd.Series(pd.ewma(ROC1 + ROC2, span=n, min_periods=n, adjust=True), name='Copp_' + str(n))
     df = df.join(Copp)
     return df
+
+def print_coppock_diario(start_dt,end_dt,symbol="SPX"):
+    client , log = init_func()
+    #start_dt1 = dt.datetime.strptime(start_dt, '%Y%m%d')
+    #end_dt1 = dt.datetime.strptime(end_dt, '%Y%m%d')
+    start_dt1 = start_dt #+" 0:00:00"
+    end_dt1 = end_dt #+" 23:59:59"
+    df=ra.extrae_historical_underl(start_dt1,end_dt1,symbol)
+    df.index = pd.to_datetime(df.index, format="%Y%m%d  %H:%M:%S")
+    df["date"] = df.index
+    df[[u'close', u'high', u'open', u'low']]=df[[u'close', u'high',u'open',u'low']].apply(pd.to_numeric)
+    conversion = {'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last',}
+    df=df.resample('1D', how=conversion)
+    df=COPP(df,1)
+    print df
+    end_func(client)
 
 def print_historical_underl(start_dt,end_dt,symbol):
     client , log = init_func()
