@@ -19,19 +19,20 @@ def init_func():
     log = globalconf.log
     client = None
 
-    #this is to try to fit in one line each row od a dataframe when printing to console
+    # this is to try to fit in one line each row od a dataframe when printing to console
     pd.set_option('display.max_rows', 500)
     pd.set_option('display.max_columns', 500)
     pd.set_option('display.width', 1000)
 
-    return client , log
+    return client, log
+
 
 def end_func(client):
-    if not client is None:
+    if client is not None:
         client.disconnect()
 
 
-def COPP(df, n,close_nm='close'):
+def COPP(df, n, close_nm='close'):
     """
     Coppock Curve
     """
@@ -42,7 +43,7 @@ def COPP(df, n,close_nm='close'):
     N = df[close_nm].shift(int(n * 14 / 10) - 1)
     ROC2 = M / N
     Copp = pd.Series(pd.Series.ewm(ROC1 + ROC2, span = n, min_periods = n,
-                     adjust=True,ignore_na=False).mean(), name = 'Copp_' + str(n))
+                     adjust=True, ignore_na=False).mean(), name = 'Copp_' + str(n))
     #Copp = pd.Series(pd.ewma(ROC1 + ROC2, span=n, min_periods=n, adjust=True), name='Copp_' + str(n))
     df = df.join(Copp)
     return df
@@ -58,18 +59,19 @@ def print_coppock_diario(start_dt,end_dt,symbol="SPX"):
     df["date"] = df.index
     df[[u'close', u'high', u'open', u'low']]=df[[u'close', u'high',u'open',u'low']].apply(pd.to_numeric)
     conversion = {'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last',}
-    df=df.resample('1D', how=conversion)
-    df=COPP(df,1)
+    df = df.resample('1D', how=conversion).dropna()
+    df = COPP(df, 12)
     print df
     end_func(client)
 
-def print_historical_underl(start_dt,end_dt,symbol):
-    client , log = init_func()
-    #start_dt1 = dt.datetime.strptime(start_dt, '%Y%m%d')
-    #end_dt1 = dt.datetime.strptime(end_dt, '%Y%m%d')
-    start_dt1 = start_dt #+" 0:00:00"
-    end_dt1 = end_dt #+" 23:59:59"
-    df=ra.extrae_historical_underl(start_dt1,end_dt1,symbol)
+
+def print_historical_underl(start_dt, end_dt, symbol):
+    client, log = init_func()
+    # start_dt1 = dt.datetime.strptime(start_dt, '%Y%m%d')
+    # end_dt1 = dt.datetime.strptime(end_dt, '%Y%m%d')
+    start_dt1 = start_dt  # +" 0:00:00"
+    end_dt1 = end_dt  # +" 23:59:59"
+    df = ra.extrae_historical_underl(start_dt1,end_dt1,symbol)
     print df
     end_func(client)
 
