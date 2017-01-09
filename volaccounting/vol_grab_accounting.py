@@ -169,6 +169,5 @@ def run_get_portfolio_data():
         store_new.close()
 
 if __name__=="__main__":
-    #run_get_portfolio_data()
-    print_portfolio_data()
+    run_get_portfolio_data()
 
