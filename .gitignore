@@ -5,3 +5,5 @@ db/
 ib-flex-analyzer-master/ib-flex-analyzer-master.zip
 shell/gw.sh.orig
 volibutils/__pycache__/
+*.log
+*.pid
