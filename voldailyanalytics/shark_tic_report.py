@@ -744,30 +744,22 @@ def run_analytics(symbol, expiry, secType,accountid,valuation_dt,scenarioMode,si
     if toxls == 1:
         datos_toxls.to_excel(symbol+"_"+valuation_dt.strftime("%Y%m%d_%H")+"_scn"+scenarioMode+".xlsx");
 
+def run_report():
+    # i_secType OPT para SPY FOP para ES
+    # run_shark_analytics(i_symbol='SPY',i_year=2016,i_month_num=9,i_day_t0=2,i_day_tminus1=1,i_expiry='20161021',i_secType='OPT')
+    accountid = globalconf.get_accountid()
+    optchain_def = globalconf.get_tickers_optchain_ib()
+    fecha_valoracion = dt.datetime.now()
+
+    for index, row in optchain_def.iterrows():
+        log.info("underl=[%s] [%s] [%s] [%s] [%s] [%d]"
+                 % (row['symbol'], row['type'], str(row['Expiry']), row['Exchange'], row['Currency'], int(index)))
+        run_analytics(symbol=row['symbol'], expiry=str(row['Expiry']), secType=row['type'], accountid=accountid,
+                      valuation_dt=fecha_valoracion, scenarioMode="N", simulName="NA", appendh5=1, appendsql=0, toxls=0,
+                      timedelta1=1)
+
 
 if __name__=="__main__":
-    #i_secType OPT para SPY FOP para ES
-    #run_shark_analytics(i_symbol='SPY',i_year=2016,i_month_num=9,i_day_t0=2,i_day_tminus1=1,i_expiry='20161021',i_secType='OPT')
-    accountid = globalconf.get_accountid()
-    #fecha_valoracion = dt.datetime(year=2016, month=10, day=17, hour=21, minute=59, second=59)
-    fecha_valoracion=dt.datetime.now()
-    #run_analytics(symbol="SPY", expiry="20160916", secType="OPT", accountid=accountid,
-    #              valuation_dt=fecha_valoracion,scenarioMode="N",simulName="NA",appendh5=0,appendsql=1,toxls=0,timedelta1=24)
-    #run_analytics(symbol="SPY", expiry="20161021", secType="OPT", accountid=accountid,
-    #              valuation_dt=fecha_valoracion,scenarioMode="N",simulName="NA",appendh5=0,appendsql=1,toxls=0,timedelta1=24)
-    #run_analytics(symbol="SPY", expiry="20161118", secType="OPT", accountid=accountid,
-    #              valuation_dt=fecha_valoracion,scenarioMode="N",simulName="NA",appendh5=0,appendsql=1,toxls=0,timedelta1=24)
-
-    #run_analytics(symbol="ES", expiry="20160916", secType="FOP", accountid=accountid,
-    #              valuation_dt=fecha_valoracion,scenarioMode="N",simulName="NA",appendh5=0,appendsql=1,toxls=0,timedelta1=24)
-    #run_analytics(symbol="ES", expiry="20161021", secType="FOP", accountid=accountid,
-    #              valuation_dt=fecha_valoracion,scenarioMode="N",simulName="NA",appendh5=0,appendsql=1,toxls=0,timedelta1=24)
-    run_analytics(symbol="ES", expiry="20161118", secType="FOP", accountid=accountid,
-                  valuation_dt=fecha_valoracion,scenarioMode="N",simulName="NA",appendh5=1,appendsql=0,toxls=0,timedelta1=1)
-
-    run_analytics(symbol="ES", expiry="20170120", secType="FOP", accountid=accountid,
-                  valuation_dt=fecha_valoracion,scenarioMode="N",simulName="NA",appendh5=1,appendsql=0,toxls=0,timedelta1=1)
-
-
-    #run_analytics(symbol="ES", expiry="20161118", secType="FOP", accountid=accountid,
-    #             valuation_dt=fecha_valoracion,scenarioMode="N",simulName="NA",appendh5=1)
+    run_report()
+    #run_analytics(symbol="ES", expiry="20170120", secType="FOP", accountid=accountid,
+    #              valuation_dt=fecha_valoracion,scenarioMode="N",simulName="NA",appendh5=1,appendsql=0,toxls=0,timedelta1=1)

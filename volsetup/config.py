@@ -109,6 +109,11 @@ class GlobalConfig(object):
         path=self.config['paths']['data_folder']
         return pd.HDFStore(path + name)
 
+    def open_economic_calendar_h5_store_error(self):
+        name=self.config['db']['hdf5_economic_calendar_db'] + datetime.now().strftime('%Y%m%d%H%M%S')
+        path=self.config['paths']['data_folder']
+        return pd.HDFStore(path + name)
+
     def portfolio_store(self):
         name=self.config['db']['hdf5_portfolio_db']
         path=self.config['paths']['data_folder']

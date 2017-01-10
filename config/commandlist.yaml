@@ -37,3 +37,5 @@ hist_chain:
    pointer: voldailyanalytics.analytics_methods.print_historical_chain
 coppock:
    pointer: voldailyanalytics.analytics_methods.print_coppock_diario
+batch_tic_rpt:
+   pointer: voldailyanalytics.shark_tic_report.run_report

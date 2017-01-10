@@ -75,8 +75,15 @@ def run_reader():
         dataframe[col] = dataframe[col].astype(str)
     dataframe.columns = [str(c) for c in dataframe.columns]
     log.info("storing calendar in hdf5 ...")
-    f.append(    c_year , dataframe, data_columns=dataframe.columns)
+    try:
+        f.append(    c_year , dataframe, data_columns=dataframe.columns)
+    except ValueError as e:
+        print ("ValueError raised [" + str(e) + "]  Creating ancilliary file ...")
+        aux = globalconf.open_economic_calendar_h5_store_error()
+        aux.append( c_year, dataframe, data_columns=dataframe.columns)
+        aux.close()
     f.close()  # Close file
+
 
 def get_earning_data(date):
     html = requests.get("https://biz.yahoo.com/research/earncal/{}.html".format(date), headers={"User-Agent": "Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0"}).text

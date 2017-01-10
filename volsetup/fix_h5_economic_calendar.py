@@ -18,9 +18,9 @@ path = 'C:/Users/David/Dropbox/proyectos/data/'
 
 def run():
     os.chdir(path)
-    optchain_orig = 'optchain_ib_hist_db.h5'
-    pattern_optchain = 'optchain_ib_hist_db.h5*'
-    optchain_out = 'optchain_ib_hist_db_new.h5'
+    optchain_orig = 'economic_calendar_db.h5'
+    pattern_optchain = 'economic_calendar_db.h5*'
+    optchain_out = 'economic_calendar_db_new.h5'
     lst1 = glob.glob(pattern_optchain)
     lst1.remove(optchain_orig)
     print lst1
@@ -36,6 +36,7 @@ def run():
                 dataframe = dataframe.append(df1)
                 print "store_in1", len(df1), x
         store_in1.close()
+
 
     store_in1 = pd.HDFStore(path + optchain_orig)
     store_out = pd.HDFStore(path + optchain_out)
@@ -55,7 +56,7 @@ def run():
         print ("Storing " + name + " in ABT ..." + str(len(dataframe)))
         joe = dataframe[dataframe.symbol == name]
         joe=joe.sort_values(by=['symbol', 'current_datetime', 'expiry', 'strike', 'right'])
-        store_out.append("/" + name, joe, data_columns=True,min_itemsize={'comboLegsDescrip': 25})
+        store_out.append("/" + name, joe, data_columns=True)
     store_out.close()
 
 if __name__ == "__main__":

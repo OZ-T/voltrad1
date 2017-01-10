@@ -247,7 +247,7 @@ def run_reader():
                         #print dataframe.index , dataframe.columns
                         log.info( "appending data in hdf5 ...")
                         f.append(path_h5, dataframe, data_columns=True)
-                        f.close()  # Close file
+                    f.close()  # Close file
                     log.info ("sleeping [%s] secs ..." % (str(wait_secs)))
                     sleep(wait_secs)
                     num += 1
