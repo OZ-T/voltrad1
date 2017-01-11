@@ -1065,18 +1065,26 @@ class IBClient():
 
 
     def place_new_IB_order(self,ibcontract, iborder, orderid):
+        start_time=time.time()
         if orderid is None:
             self.log.info("Getting orderid from IB")
             orderid=self.get_next_brokerorderid()
         if orderid is not None:
             self.log.info("Using order id of %d" % orderid)
 
+        finished=False
+        iserror=False
         # Place the order
         self.myEClientSocket.placeOrder(
                 orderid,                                    # orderId,
                 ibcontract,                                   # contract,
                 iborder                                       # order
             )
+
+        while not finished and not iserror:
+            if (time.time() - start_time) > int(self.config.config['ib_api']['max_wait']):
+                finished=True
+            pass
 
         return orderid
 
