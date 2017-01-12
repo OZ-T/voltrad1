@@ -76,6 +76,7 @@ class syncEWrapper(EWrapper):
     def init_openorders(self):
         setattr(self, "data_order_structure", {})
         setattr(self, "flag_order_structure_finished", False)
+        setattr(self, "flag_order_confirm_finished", False)
 
     def add_order_data(self, orderdetails):
         if "data_order_structure" not in dir(self):
@@ -87,6 +88,7 @@ class syncEWrapper(EWrapper):
         orderdata[orderid]=orderdetails
         self.log.info("add_order_data orderdetails [%s]" % ( str(orderdetails) ))
         setattr(self, "data_order_structure", orderdata)
+        setattr(self, "flag_order_confirm_finished", True)
 
 
     def add_news_data(self, msgId, msgType, message, origExch ):
@@ -1052,7 +1054,7 @@ class IBClient():
             )
 
         while not finished and not iserror:
-            finished=self.myEWrapper.flag_order_structure_finished
+            finished=self.myEWrapper.flag_order_confirm_finished
             iserror=self.myEWrapper.flag_iserror
             if (time.time() - start_time) > int(self.config.config['ib_api']['max_wait']):
                 finished=True
