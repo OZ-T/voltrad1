@@ -49,7 +49,7 @@ def COPP(df, n, close_nm='close'):
     return df
 
 def print_coppock_diario(start_dt,end_dt,symbol="SPX"):
-    client , log = init_func()
+    client , log_analytics = init_func()
     #start_dt1 = dt.datetime.strptime(start_dt, '%Y%m%d')
     #end_dt1 = dt.datetime.strptime(end_dt, '%Y%m%d')
     start_dt1 = start_dt #+" 0:00:00"
@@ -66,7 +66,7 @@ def print_coppock_diario(start_dt,end_dt,symbol="SPX"):
 
 
 def print_historical_underl(start_dt, end_dt, symbol):
-    client, log = init_func()
+    client, log_analytics = init_func()
     # start_dt1 = dt.datetime.strptime(start_dt, '%Y%m%d')
     # end_dt1 = dt.datetime.strptime(end_dt, '%Y%m%d')
     start_dt1 = start_dt  # +" 0:00:00"
@@ -80,7 +80,7 @@ def print_historical_chain(start_dt,end_dt,symbol,strike,expiry,right,type):
     """
     Type should be bid, ask or trades
     """
-    client , log = init_func()
+    client , log_analytics = init_func()
     start_dt1 = start_dt #+" 0:00:00"
     end_dt1 = end_dt #+" 23:59:59"
     df=ra.extrae_historical_chain(start_dt1,end_dt1,symbol,strike,expiry,right)

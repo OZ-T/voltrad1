@@ -62,8 +62,8 @@ def place_plain_order(expiry,symbol,right,strike,orderType,quantity,lmtPrice,ord
     if orderId <=0:
         orderId = None
 
-    client, log = init_func()
-    log.info("placing order ")
+    client, log_order = init_func()
+    log_order.info("placing order ")
     ibcontract = IBcontract()
     ibcontract.secType = get_contract_details(symbol)["secType"]
     ibcontract.expiry=expiry
@@ -82,7 +82,16 @@ def place_plain_order(expiry,symbol,right,strike,orderType,quantity,lmtPrice,ord
     iborder.tif = get_order_defaults()["tif"]
     iborder.transmit = get_order_defaults()["transmit"]
 
-    orderid1 = client.place_new_IB_order(ibcontract, iborder, orderid=orderId)
+    order_structure = client.place_new_IB_order(ibcontract, iborder, orderid=orderId)
+    df1 = pd.DataFrame()
+    for idx, x in order_structure.iteritems():
+        temp=pd.DataFrame.from_dict(x, orient='index').transpose()
+        df1=df1.append(temp)
+    if not df1.empty:
+        df1=df1.set_index(['orderid'],drop=True)
+    print(df1)
+
+
     print("orderid [%s] " % (str(orderid1)))
     end_func(client=client)
 
@@ -108,8 +117,8 @@ def place_or_modif_spread_order(expiry,symbol,right,strike_l,strike_s,orderType,
 
     if orderId <=0:
         orderId = None
-    client, log = init_func()
-    log.info("placing order ")
+    client, log_order = init_func()
+    log_order.info("placing order ")
     underl = {
             1001:RequestOptionData(symbol,
                                    get_contract_details(symbol)["secType"],
@@ -133,9 +142,9 @@ def place_or_modif_spread_order(expiry,symbol,right,strike_l,strike_s,orderType,
     action1 = {1001:"BUY",1002:"SELL"}
     list_results = client.getOptionsChain(underl)
     legs = []
-    log.info("Number of requests [%d]" % (len(list_results)) )
+    log_order.info("Number of requests [%d]" % (len(list_results)) )
     for reqId, request in list_results.iteritems():
-        log.info ("Requestid [%d]: Option[%s] Results [%d]" % ( reqId , str(request.get_in_data()), len(request.optionsChain) ))
+        log_order.info ("Requestid [%d]: Option[%s] Results [%d]" % ( reqId , str(request.get_in_data()), len(request.optionsChain) ))
         for opt1 in request.optionsChain:
             leg1 = sy.ComboLeg()
             leg1.conId = opt1['conId']
@@ -157,16 +166,23 @@ def place_or_modif_spread_order(expiry,symbol,right,strike_l,strike_s,orderType,
     iborder.totalQuantity = abs(quantity)
     iborder.tif = get_order_defaults()["tif"]
     iborder.transmit = get_order_defaults()["transmit"]
-    orderid1 = client.place_new_IB_order(ibcontract, iborder, orderid=orderId)
-    print("orderid [%s] " % (str(orderid1)))
+    order_structure = client.place_new_IB_order(ibcontract, iborder, orderid=orderId)
+    df1 = pd.DataFrame()
+    for idx, x in order_structure.iteritems():
+        temp=pd.DataFrame.from_dict(x, orient='index').transpose()
+        df1=df1.append(temp)
+    if not df1.empty:
+        df1=df1.set_index(['orderid'],drop=True)
+    print(df1)
     end_func(client=client)
+
 
 def list_open_orders():
     """
     List all currently open orders for this client
     """
-    client, log = init_func()
-    log.info("list orders ")
+    client, log_order = init_func()
+    log_order.info("list orders ")
 
     order_structure = client.get_open_orders()
     df1 = pd.DataFrame()
@@ -180,14 +196,14 @@ def list_open_orders():
     end_func(client=client)
 
 def modify_open_order(orderId):
-    client, log = init_func()
+    client, log_order = init_func()
     end_func(client=client)
 
 def cancel_open_order(orderId):
     """
     Cancel open order identified with orderId
     """
-    client, log = init_func()
+    client, log_order = init_func()
     client.cancelOrder(orderId)
     end_func(client=client)
 
@@ -196,7 +212,7 @@ def cancel_all_open_orders():
     """
     Cancel all open orders
     """
-    client, log = init_func()
+    client, log_order = init_func()
     client.reqGlobalCancel()
     end_func(client=client)
 
@@ -206,7 +222,7 @@ def list_prices_before_trade(symbol,expiry,query):
     List prices before trade
     """
     query1 = query.split(",")
-    client, log = init_func()
+    client, log_order = init_func()
     ctrt = {}
     for idx, x in enumerate(query1):
         ctrt[idx] = RequestOptionData(symbol,
@@ -218,9 +234,9 @@ def list_prices_before_trade(symbol,expiry,query):
                                       get_contract_details(symbol)["exchange"],
                                       get_contract_details(symbol)["currency"],
                                       idx)
-    log.info("[%s]" % (str(ctrt)))
+    log_order.info("[%s]" % (str(ctrt)))
     ctrt_prc = client.getMktData(ctrt)
-    log.info("[%s]" % (str(ctrt_prc)))
+    log_order.info("[%s]" % (str(ctrt_prc)))
     df1 = pd.DataFrame()
     for id, req1 in ctrt_prc.iteritems():
         subset_dic = {k: req1.get_in_data()[k] for k in ('strike', 'right', 'expiry','symbol')}
@@ -237,7 +253,7 @@ def list_option_chain(symbol,expiry,expiry_underlying):
     """
     List option chain before trading a TIC
     """
-    client, log = init_func()
+    client, log_order = init_func()
     underl = {100:RequestUnderlyingData(symbol,
                                         get_contract_details(symbol)["underlType"],
                                         expiry_underlying,
@@ -269,7 +285,7 @@ def list_spread_prices_before_trade(symbol,expiry,query):
     List option spread prices before trade
     """
     query1 = query.split(",")
-    client, log = init_func()
+    client, log_order = init_func()
     underl = {}
 
     for idx, x in enumerate(query1):
@@ -286,9 +302,9 @@ def list_spread_prices_before_trade(symbol,expiry,query):
     action1 = {0:"BUY",1:"SELL"}
     list_results = client.getOptionsChain(underl)
     legs = []
-    log.info("Number of requests [%d]" % (len(list_results)) )
+    log_order.info("Number of requests [%d]" % (len(list_results)) )
     for reqId, request in list_results.iteritems():
-        log.info ("Requestid [%d]: Option[%s] Results [%d]" % ( reqId , str(request.get_in_data()), len(request.optionsChain) ))
+        log_order.info ("Requestid [%d]: Option[%s] Results [%d]" % ( reqId , str(request.get_in_data()), len(request.optionsChain) ))
         for opt1 in request.optionsChain:
             leg1 = sy.ComboLeg()
             leg1.conId = opt1['conId']
@@ -317,7 +333,7 @@ def list_spread_prices_before_trade(symbol,expiry,query):
                                   comboLegs=None,
                                   contract=ibcontract)
     ctrt_prc = client.getMktData(ctrt)
-    log.info("[%s]" % (str(ctrt_prc)))
+    log_order.info("[%s]" % (str(ctrt_prc)))
     df1 = pd.DataFrame()
     for id, req1 in ctrt_prc.iteritems():
         subset_dic = {k: req1.get_in_data()[k] for k in ('secType','symbol','comboLegsDescrip')}

@@ -1026,13 +1026,44 @@ class IBClient():
                 ## You should have thought that IB would teldl you we had finished
                 finished=True
             pass
+        order_structure=self.myEWrapper.data_order_structure
+        if iserror:
+            self.log.error (self.myEWrapper.error_msg)
+            self.log.error ("Problem getting open orders")
+        return order_structure
 
+
+    def place_new_IB_order(self,ibcontract, iborder, orderid):
+        self.myEWrapper.init_openorders()
+        self.myEWrapper.init_error()
+        start_time=time.time()
+        if orderid is None:
+            self.log.info("Getting orderid from IB")
+            orderid=self.get_next_brokerorderid()
+        if orderid is not None:
+            self.log.info("Using order id of %d" % orderid)
+        finished=False
+        iserror=False
+        # Place the order
+        self.myEClientSocket.placeOrder(
+                orderid,                                    # orderId,
+                ibcontract,                                   # contract,
+                iborder                                       # order
+            )
+
+        while not finished and not iserror:
+            finished=self.myEWrapper.flag_order_structure_finished
+            iserror=self.myEWrapper.flag_iserror
+            if (time.time() - start_time) > int(self.config.config['ib_api']['max_wait']):
+                finished=True
+            pass
         order_structure=self.myEWrapper.data_order_structure
         if iserror:
             self.log.error (self.myEWrapper.error_msg)
             self.log.error ("Problem getting open orders")
 
         return order_structure
+
 
 
     def get_next_brokerorderid(self):
@@ -1061,32 +1092,6 @@ class IBClient():
             return None
 
         return brokerorderid
-
-
-
-    def place_new_IB_order(self,ibcontract, iborder, orderid):
-        start_time=time.time()
-        if orderid is None:
-            self.log.info("Getting orderid from IB")
-            orderid=self.get_next_brokerorderid()
-        if orderid is not None:
-            self.log.info("Using order id of %d" % orderid)
-
-        finished=False
-        iserror=False
-        # Place the order
-        self.myEClientSocket.placeOrder(
-                orderid,                                    # orderId,
-                ibcontract,                                   # contract,
-                iborder                                       # order
-            )
-
-        while not finished and not iserror:
-            if (time.time() - start_time) > int(self.config.config['ib_api']['max_wait']):
-                finished=True
-            pass
-
-        return orderid
 
 
 def run_test_opt_chain():
