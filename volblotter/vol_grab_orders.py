@@ -45,7 +45,8 @@ def run_get_orders():
         #f.close()  Close file
 
         # sort the dataframe
-        dataframe.sort(columns=['account'], inplace=True)
+        #dataframe.sort(columns=['account'], inplace=True) DEPRECATED
+        dataframe=dataframe.sort_values(by=['account'])
         # set the index to be this and don't drop
         dataframe.set_index(keys=['account'], drop=False, inplace=True)
         # get a list of names
@@ -55,7 +56,8 @@ def run_get_orders():
             # now we can perform a lookup on a 'view' of the dataframe
             log.info("Storing " + name + " in ABT ...")
             joe = dataframe.loc[dataframe['account'] == name]
-            joe.sort(columns=['current_datetime'], inplace=True)
+            #joe.sort(columns=['current_datetime'], inplace=True)  DEPRECATED
+            joe = joe.sort_values(by=['current_datetime'])
             try:
                 f.append("/" + name, joe, data_columns=joe.columns)
             except ValueError as e:

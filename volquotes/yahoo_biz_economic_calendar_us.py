@@ -84,6 +84,16 @@ def run_reader():
         aux.close()
     f.close()  # Close file
 
+    """ TODO:
+        import warnings
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings('error')
+            try:
+                answer = 1 / 0
+            except Warning as e:
+                print('error found:', e)
+    """
 
 def get_earning_data(date):
     html = requests.get("https://biz.yahoo.com/research/earncal/{}.html".format(date), headers={"User-Agent": "Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0"}).text

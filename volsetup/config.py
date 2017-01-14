@@ -69,6 +69,12 @@ class GlobalConfig(object):
         path=self.config['paths']['data_folder']
         return pd.HDFStore(path + name)
 
+    def open_yahoo_h5_store_new_error(self):
+        name = self.config['use_case_yahoo_options']['hdf5_db_nm_new'] + datetime.now().strftime('%Y%m%d%H%M%S')
+        path = self.config['paths']['data_folder']
+        return pd.HDFStore(path + name)
+
+
     def open_orders_store(self):
         name=self.config['db']['hdf5_orders_db']
         path=self.config['paths']['data_folder']

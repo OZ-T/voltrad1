@@ -18,9 +18,9 @@ path = 'C:/Users/David/data/'
 
 def run():
     os.chdir(path)
-    optchain_orig = 'economic_calendar_db.h5'
-    pattern_optchain = 'economic_calendar_db.h5*'
-    optchain_out = 'economic_calendar_db_new.h5'
+    optchain_orig = 'optchain_yahoo_hist_db_new.h5'
+    pattern_optchain = 'optchain_yahoo_hist_db_new.h5*'
+    optchain_out = 'optchain_yahoo_hist_db_new_new.h5'
     lst1 = glob.glob(pattern_optchain)
     lst1.remove(optchain_orig)
     print lst1
@@ -51,12 +51,13 @@ def run():
     store_in1.close()
 
     dataframe.sort_index(inplace=True,ascending=[True])
-    names = dataframe['week'].apply(lambda x: x[:4]).unique().tolist()
+    names = dataframe['symbol'].unique().tolist()
     for name in names:
-        print ("Storing " + name + " in ABT ..." + str(len(dataframe)))
-        joe = dataframe[dataframe['week'].apply(lambda x: x[:4]) == name]
-        joe=joe.sort_values(by=['week', 'Time_ET', 'load_dttm'])
-        store_out.append("/" + name, joe, data_columns=True)
+        joe = dataframe[dataframe.symbol == name]
+        print ("Storing " + name + " in ABT ..." + str(len(joe)))
+        joe=joe.sort_values(by=['Symbol', 'load_dttm'])
+        store_out.append("/" + name, joe, data_columns=True,
+                         min_itemsize={'Chg': 7,'Last': 10,'OpenInt':10,'Vol':10})
     store_out.close()
 
 if __name__ == "__main__":

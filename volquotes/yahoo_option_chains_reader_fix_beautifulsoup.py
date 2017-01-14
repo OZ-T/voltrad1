@@ -81,7 +81,8 @@ dataframe=dataframe.drop_duplicates()
 dataframe['load_dttm'] = load_dttm
 
 # sort the dataframe
-dataframe.sort(columns=['symbol'], inplace=True)
+#dataframe.sort(columns=['symbol'], inplace=True) DEPRECATED
+dataframe=dataframe.sort_values(by=['symbol'])
 # set the index to be this and don't drop
 dataframe.set_index(keys=['symbol'], drop=False,inplace=True)
 # get a list of names
@@ -95,8 +96,16 @@ for name in names:
     log.info( "storing =[%s]" % (  name ))
     joe = dataframe.loc[dataframe.symbol==name]
     #joe=joe.append(df1)
-    joe.sort(columns=['Symbol','load_dttm'], inplace=True)
-    f.append( "/"+name , joe, data_columns=True, min_itemsize={'Last': 10}) # ,'OpenInt':10,'Vol':10}) PENDIENTE recrear el hdf5 con longitudes por defecto
+    #joe.sort(columns=['Symbol','load_dttm'], inplace=True) DEPRECATED
+    joe = joe.sort_values(by=['Symbol','load_dttm'])
+    try:
+        f.append( "/"+name , joe, data_columns=True, min_itemsize={'Last': 10})
+        # ,'OpenInt':10,'Vol':10}) PENDIENTE recrear el hdf5 con longitudes por defecto
+    except ValueError as e:
+        log.warn("ValueError raised [" + str(e) + "]  Creating ancilliary file ...")
+        aux = globalconf.open_yahoo_h5_store_new_error()
+        aux.append("/" + name, joe, data_columns=True, min_itemsize={'Last': 10})
+        aux.close()
 
 f.close()  # Close file
 
