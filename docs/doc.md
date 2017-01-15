@@ -1,6 +1,7 @@
 # use Pandoc’s Markdown: http://www.johnmacfarlane.net/pandoc/
 # or use reStructuredText markup: http://docutils.sourceforge.net/rst.html
 
+Configuration
 
 The specific paths are configured in a configuration file residing in the user home folder called .voltrad1
 
@@ -46,3 +47,18 @@ Folders:
         En el caso de windows hay que copiar al home del usuario voltrad.ini
         En el caso de ubuntu hay que copiar al home del usuario renombrandolo a .voltrad
 
+Operations
+
+the file config/commandlist.yaml contains the commands to operate the system. The following is a description
+of the workflow for operations with TIC:
+
+TREND ANALYSIS
+1.- Check daily Coopock for SPX with command: . p coppock
+        Check what coppock has to say about the market trend: positive&down, negative&up, ...
+2.- Check Daily summary (YTD, MTD, WTD, DD) for SPX: . p summary "SPX"
+
+RISK ANALYSIS
+1.- Check EMAS and IV Channels for SPX: . p emas "SPX"
+        Check if there are alerts activated for RSK_EMA50 or CANAL_IV_WK or CANAL_IV_MO
+        
+2.- Check volatility levels

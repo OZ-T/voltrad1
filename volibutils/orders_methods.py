@@ -12,7 +12,7 @@ from swigibpy import Order as IBOrder
 import time
 
 def init_func():
-    globalconf = config.GlobalConfig(level=logger.DEBUG)
+    globalconf = config.GlobalConfig(level=logger.ERROR)
     log = globalconf.log
     client = ib.IBClient(globalconf)
     clientid1 = int(globalconf.config['ib_api']['clientid_orders'])
@@ -90,9 +90,6 @@ def place_plain_order(expiry,symbol,right,strike,orderType,quantity,lmtPrice,ord
     if not df1.empty:
         df1=df1.set_index(['orderid'],drop=True)
     print(df1)
-
-
-    print("orderid [%s] " % (str(orderid1)))
     end_func(client=client)
 
 def place_or_modif_spread_order(expiry,symbol,right,strike_l,strike_s,orderType,quantity,lmtPrice,orderId):
@@ -193,10 +190,6 @@ def list_open_orders():
         df1=df1.set_index(['orderid'],drop=True)
     print(df1)
 
-    end_func(client=client)
-
-def modify_open_order(orderId):
-    client, log_order = init_func()
     end_func(client=client)
 
 def cancel_open_order(orderId):

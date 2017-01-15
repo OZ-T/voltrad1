@@ -334,7 +334,7 @@ def extrae_account_delta(year,month,day,hour,minute):
     return dataframe
 
 
-def extrae_historical_underl(start_dt,end_dt,symbol):
+def extrae_historical_underl(symbol,start_dt="20160101",end_dt="29991231"):
     log.info("extrae_historical_underl para : start_dt=%s end_dt=%s symbol=%s " % (str(start_dt),str(end_dt),symbol))
     store = globalconf.open_historical_store()
     dataframe = pd.DataFrame(dtype=float)

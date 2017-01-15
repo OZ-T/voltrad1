@@ -13,6 +13,11 @@ from swigibpy import Order as IBOrder
 import time
 from voldailyanalytics import run_analytics as ra
 
+from numpy.lib.stride_tricks import as_strided
+
+
+HISTORY_LIMIT = 30
+
 
 def init_func():
     globalconf = config.GlobalConfig(level=logger.ERROR)
@@ -32,38 +37,160 @@ def end_func(client):
         client.disconnect()
 
 
-def COPP(df, n, close_nm='close'):
+def windowed_view(x, window_size):
+    """Creat a 2d windowed view of a 1d array.
+
+    `x` must be a 1d numpy array.
+
+    `numpy.lib.stride_tricks.as_strided` is used to create the view.
+    The data is not copied.
+
+    Example:
+
+    >>> x = np.array([1, 2, 3, 4, 5, 6])
+    >>> windowed_view(x, 3)
+    array([[1, 2, 3],
+           [2, 3, 4],
+           [3, 4, 5],
+           [4, 5, 6]])
+    """
+    y = as_strided(x, shape=(x.size - window_size + 1, window_size),
+                   strides=(x.strides[0], x.strides[0]))
+    return y
+
+
+def rolling_max_dd(x, window_size, min_periods=1):
+    """Compute the rolling maximum drawdown of `x`.
+
+    `x` must be a 1d numpy array.
+    `min_periods` should satisfy `1 <= min_periods <= window_size`.
+
+    Returns an 1d array with length `len(x) - min_periods + 1`.
+    """
+    if min_periods < window_size:
+        pad = np.empty(window_size - min_periods)
+        pad.fill(x[0])
+        x = np.concatenate((pad, x))
+    y = windowed_view(x, window_size)
+    running_max_y = np.maximum.accumulate(y, axis=1)
+    dd = y - running_max_y
+    return dd.min(axis=1)
+
+
+def max_dd(ser):
+    max2here = pd.expanding_max(ser)
+    dd2here = (ser - max2here) / ser
+    return dd2here.min()
+
+
+
+def legend_coppock(copp,copp_shift1):
+    #print copp,copp_shift1
+    if copp >= 0:
+        if copp > copp_shift1:
+            legend = "Positive & Up"
+        else:
+            legend = "Positive & Down"
+    else:
+        if copp > copp_shift1:
+            legend = "Negative & Up"
+        else:
+            legend = "Negative & Down"
+    return legend
+
+def COPP(df, a=11, b=14, n=50, close_nm='close'):
     """
     Coppock Curve
     """
-    M = df[close_nm].diff(int(n * 11 / 10) - 1)
-    N = df[close_nm].shift(int(n * 11 / 10) - 1)
+    M = df[close_nm].diff(int(n * a / 10) - 1)
+    N = df[close_nm].shift(int(n * a / 10) - 1)
     ROC1 = M / N
-    M = df[close_nm].diff(int(n * 14 / 10) - 1)
-    N = df[close_nm].shift(int(n * 14 / 10) - 1)
+    M = df[close_nm].diff(int(n * b / 10) - 1)
+    N = df[close_nm].shift(int(n * b / 10) - 1)
     ROC2 = M / N
     Copp = pd.Series(pd.Series.ewm(ROC1 + ROC2, span = n, min_periods = n,
                      adjust=True, ignore_na=False).mean(), name = 'Copp_' + str(n))
     #Copp = pd.Series(pd.ewma(ROC1 + ROC2, span=n, min_periods=n, adjust=True), name='Copp_' + str(n))
     df = df.join(Copp)
+    df['Copp_' + str(n) + '_shift1'] = df['Copp_' + str(n)].shift(1)
+    df['legend'] = df.apply(lambda row: legend_coppock(row['Copp_' + str(n)],row['Copp_' + str(n) + '_shift1']),axis=1)
+    df=df.drop('Copp_' + str(n) + '_shift1',1)
     return df
 
-def print_coppock_diario(start_dt,end_dt,symbol="SPX"):
+def print_coppock_diario(symbol="SPX"):
     client , log_analytics = init_func()
     #start_dt1 = dt.datetime.strptime(start_dt, '%Y%m%d')
     #end_dt1 = dt.datetime.strptime(end_dt, '%Y%m%d')
-    start_dt1 = start_dt #+" 0:00:00"
-    end_dt1 = end_dt #+" 23:59:59"
-    df=ra.extrae_historical_underl(start_dt1,end_dt1,symbol)
+    df=ra.extrae_historical_underl(symbol)
     df.index = pd.to_datetime(df.index, format="%Y%m%d  %H:%M:%S")
     df["date"] = df.index
     df[[u'close', u'high', u'open', u'low']]=df[[u'close', u'high',u'open',u'low']].apply(pd.to_numeric)
     conversion = {'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last',}
     df = df.resample('1D', how=conversion).dropna()
-    df = COPP(df, 12)
-    print df
+    # conf. semanal: StoCop (60,30,50) NO hay suficiente historico para configuracion semanal del copock
+    # conf. diaria: StoCop (12,6,10)
+    df = COPP(df, 12, 6, 10)
+    print df.iloc[-HISTORY_LIMIT:] # pinta los ultimos 30 dias del coppock
     end_func(client)
 
+def print_volatity(symbol):
+    window=34.0
+    year_days=252.0
+    client, log_analytics = init_func()
+    df = ra.extrae_historical_underl(symbol)
+    df.index = pd.to_datetime(df.index, format="%Y%m%d  %H:%M:%S")
+    df["date"] = df.index
+    df[[u'close', u'high', u'open', u'low']]=df[[u'close', u'high',u'open',u'low']].apply(pd.to_numeric)
+    conversion = {'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last',}
+    df = df.resample('1D', how=conversion).dropna().rename(columns={'close': symbol})
+    df['HV'] = pd.rolling_std(df[symbol],window=int(window),min_periods=int(window)) * np.sqrt(window / year_days)
+    df=df.drop(['high','open','low'], 1)
+    vix = ra.extrae_historical_underl("VIX")
+    vix.index = pd.to_datetime(vix.index, format="%Y%m%d  %H:%M:%S")
+    vix["date"] = vix.index
+    vix[[u'close', u'high', u'open', u'low']]=vix[[u'close', u'high',u'open',u'low']].apply(pd.to_numeric)
+    conversion = {'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last',}
+    vix = vix.resample('1D', how=conversion).dropna().rename(columns={'close': 'vix'})['vix']
+    df = df.join(vix)
+
+    print df.iloc[-HISTORY_LIMIT:]
+    end_func(client)
+
+
+def print_emas(symbol="SPX"):
+    client, log_analytics = init_func()
+    df = ra.extrae_historical_underl(symbol)
+    df.index = pd.to_datetime(df.index, format="%Y%m%d  %H:%M:%S")
+    df["date"] = df.index
+    df[[u'close', u'high', u'open', u'low']]=df[[u'close', u'high',u'open',u'low']].apply(pd.to_numeric)
+    conversion = {'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last',}
+    df = df.resample('1D', how=conversion).dropna()
+    n = 50
+    ema50 = pd.Series(pd.Series.ewm(df['close'], span = n, min_periods = n,
+                     adjust=True, ignore_na=False).mean(), name = 'EMA_' + str(n))
+    df = df.join(ema50)
+    df['RSK_EMA50'] = np.where(df['close'] > df['EMA_' + str(n)], "-----", "ALERT")
+
+    # sacar los canales de IV del historico del VIX
+    vix = ra.extrae_historical_underl("VIX")
+    vix.index = pd.to_datetime(vix.index, format="%Y%m%d  %H:%M:%S")
+    vix["date"] = vix.index
+    vix[[u'close', u'high', u'open', u'low']]=vix[[u'close', u'high',u'open',u'low']].apply(pd.to_numeric)
+    conversion = {'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last',}
+    vix = vix.resample('1D', how=conversion).dropna().rename(columns={'close': 'vix'})['vix']
+    df = df.join(vix)
+    df['lower_wk_iv_channel']=df['close'].shift(5) * (1 - (df['vix'].shift(5)*0.01 / np.sqrt(252/5)) )
+    df['upper_wk_iv_channel'] = df['close'].shift(5) * (1 + (df['vix'].shift(5)*0.01 / np.sqrt(252/5)))
+    df['lower_mo_iv_channel']= df['close'].shift(34) * (1 - (df['vix'].shift(34)*0.01 / np.sqrt(252/34)))
+    df['upper_mo_iv_channel'] = df['close'].shift(34) * (1 + (df['vix'].shift(34)*0.01 / np.sqrt(252/34)))
+
+    df['CANAL_IV_WK'] = np.where( (df['close'] < df['upper_wk_iv_channel']) &
+                                  (df['close'] > df['lower_wk_iv_channel']), "-----", "ALERT")
+    df['CANAL_IV_MO'] = np.where( (df['close'] < df['upper_mo_iv_channel']) &
+                                   (df['close'] > df['lower_mo_iv_channel']), "-----", "ALERT")
+
+    print df.iloc[-HISTORY_LIMIT:] # pinta los ultimos 30 dias del coppock
+    end_func(client)
 
 def print_historical_underl(start_dt, end_dt, symbol):
     client, log_analytics = init_func()
@@ -71,10 +198,50 @@ def print_historical_underl(start_dt, end_dt, symbol):
     # end_dt1 = dt.datetime.strptime(end_dt, '%Y%m%d')
     start_dt1 = start_dt  # +" 0:00:00"
     end_dt1 = end_dt  # +" 23:59:59"
-    df = ra.extrae_historical_underl(start_dt1,end_dt1,symbol)
+    df = ra.extrae_historical_underl(symbol,start_dt1,end_dt1)
     print df
     end_func(client)
 
+
+def print_summary_underl(symbol):
+    client, log_analytics = init_func()
+    df = ra.extrae_historical_underl(symbol)
+    df.index = pd.to_datetime(df.index, format="%Y%m%d  %H:%M:%S")
+    df["date"] = df.index
+    df[[u'close', u'high', u'open', u'low']]=df[[u'close', u'high',u'open',u'low']].apply(pd.to_numeric)
+    conversion = {'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last',}
+    df = df.resample('1D', how=conversion).dropna()
+    df=df.drop(['high','open','low'], 1)
+    GroupedYear = df.groupby(pd.TimeGrouper('A'))
+    df["YTD"] = GroupedYear['close'].transform(lambda x: ( x / x.iloc[0] - 1.0))
+    GroupedMonth = df.groupby([(df.index.year), (df.index.month)])
+    df["MTD"] = GroupedMonth['close'].transform(lambda x: ( x / x.iloc[0] - 1.0))
+
+    GroupedWeek = df.groupby([(df.index.year), (df.index.week)])
+    df["WTD"] = GroupedWeek['close'].transform(lambda x: ( x / x.iloc[0] - 1.0))
+
+
+    n = 100
+    s = df['close']
+    window_length = 252
+
+    rolling_dd = pd.rolling_apply(s, window_length, max_dd, min_periods=0)
+    df2 = pd.concat([s, rolling_dd], axis=1)
+    df2.columns = ['s', 'rol_dd_%d' % window_length]
+    my_rmdd = rolling_max_dd(s.values, window_length, min_periods=1)
+
+    df = pd.concat([df,rolling_dd],axis=1)
+    df.columns = ['close', 'YTD', 'MTD', 'WTD', 'rol_dd_%d' % window_length]
+    #lastDayPrevMonth = dt.date.today().replace(day=1) - dt.timedelta(days=1)
+    output = df.iloc[-HISTORY_LIMIT:].to_string(formatters={
+                                    'YTD': '{:,.2%}'.format,
+                                    'MTD': '{:,.2%}'.format,
+                                    'WTD': '{:,.2%}'.format,
+                                    'rol_dd_%d' % window_length: '{:,.2%}'.format,
+                                    'close': '{:,.2f}'.format
+                                })
+    print(output)
+    end_func(client)
 
 def print_historical_chain(start_dt,end_dt,symbol,strike,expiry,right,type):
     """
@@ -94,3 +261,9 @@ def print_historical_chain(start_dt,end_dt,symbol,strike,expiry,right,type):
      """
     print df[columns]
     end_func(client)
+
+
+if __name__ == "__main__":
+    #print_coppock_diario(start_dt="20160101", end_dt="20170303", symbol="SPX")
+    #print_emas("SPX")
+    print_summary_underl("SPX")
