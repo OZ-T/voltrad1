@@ -15,8 +15,10 @@ from voldailyanalytics import run_analytics as ra
 
 from numpy.lib.stride_tricks import as_strided
 
+import warnings
+warnings.filterwarnings("ignore")
 
-HISTORY_LIMIT = 30
+HISTORY_LIMIT = 20
 
 
 def init_func():
@@ -136,6 +138,7 @@ def print_coppock_diario(symbol="SPX"):
 def print_volatity(symbol):
     window=34.0
     year_days=252.0
+    length = 20
     client, log_analytics = init_func()
     df = ra.extrae_historical_underl(symbol)
     df.index = pd.to_datetime(df.index, format="%Y%m%d  %H:%M:%S")
@@ -151,11 +154,65 @@ def print_volatity(symbol):
     vix[[u'close', u'high', u'open', u'low']]=vix[[u'close', u'high',u'open',u'low']].apply(pd.to_numeric)
     conversion = {'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last',}
     vix = vix.resample('1D', how=conversion).dropna().rename(columns={'close': 'vix'})['vix']
+    vix_ewm = pd.Series(pd.Series.ewm(vix, span = length, min_periods = length,
+                     adjust=True, ignore_na=False).mean(), name = 'vix_ema' + str(length))
+    df = df.join(vix_ewm)
     df = df.join(vix)
-
+    vix_std = pd.rolling_std(df['vix'], window=int(window), min_periods=int(window))
+    VIX_BB_2SD_UP = vix_ewm + 2 * vix_std
+    VIX_BB_2SD_DOWN = vix_ewm - 2 * vix_std
+    VIX_BB_1SD_UP = vix_ewm +  vix_std
+    VIX_BB_1SD_DOWN = vix_ewm -  vix_std
+    df['ALERT_IV'] = np.where(( ( df['vix'] < VIX_BB_1SD_DOWN ) ) , "LOW","------")
+    df['ALERT_IV'] = np.where(( ( df['vix'] > VIX_BB_1SD_UP ) ) , "HIGH",df['ALERT_IV'])
+    df['ALERT_IV'] = np.where( (df['vix'] < VIX_BB_2SD_DOWN) , "EXTREME_LOW",df['ALERT_IV'])
+    df['ALERT_IV'] = np.where(( ( df['vix'] > VIX_BB_2SD_UP ) ) , "EXTREME_HIGH",df['ALERT_IV'])
     print df.iloc[-HISTORY_LIMIT:]
     end_func(client)
 
+def print_fast_move(symbol):
+    length = 20.0
+    num_dev_dn = -2.0
+    num_dev_up = 2.0
+    dbb_length = 120.0
+    client, log_analytics = init_func()
+    df = ra.extrae_historical_underl(symbol)
+    df.index = pd.to_datetime(df.index, format="%Y%m%d  %H:%M:%S")
+    df["date"] = df.index
+    df[[u'close', u'high', u'open', u'low']]=df[[u'close', u'high',u'open',u'low']].apply(pd.to_numeric)
+    conversion = {'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last',}
+    df = df.resample('1D', how=conversion).dropna().rename(columns={'close': symbol})
+    stddev = pd.rolling_std(df[symbol],window=int(length),min_periods=int(length))
+    midline = pd.Series(pd.Series.ewm(df[symbol], span = int(length), min_periods = int(length),
+              adjust=True, ignore_na=False).mean(), name = symbol + '_ema' + str(int(length)))
+    lowerBand = midline + num_dev_dn * stddev
+    upperBand = midline + num_dev_up * stddev
+    dbb = np.sqrt((upperBand - lowerBand) / upperBand ) * length
+    dbbmed = pd.Series(pd.Series.ewm(dbb, span = int(dbb_length), min_periods = int(dbb_length),
+              adjust=True, ignore_na=False).mean(), name = 'dbb_ema' + str(int(dbb_length)))
+    factor = dbbmed * 4.0 / 5.0
+    atl = dbb - factor
+    df = df.join(pd.DataFrame(atl))
+    df['al1'] = np.where(((atl > 0.0)), np.nan , atl )
+
+    """
+
+    def factor = dbbmed * 4 / 5;
+    def atl = dbb - factor;
+    plot al1=if (atl>0) then Double.Nan else atl;
+    al1.SetDefaultColor(Color.RED);
+    al1.SetPaintingStrategy(PaintingStrategy.HISTOGRAM);
+    def c1 = if atl > 0 and atl < Parameter then 1 else 0;
+    def c2 = if atl[1] > 0 and atl[2] > 0 and atl[3] > 0 and atl[4] > 0 and atl[5] > 0 and atl[6] > 0 and atl[7] > 0 and atl[8] > 0 and atl[9] > 0 and atl[10] > 0 then 1 else 0;
+    def c3 = c1 + c2 + base;
+    plot al2 = if c3 == 3 then atl else Double.Nan;
+    al2.SetDefaultColor(Color.DARK_RED);
+    al2.SetPaintingStrategy(PaintingStrategy.HISTOGRAM);
+
+    """
+
+    print df #.iloc[-HISTORY_LIMIT:]
+    end_func(client)
 
 def print_emas(symbol="SPX"):
     client, log_analytics = init_func()
@@ -266,4 +323,5 @@ def print_historical_chain(start_dt,end_dt,symbol,strike,expiry,right,type):
 if __name__ == "__main__":
     #print_coppock_diario(start_dt="20160101", end_dt="20170303", symbol="SPX")
     #print_emas("SPX")
-    print_summary_underl("SPX")
+    #print_summary_underl("SPX")
+    print_fast_move("SPX")

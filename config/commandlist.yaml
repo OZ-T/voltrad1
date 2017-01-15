@@ -45,3 +45,5 @@ summary:
   pointer: voldailyanalytics.analytics_methods.print_summary_underl
 vol:
   pointer: voldailyanalytics.analytics_methods.print_volatity
+fastmove:
+  pointer: voldailyanalytics.analytics_methods.print_fast_move

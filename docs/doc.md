@@ -60,5 +60,8 @@ TREND ANALYSIS
 RISK ANALYSIS
 1.- Check EMAS and IV Channels for SPX: . p emas "SPX"
         Check if there are alerts activated for RSK_EMA50 or CANAL_IV_WK or CANAL_IV_MO
-        
-2.- Check volatility levels
+        price tend to be outside these channel a "short" time
+2.- Check volatility levels: . p vol "SPX"
+        Check if the level of IV (VIX) is inside or outside of bollinger bands (1sd and 2sd)
+        so IV will be classified as high, low, extreme high or extreme low
+3.- Check rapid movement indicator: . p fastmove "SPX"        
