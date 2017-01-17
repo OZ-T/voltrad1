@@ -231,17 +231,25 @@ def print_emas(symbol="SPX"):
     conversion = {'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last',}
     vix = vix.resample('1D', how=conversion).dropna().rename(columns={'close': 'vix'})['vix']
     df = df.join(vix)
-    df['lower_wk_iv_channel']=df['close'].shift(5) * (1 - (df['vix'].shift(5)*0.01 / np.sqrt(252/5)) )
-    df['upper_wk_iv_channel'] = df['close'].shift(5) * (1 + (df['vix'].shift(5)*0.01 / np.sqrt(252/5)))
-    df['lower_mo_iv_channel']= df['close'].shift(34) * (1 - (df['vix'].shift(34)*0.01 / np.sqrt(252/34)))
-    df['upper_mo_iv_channel'] = df['close'].shift(34) * (1 + (df['vix'].shift(34)*0.01 / np.sqrt(252/34)))
+    df['lower_wk_iv']=df['close'].shift(5) * (1 - (df['vix'].shift(5)*0.01 / np.sqrt(252/5)) )
+    df['upper_wk_iv'] = df['close'].shift(5) * (1 + (df['vix'].shift(5)*0.01 / np.sqrt(252/5)))
+    df['lower_mo_iv']= df['close'].shift(34) * (1 - (df['vix'].shift(34)*0.01 / np.sqrt(252/34)))
+    df['upper_mo_iv'] = df['close'].shift(34) * (1 + (df['vix'].shift(34)*0.01 / np.sqrt(252/34)))
 
-    df['CANAL_IV_WK'] = np.where( (df['close'] < df['upper_wk_iv_channel']) &
-                                  (df['close'] > df['lower_wk_iv_channel']), "-----", "ALERT")
-    df['CANAL_IV_MO'] = np.where( (df['close'] < df['upper_mo_iv_channel']) &
-                                   (df['close'] > df['lower_mo_iv_channel']), "-----", "ALERT")
+    df['CANAL_IV_WK'] = np.where( (df['close'] < df['upper_wk_iv']) &
+                                  (df['close'] > df['lower_wk_iv']), "-----", "ALERT")
+    df['CANAL_IV_MO'] = np.where( (df['close'] < df['upper_mo_iv']) &
+                                   (df['close'] > df['lower_mo_iv']), "-----", "ALERT")
 
-    print df.iloc[-HISTORY_LIMIT:] # pinta los ultimos 30 dias del coppock
+    output = df.iloc[-HISTORY_LIMIT:].to_string(formatters={
+                                    'lower_wk_iv': '{:,.2f}'.format,
+                                    'upper_wk_iv': '{:,.2f}'.format,
+                                    'lower_mo_iv': '{:,.2f}'.format,
+                                    'upper_mo_iv': '{:,.2f}'.format,
+                                    'EMA_' + str(n): '{:,.2f}'.format
+                                })
+    print(output)
+
     end_func(client)
 
 def print_historical_underl(start_dt, end_dt, symbol):
