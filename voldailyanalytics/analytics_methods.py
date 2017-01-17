@@ -181,27 +181,22 @@ def print_fast_move(symbol):
     df["date"] = df.index
     df[[u'close', u'high', u'open', u'low']]=df[[u'close', u'high',u'open',u'low']].apply(pd.to_numeric)
     conversion = {'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last',}
-    df = df.resample('1D', how=conversion).dropna().rename(columns={'close': symbol})
+    df = df.resample('1H', how=conversion).dropna().rename(columns={'close': symbol})
+    df = df.drop(['high', 'open', 'low'], 1)
     stddev = pd.rolling_std(df[symbol],window=int(length),min_periods=int(length))
     midline = pd.Series(pd.Series.ewm(df[symbol], span = int(length), min_periods = int(length),
               adjust=True, ignore_na=False).mean(), name = symbol + '_ema' + str(int(length)))
-    lowerBand = midline + num_dev_dn * stddev
-    upperBand = midline + num_dev_up * stddev
-    dbb = np.sqrt((upperBand - lowerBand) / upperBand ) * length
-    dbbmed = pd.Series(pd.Series.ewm(dbb, span = int(dbb_length), min_periods = int(dbb_length),
-              adjust=True, ignore_na=False).mean(), name = 'dbb_ema' + str(int(dbb_length)))
-    factor = dbbmed * 4.0 / 5.0
-    atl = dbb - factor
-    df = df.join(pd.DataFrame(atl))
-    df['al1'] = np.where(((atl > 0.0)), np.nan , atl )
+    df['lowerBand'] = midline + num_dev_dn * stddev
+    df['upperBand'] = midline + num_dev_up * stddev
+    df['dbb'] = np.sqrt((df['upperBand'] - df['lowerBand']) / df['upperBand'] ) * length
+    df['dbbmed'] = pd.Series(pd.Series.ewm(df['dbb'], span = int(dbb_length), min_periods = int(dbb_length),
+                        adjust=True, ignore_na=False).mean(), name = 'dbb_ema' + str(int(dbb_length)))
+    df['factor'] = df['dbbmed'] * 4.0 / 5.0
+    df['atl'] = df['dbb'] - df['factor']
+    df['al1'] = np.where(((df['atl'] > 0.0)), np.nan , df['atl'] )
 
     """
 
-    def factor = dbbmed * 4 / 5;
-    def atl = dbb - factor;
-    plot al1=if (atl>0) then Double.Nan else atl;
-    al1.SetDefaultColor(Color.RED);
-    al1.SetPaintingStrategy(PaintingStrategy.HISTOGRAM);
     def c1 = if atl > 0 and atl < Parameter then 1 else 0;
     def c2 = if atl[1] > 0 and atl[2] > 0 and atl[3] > 0 and atl[4] > 0 and atl[5] > 0 and atl[6] > 0 and atl[7] > 0 and atl[8] > 0 and atl[9] > 0 and atl[10] > 0 then 1 else 0;
     def c3 = c1 + c2 + base;
@@ -211,7 +206,7 @@ def print_fast_move(symbol):
 
     """
 
-    print df #.iloc[-HISTORY_LIMIT:]
+    print df.iloc[-HISTORY_LIMIT:]
     end_func(client)
 
 def print_emas(symbol="SPX"):
