@@ -12,26 +12,23 @@ from swigibpy import Contract as IBcontract
 from swigibpy import Order as IBOrder
 import time
 from voldailyanalytics import run_analytics as ra
-
+import json
 from numpy.lib.stride_tricks import as_strided
 
 import warnings
+
 warnings.filterwarnings("ignore")
-
 HISTORY_LIMIT = 20
-
 
 def init_func():
     globalconf = config.GlobalConfig(level=logger.ERROR)
     log = globalconf.log
     client = None
-
     # this is to try to fit in one line each row od a dataframe when printing to console
     pd.set_option('display.max_rows', 500)
     pd.set_option('display.max_columns', 500)
     pd.set_option('display.width', 1000)
-
-    return client, log
+    return client, log, globalconf
 
 
 def end_func(client):
@@ -41,14 +38,10 @@ def end_func(client):
 
 def windowed_view(x, window_size):
     """Creat a 2d windowed view of a 1d array.
-
     `x` must be a 1d numpy array.
-
     `numpy.lib.stride_tricks.as_strided` is used to create the view.
     The data is not copied.
-
     Example:
-
     >>> x = np.array([1, 2, 3, 4, 5, 6])
     >>> windowed_view(x, 3)
     array([[1, 2, 3],
@@ -85,7 +78,6 @@ def max_dd(ser):
     return dd2here.min()
 
 
-
 def legend_coppock(copp,copp_shift1):
     #print copp,copp_shift1
     if copp >= 0:
@@ -99,6 +91,7 @@ def legend_coppock(copp,copp_shift1):
         else:
             legend = "Negative & Down"
     return legend
+
 
 def COPP(df, a=11, b=14, n=50, close_nm='close'):
     """
@@ -119,8 +112,9 @@ def COPP(df, a=11, b=14, n=50, close_nm='close'):
     df=df.drop('Copp_' + str(n) + '_shift1',1)
     return df
 
+
 def print_coppock_diario(symbol="SPX"):
-    client , log_analytics = init_func()
+    client , log_analytics, globalconf = init_func()
     #start_dt1 = dt.datetime.strptime(start_dt, '%Y%m%d')
     #end_dt1 = dt.datetime.strptime(end_dt, '%Y%m%d')
     df=ra.extrae_historical_underl(symbol)
@@ -135,11 +129,12 @@ def print_coppock_diario(symbol="SPX"):
     print df.iloc[-HISTORY_LIMIT:] # pinta los ultimos 30 dias del coppock
     end_func(client)
 
+
 def print_volatity(symbol):
     window=34.0
     year_days=252.0
     length = 20
-    client, log_analytics = init_func()
+    client, log_analytics, globalconf = init_func()
     df = ra.extrae_historical_underl(symbol)
     df.index = pd.to_datetime(df.index, format="%Y%m%d  %H:%M:%S")
     df["date"] = df.index
@@ -175,7 +170,7 @@ def print_fast_move(symbol):
     num_dev_dn = -2.0
     num_dev_up = 2.0
     dbb_length = 120.0
-    client, log_analytics = init_func()
+    client, log_analytics, globalconf = init_func()
     df = ra.extrae_historical_underl(symbol)
     df.index = pd.to_datetime(df.index, format="%Y%m%d  %H:%M:%S")
     df["date"] = df.index
@@ -195,22 +190,21 @@ def print_fast_move(symbol):
     df['atl'] = df['dbb'] - df['factor']
     df['al1'] = np.where(((df['atl'] > 0.0)), np.nan , df['atl'] )
 
+    # TODO: Finish this:
     """
-
     def c1 = if atl > 0 and atl < Parameter then 1 else 0;
     def c2 = if atl[1] > 0 and atl[2] > 0 and atl[3] > 0 and atl[4] > 0 and atl[5] > 0 and atl[6] > 0 and atl[7] > 0 and atl[8] > 0 and atl[9] > 0 and atl[10] > 0 then 1 else 0;
     def c3 = c1 + c2 + base;
     plot al2 = if c3 == 3 then atl else Double.Nan;
     al2.SetDefaultColor(Color.DARK_RED);
     al2.SetPaintingStrategy(PaintingStrategy.HISTOGRAM);
-
     """
-
     print df.iloc[-HISTORY_LIMIT:]
     end_func(client)
 
+
 def print_emas(symbol="SPX"):
-    client, log_analytics = init_func()
+    client, log_analytics, globalconf = init_func()
     df = ra.extrae_historical_underl(symbol)
     df.index = pd.to_datetime(df.index, format="%Y%m%d  %H:%M:%S")
     df["date"] = df.index
@@ -249,11 +243,158 @@ def print_emas(symbol="SPX"):
                                     'EMA_' + str(n): '{:,.2f}'.format
                                 })
     print(output)
-
     end_func(client)
 
+
+def print_tic_report(symbol,expiry,history=1):
+    """
+    history: number of rows to print from the historical ABT
+    """
+    client, log_analytics, globalconf = init_func()
+    store = globalconf.open_ib_abt_strategy_tic(scenarioMode="N")
+    dataframe = pd.DataFrame(dtype=float)
+    node = store.get_node("/" + symbol + "/" + expiry)
+    accountid = globalconf.get_accountid()
+
+    df1_abt = store.select(node._v_pathname,
+                               where=['subyacente==' + symbol, 'expiry==' + expiry, 'accountid==' + accountid])
+    store.close()
+    dataframe = dataframe.append(df1_abt.iloc[-int(history):])
+    df1 = dataframe[['MargenNeto','comisiones','PnL','unrealizedPNLfromPrices',
+                           'linea_mercado','DshortPosition','GammaPosition','ThetaPosition',
+                           'VegaPosition','AD1PCT','AD1SD1D','MaxDsAD1PCT','MaxDsAD1SD1D','MaxDs',
+                           'BearCallMaxDeltaShortPos','BullPutMaxDeltaShortPos','coste_base','dit','dte','impacto_cash']]
+
+
+    df2 = dataframe[['BearCallMaxIVShort',
+                       'BullPutMaxIVShort',
+                       'ImplVolATM',
+                       'marketValueGross',
+                       'marketValuefromPrices',
+                       'max_profit',
+                       'portfolio_marketValue',
+                       'orders_precio_bruto',
+                       'portfolio_precio_neto',
+                       'portfolio_unrealizedPNL',
+                       'prc_ajuste_1SD15D_dn',
+                       'prc_ajuste_1SD15D_up',
+                       'prc_ajuste_1SD21D_dn',
+                       'prc_ajuste_1SD21D_up',
+                       'precio_close_anterior_subyacente',
+                       'precio_last_subyacente',
+                       'precio_undl_inicio_strat']]
+
+    """
+    u'AD1PCT', u'AD1SD1D', u'BearCallMaxDShortJL', u'BearCallMaxDeltaShort', u'BearCallMaxDeltaShortPos',
+    u'BearCallMaxIVShort', u'BullPutMaxDShortJL', u'BullPutMaxDeltaShort', u'BullPutMaxDeltaShortPos',
+    u'BullPutMaxIVShort', u'DTMaxdatost', u'DTMaxdatost_1', u'DToperaciones', u'DshortPosition', u'GammaPosition',
+    u'ImplVolATM', u'MargenNeto', u'MaxDs', u'MaxDsAD1PCT', u'MaxDsAD1SD1D', u'PnL', u'Pts1SD1D',
+    u'Pts1SD5D', u'ThetaPosition', u'VegaPosition', u'VegaThetaRatio', u'accountid', u'comisiones',
+    u'coste_base', u'dit', u'dte', u'dte_inicio_estrategia', u'e_v', u'expiry', u'impacto_cash',
+    u'ini_1SD15D', u'ini_1SD21D', u'iv_atm_inicio_strat', u'iv_subyacente', u'lastUndPrice',
+    u'linea_mercado', u'marketValueGross', u'marketValuefromPrices', u'max_profit', u'multiplier',
+    u'orders_precio_bruto', u'pnl_margin_ratio', u'portfolio', u'portfolio_marketValue',
+    u'portfolio_precio_neto', u'portfolio_unrealizedPNL', u'prc_ajuste_1SD15D_dn',
+    u'prc_ajuste_1SD15D_up', u'prc_ajuste_1SD21D_dn',
+   u'prc_ajuste_1SD21D_up', u'precio_close_anterior_subyacente', u'precio_last_subyacente',
+   u'precio_undl_inicio_strat', u'puntos_desde_last_close', u'retorno_subyacente', u'subyacente',
+   u'thetaDeltaRatio', u'thetaGammaRatio', u'unrealizedPNLfromPrices'
+
+    """
+
+    df1 = df1.rename(columns={'MargenNeto': 'NMargin',
+                              'comisiones': 'Comm',
+                              'unrealizedPNLfromPrices': 'PnL_prc',
+                              'DshortPosition': 'Ds',
+                              'GammaPosition': 'Gamma',
+                              'ThetaPosition': 'Theta',
+                              'VegaPosition': 'Vega',
+                              'BearCallMaxDeltaShortPos': 'BCMaxDs',
+                              'BullPutMaxDeltaShortPos': 'BPMaxDs',
+                              'coste_base': 'CB',
+                              'linea_mercado': 'LM',
+                              'impacto_cash': 'Cash'
+                              })
+
+    output = df1.to_string(formatters={
+                                    'NMargin': '{:,.2f}'.format,
+                                    'Comm': '{:,.2f}'.format,
+                                    'CB': '{:,.2f}'.format,
+                                    'dit': '{:,.2f}'.format,
+                                    'dte': '{:,.2f}'.format,
+                                    'Cash': '{:,.2f}'.format,
+                                    'PnL': '{:,.2f}'.format,
+                                    'PnL_prc': '{:,.2f}'.format,
+                                    'LM' : '{:,.2f}'.format,
+                                    'Ds': '{:,.2f}'.format,
+                                    'Gamma': '{:,.2f}'.format,
+                                    'Theta': '{:,.2f}'.format,
+                                    'Vega': '{:,.2f}'.format,
+                                    'AD1PCT': '{:,.2f}'.format,
+                                    'AD1SD1D': '{:,.2f}'.format,
+                                    'MaxDsAD1PCT': '{:,.2f}'.format,
+                                    'MaxDsAD1SD1D': '{:,.2f}'.format,
+                                    'MaxDs': '{:,.2f}'.format,
+                                    'BCMaxDs': '{:,.2f}'.format,
+                                    'BPMaxDs': '{:,.2f}'.format
+                                })
+
+    df2 = df2.rename(columns={'BearCallMaxIVShort': 'BCMaxIV',
+                              'BullPutMaxIVShort': 'BPMaxIV',
+                              'ImplVolATM': 'IVATM',
+                              'marketValueGross': 'G_MV',
+                              'marketValuefromPrices': 'MVprc',
+                              'max_profit': 'MaxPrft',
+                              'portfolio_marketValue': 'P_MV',
+                              'orders_precio_bruto': 'OrdGPrc',
+                              'portfolio_precio_neto': 'PortNPrc',
+                              'portfolio_unrealizedPNL': 'PortPnL',
+                              'prc_ajuste_1SD15D_dn': '1sd15ddn',
+                              'prc_ajuste_1SD15D_up': '1sd15dup',
+                              'prc_ajuste_1SD21D_dn': '1sd21ddn',
+                              'prc_ajuste_1SD21D_up': '1sd21dup',
+                              'precio_close_anterior_subyacente': 'pclose',
+                              'precio_last_subyacente': 'plast',
+                              'precio_undl_inicio_strat': 'pini'
+                              })
+
+
+    output2 = df2.to_string(formatters={
+                                    'BCMaxIV': '{:,.2f}'.format,
+                                    'BPMaxIV': '{:,.2f}'.format,
+                                    'IVATM': '{:,.2f}'.format,
+                                    'G_MV': '{:,.2f}'.format,
+                                    'MVprc': '{:,.2f}'.format,
+                                    'MaxPrft': '{:,.2f}'.format,
+                                    'P_MV': '{:,.2f}'.format,
+                                    'OrdGPrc': '{:,.2f}'.format,
+                                    'PortNPrc': '{:,.2f}'.format,
+                                    'PortPnL': '{:,.2f}'.format,
+                                    '1sd15ddn': '{:,.2f}'.format,
+                                    '1sd15dup': '{:,.2f}'.format,
+                                    '1sd21ddn': '{:,.2f}'.format,
+                                    '1sd21dup': '{:,.2f}'.format,
+                                    'pclose': '{:,.2f}'.format,
+                                    'plast': '{:,.2f}'.format,
+                                    'pini': '{:,.2f}'.format
+                                })
+
+
+    print(output)
+    print("_____________________________________________________________")
+    print(output2)
+    print("_____________________________________________________________")
+
+    for i in range(0,dataframe.__len__()):
+        parsed=json.loads(dataframe['portfolio'][i])
+        #print json.dumps(parsed, indent=4, sort_keys=True)
+        print dataframe.index[i]
+        print pd.DataFrame(parsed)
+    end_func(client)
+
+
 def print_historical_underl(start_dt, end_dt, symbol):
-    client, log_analytics = init_func()
+    client, log_analytics, globalconf = init_func()
     # start_dt1 = dt.datetime.strptime(start_dt, '%Y%m%d')
     # end_dt1 = dt.datetime.strptime(end_dt, '%Y%m%d')
     start_dt1 = start_dt  # +" 0:00:00"
@@ -264,7 +405,7 @@ def print_historical_underl(start_dt, end_dt, symbol):
 
 
 def print_summary_underl(symbol):
-    client, log_analytics = init_func()
+    client, log_analytics, globalconf = init_func()
     df = ra.extrae_historical_underl(symbol)
     df.index = pd.to_datetime(df.index, format="%Y%m%d  %H:%M:%S")
     df["date"] = df.index
@@ -276,20 +417,15 @@ def print_summary_underl(symbol):
     df["YTD"] = GroupedYear['close'].transform(lambda x: ( x / x.iloc[0] - 1.0))
     GroupedMonth = df.groupby([(df.index.year), (df.index.month)])
     df["MTD"] = GroupedMonth['close'].transform(lambda x: ( x / x.iloc[0] - 1.0))
-
     GroupedWeek = df.groupby([(df.index.year), (df.index.week)])
     df["WTD"] = GroupedWeek['close'].transform(lambda x: ( x / x.iloc[0] - 1.0))
-
-
     n = 100
     s = df['close']
     window_length = 252
-
     rolling_dd = pd.rolling_apply(s, window_length, max_dd, min_periods=0)
     df2 = pd.concat([s, rolling_dd], axis=1)
     df2.columns = ['s', 'rol_dd_%d' % window_length]
     my_rmdd = rolling_max_dd(s.values, window_length, min_periods=1)
-
     df = pd.concat([df,rolling_dd],axis=1)
     df.columns = ['close', 'YTD', 'MTD', 'WTD', 'rol_dd_%d' % window_length]
     #lastDayPrevMonth = dt.date.today().replace(day=1) - dt.timedelta(days=1)
@@ -303,11 +439,12 @@ def print_summary_underl(symbol):
     print(output)
     end_func(client)
 
+
 def print_historical_chain(start_dt,end_dt,symbol,strike,expiry,right,type):
     """
     Type should be bid, ask or trades
     """
-    client , log_analytics = init_func()
+    client , log_analytics, globalconf = init_func()
     start_dt1 = start_dt #+" 0:00:00"
     end_dt1 = end_dt #+" 23:59:59"
     df=ra.extrae_historical_chain(start_dt1,end_dt1,symbol,strike,expiry,right)
@@ -327,4 +464,5 @@ if __name__ == "__main__":
     #print_coppock_diario(start_dt="20160101", end_dt="20170303", symbol="SPX")
     #print_emas("SPX")
     #print_summary_underl("SPX")
-    print_fast_move("SPX")
+    #print_fast_move("SPX")
+    print_tic_report(symbol="ES", expiry="20161118",history=3)

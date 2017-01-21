@@ -110,8 +110,6 @@ def place_or_modif_spread_order(expiry,symbol,right,strike_l,strike_s,orderType,
     """
     # http://interactivebrokers.github.io/tws-api/modifying_orders.html#gsc.tab=0
 
-
-
     if orderId <=0:
         orderId = None
     client, log_order = init_func()

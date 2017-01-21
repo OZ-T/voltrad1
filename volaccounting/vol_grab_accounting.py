@@ -11,6 +11,7 @@ from volibutils.RequestUnderlyingData import RequestUnderlyingData
 from volutils import utils as utils
 
 def print_portfolio_data():
+    days = 10
     globalconf = config.GlobalConfig(level=logger.ERROR)
     log = globalconf.log
     #this is to try to fit in one line each row od a dataframe when printing to console
@@ -22,25 +23,19 @@ def print_portfolio_data():
     client = ib.IBClient(globalconf)
     clientid1 = int(globalconf.config['ib_api']['clientid_orders'])
     client.connect(clientid1=clientid1)
-    months = globalconf.months
-    now = dt.datetime.now()  # Get current time
-    c_month = months[now.month]  # Get current month
-    c_day = str(now.day)  # Get current day
-    c_year = str(now.year)  # Get current year
-    c_hour = str(now.hour)
-    c_minute = str(now.minute)
 
+    now = dt.datetime.now()  # Get current time
     ## Get the executions (gives you everything for last business day)
     acclist, summarylist = client.get_potfolio_data(11)
     client.disconnect()
     log.info("acclist length [%d] " % ( len(acclist) ))
     log.info("summarylist length [%d]" % ( len(summarylist) ))
+    print("Real time valuation: %s" % (str(now)))
     if acclist:
         dataframe = pd.DataFrame.from_dict(acclist).transpose()
         dataframe['current_date'] = dt.datetime.now().strftime('%Y%m%d')
         dataframe['current_datetime'] = dt.datetime.now().strftime('%Y%m%d%H%M%S')
-        columns1 = [u'averageCost', u'comboLegsDescrip', u'combolegs',
-                               u'conId', u'expiry', u'localSymbol',
+        columns1 = [u'averageCost', u'conId', u'expiry', u'localSymbol', u'right',
                                u'marketPrice', u'marketValue', u'multiplier',
                                u'position',u'strike', u'symbol', u'unrealizedPNL']
         dataframe = dataframe[columns1]
@@ -55,14 +50,33 @@ def print_portfolio_data():
         dataframe2.sort_values(by=['AccountCode_'], inplace=True)
         # set the index to be this and don't drop
         dataframe2.set_index(keys=['AccountCode_'], drop=False,inplace=True)
-        dataframe2=dataframe2[[u'CashBalance_BASE',u'Cushion_',
+        dataframe2=dataframe2[[u'Cushion_',
                                u'FullInitMarginReq_USD',
                                u'FullMaintMarginReq_USD',u'GrossPositionValue_USD',
                                u'NetLiquidation_USD',u'RegTEquity_USD',
                                u'TotalCashBalance_BASE',u'UnrealizedPnL_BASE']]
+        print("____________________________________________________________________________________________")
         print("Summary = ")
         print(dataframe2)
         # u'DayTradesRemaining_',u'AvailableFunds_USD',
+    print("____________________________________________________________________________________________")
+    print("Summary Account Last %d days valuation:" % (days))
+    accountid = globalconf.get_accountid()
+    store = globalconf.account_store_new()
+    node = store.get_node("/" + accountid)
+    df1 = store.select(node._v_pathname)
+    df1['date1']=df1.index.map(lambda x: x.date())
+    df1= df1.drop_duplicates(subset=['date1'],keep='last')
+    df1 = df1[[u'FullInitMarginReq_USD',
+               u'FullMaintMarginReq_USD',u'GrossPositionValue_USD',
+               u'RegTMargin_USD',
+               u'TotalCashBalance_BASE',u'UnrealizedPnL_BASE']]
+    df1 = df1.ix[-10:]
+    store.close()
+    print(df1)
+
+
+
 
 def run_get_portfolio_data():
     log=logger("run_get_portfolio_data")
@@ -170,4 +184,5 @@ def run_get_portfolio_data():
 
 if __name__=="__main__":
     run_get_portfolio_data()
+    #print_portfolio_data()
 

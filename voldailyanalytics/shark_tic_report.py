@@ -600,8 +600,14 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
                               positions_summary[['portfolio_strike',
                                                  'portfolio_right',
                                                  'prices_bidPrice',
-                                                 'prices_askPrice']].rename(columns={'portfolio_strike': 'Str',
+                                                 'prices_askPrice',
+                                                 'portfolio_marketValue',
+                                                 'portfolio_unrealizedPNL',
+                                                 'portfolio_position']].rename(columns={'portfolio_strike': 'Str',
                                                                                      'portfolio_right': 'T',
+                                                                                     'portfolio_position': 'n',
+                                                                                     'portfolio_marketValue' : 'v',
+                                                                                     'portfolio_unrealizedPNL' : 'pnl',
                                                                                      'prices_bidPrice': 'Bid',
                                                                                      'prices_askPrice': 'Ask'})
                                                                     .reset_index().drop('index',axis=1)
@@ -642,7 +648,7 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
         elif scenarioMode == "Y":
             loc1 = simulName
         store.append("/" + loc1 , row_datos, data_columns=True,
-                     min_itemsize={'portfolio': 500,
+                     min_itemsize={'portfolio': 600,
                                    'DToperaciones': 500})
         store.close()
 
