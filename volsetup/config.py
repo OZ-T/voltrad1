@@ -64,12 +64,12 @@ class GlobalConfig(object):
         path=self.config['paths']['config_folder']
         return self.get_config_csv(name,path,sep=",")
 
-    def open_yahoo_h5_store_new(self):
+    def open_yahoo_h5_store_fix(self):
         name = self.config['use_case_yahoo_options']['hdf5_db_nm_new']
         path=self.config['paths']['data_folder']
         return pd.HDFStore(path + name)
 
-    def open_yahoo_h5_store_new_error(self):
+    def open_yahoo_h5_store_fix_error(self):
         name = self.config['use_case_yahoo_options']['hdf5_db_nm_new'] + datetime.now().strftime('%Y%m%d%H%M%S')
         path = self.config['paths']['data_folder']
         return pd.HDFStore(path + name)
@@ -219,13 +219,15 @@ class GlobalConfig(object):
         return h5.File(path + name)
 
     def open_yahoo_h5_store(self):
-        """
-        Deprecated
-        :return:
-        """
         name = self.config['use_case_yahoo_options']['hdf5_db_nm']
+        path=self.config['paths']['data_folder']
+        return pd.HDFStore(path + name)
+
+    def open_yahoo_h5_store_error(self):
+        name = self.config['use_case_yahoo_options']['hdf5_db_nm'] + datetime.now().strftime('%Y%m%d%H%M%S')
         path = self.config['paths']['data_folder']
         return pd.HDFStore(path + name)
+
 
     def open_ib_h5_db(self):
         """

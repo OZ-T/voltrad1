@@ -39,7 +39,7 @@ c_day = str(now.day)  # Get current day
 c_year = str(now.year)  # Get current year
 c_hour = str(now.hour)
 c_minute = str(now.minute)
-f = globalconf.open_yahoo_h5_store_new()  # open database file
+f = globalconf.open_yahoo_h5_store_fix()  # open database file
 load_dttm = now.strftime('%Y-%m-%d-%H-%M-%S')
 datelist = pd.date_range(pd.datetime.today(), freq='M', periods=5).tolist()
 
@@ -103,7 +103,7 @@ for name in names:
         # ,'OpenInt':10,'Vol':10}) PENDIENTE recrear el hdf5 con longitudes por defecto
     except ValueError as e:
         log.warn("ValueError raised [" + str(e) + "]  Creating ancilliary file ...")
-        aux = globalconf.open_yahoo_h5_store_new_error()
+        aux = globalconf.open_yahoo_h5_store_fix_error()
         aux.append("/" + name, joe, data_columns=True, min_itemsize={'Last': 10})
         aux.close()
 
