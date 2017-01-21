@@ -24,8 +24,6 @@ def prev_weekday_close(adate):
     _offsets = (3, 1, 1, 1, 1, 1, 2)
     return ( adate - dt.timedelta(days=_offsets[adate.weekday()]) ).replace(hour=23,minute=59, second=59)
 
-globalconf = config.GlobalConfig(level=logger.DEBUG)
-log = globalconf.log
 
 datos_toxls=pd.DataFrame()
 
@@ -40,7 +38,7 @@ datos_toxls=pd.DataFrame()
 #   5.- se obtiene del h5 account los impactos (deltas) en Cash (comisiones, primas cobradas) y margin en cada uno de los datetimes
 #       en que se ha realizado operaciones (este historico se obtiene en el punto 4 anterior)
 #
-def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMode,simulName,appendh5,appendsql,toxls):
+def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMode,simulName,appendh5,appendsql,toxls,log):
     log.info(" ------------- Running for valuation date: [%s] ------------- " % (str(i_date)) )
 
     # fechas en que se calcula la foto de la estrategia
@@ -664,7 +662,7 @@ def get_ivol_series(date_ini,date_end):
     df1 = store.select(lvl1._v_pathname)
     return df1.ix[date_ini:date_end]
 
-def get_strategy_start_date(con,meta,symbol,expiry,accountid,scenarioMode,simulName,timedelta1,appendh5,appendsql):
+def get_strategy_start_date(con,meta,symbol,expiry,accountid,scenarioMode,simulName,timedelta1,appendh5,appendsql,log):
     if appendh5 == 1:
         # 1.- Comprobar primero si hay ya registros en la ABT para la estrategia
         store_abt = globalconf.open_ib_abt_strategy_tic(scenarioMode)
@@ -709,7 +707,7 @@ def get_strategy_start_date(con,meta,symbol,expiry,accountid,scenarioMode,simulN
 
 
 
-def run_analytics(symbol, expiry, secType,accountid,valuation_dt,scenarioMode,simulName,appendh5,appendsql,toxls,timedelta1):
+def run_analytics(symbol, expiry, secType,accountid,valuation_dt,scenarioMode,simulName,appendh5,appendsql,toxls,timedelta1,log):
     """
         Run analytics main method.
     :param symbol:
@@ -729,7 +727,7 @@ def run_analytics(symbol, expiry, secType,accountid,valuation_dt,scenarioMode,si
         log.info("connecting to sql db... ")
         con , meta = globalconf.connect_sqldb()
 
-    start = get_strategy_start_date(con,meta,symbol, expiry,accountid,scenarioMode,simulName,timedelta1,appendh5,appendsql)
+    start = get_strategy_start_date(con,meta,symbol, expiry,accountid,scenarioMode,simulName,timedelta1,appendh5,appendsql,log)
     log.info("Starting date to use: [%s] " % (str(start)) )
     expiry_dt = dt.datetime.strptime(expiry, '%Y%m%d')
     end = min(valuation_dt,expiry_dt)
@@ -744,7 +742,7 @@ def run_analytics(symbol, expiry, secType,accountid,valuation_dt,scenarioMode,si
             diff += 1
             run_shark_analytics(i_symbol=symbol, i_date=d,i_expiry=expiry,i_secType=secType,
                                 accountid=accountid,scenarioMode=scenarioMode,
-                                simulName=simulName,appendh5=appendh5,appendsql=appendsql,toxls=toxls)
+                                simulName=simulName,appendh5=appendh5,appendsql=appendsql,toxls=toxls,log=log)
         d += delta
 
     if toxls == 1:
@@ -753,6 +751,8 @@ def run_analytics(symbol, expiry, secType,accountid,valuation_dt,scenarioMode,si
 def run_report():
     # i_secType OPT para SPY FOP para ES
     # run_shark_analytics(i_symbol='SPY',i_year=2016,i_month_num=9,i_day_t0=2,i_day_tminus1=1,i_expiry='20161021',i_secType='OPT')
+    globalconf = config.GlobalConfig(level=logger.DEBUG)
+    log = globalconf.log
     accountid = globalconf.get_accountid()
     optchain_def = globalconf.get_tickers_optchain_ib()
     fecha_valoracion = dt.datetime.now()
@@ -762,7 +762,7 @@ def run_report():
                  % (row['symbol'], row['type'], str(row['Expiry']), row['Exchange'], row['Currency'], int(index)))
         run_analytics(symbol=row['symbol'], expiry=str(row['Expiry']), secType=row['type'], accountid=accountid,
                       valuation_dt=fecha_valoracion, scenarioMode="N", simulName="NA", appendh5=1, appendsql=0, toxls=0,
-                      timedelta1=1)
+                      timedelta1=1,log=log)
 
 
 if __name__=="__main__":
