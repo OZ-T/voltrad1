@@ -19,6 +19,9 @@ from volutils import utils as utils
 _rth = (15,16,17,18,19,20,21)
 SHARK_TIC_TABLE_PREFFIX = 'shark_tic_'
 
+globalconf = config.GlobalConfig(level=logger.DEBUG)
+log = logger("TIC Sharks module")
+
 
 def prev_weekday_close(adate):
     _offsets = (3, 1, 1, 1, 1, 1, 2)
@@ -38,8 +41,9 @@ datos_toxls=pd.DataFrame()
 #   5.- se obtiene del h5 account los impactos (deltas) en Cash (comisiones, primas cobradas) y margin en cada uno de los datetimes
 #       en que se ha realizado operaciones (este historico se obtiene en el punto 4 anterior)
 #
-def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMode,simulName,appendh5,appendsql,toxls,log):
-    log.info(" ------------- Running for valuation date: [%s] ------------- " % (str(i_date)) )
+def run_shark_analytics(i_symbol, i_date, i_expiry, i_secType, accountid, scenarioMode,
+                        simulName, appendh5, appendsql, toxls, log2, globalconf2, ):
+    log2.info(" ------------- Running for valuation date: [%s] ------------- " % (str(i_date)))
 
     # fechas en que se calcula la foto de la estrategia
     fecha_valoracion=i_date
@@ -60,13 +64,13 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
     ###################################################################################################################
     temp_ts1=operaciones.reset_index().set_index('orders_times') #.tz_localize('Europe/Madrid')
     if temp_ts1.empty:
-        log.info("operaciones - No data to analyze. Exiting ...")
+        log2.info("operaciones - No data to analyze. Exiting ...")
         return
     oper_series1=temp_ts1.index.unique().to_pydatetime()
     #lista_dttm_con_trades = set([x.date() for x in oper_series1])
     lista_dttm_con_trades = set([x.replace(minute=59, second=59) for x in oper_series1])
     #x = x.replace(minute=59, second=59)  # to ensure we han updated data in portfolio after the trade
-    log.info("dttm operaciones: [%s] " % (str(lista_dttm_con_trades)) )
+    log2.info("dttm operaciones: [%s] " % (str(lista_dttm_con_trades)))
 
     ###################################################################################################################
     # PORTFOLIO en la fecha de valoracion y en las fechas de los trades
@@ -83,7 +87,7 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
     else:
         # scenario case
         x=max(lista_dttm_con_trades)
-        log.info("Extraer posiciones para fecha trade: [%s] " % (str(x)))
+        log2.info("Extraer posiciones para fecha trade: [%s] " % (str(x)))
         posiciones = ra.extrae_portfolio_positions(valuation_dttm=x,
                                                    symbol=i_symbol, expiry=i_expiry, secType=i_secType,
                                                    accountid=accountid,
@@ -94,12 +98,12 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
         posiciones['load_dttm'] = fecha_valoracion
 
     if posiciones is None:
-        log.info("posiciones No data to analyze. Exiting ...")
+        log2.info("posiciones No data to analyze. Exiting ...")
         return
 
     posiciones_trades_dates = pd.DataFrame()
     for x in lista_dttm_con_trades:
-        log.info("Extraer posiciones para fecha trade: [%s] " % (str(x)))
+        log2.info("Extraer posiciones para fecha trade: [%s] " % (str(x)))
         temp_portfolio =ra.extrae_portfolio_positions(valuation_dttm=x ,
                                            symbol=i_symbol,expiry=i_expiry,secType=i_secType,
                                            accountid = accountid,
@@ -119,8 +123,8 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
                                                 symbol=i_symbol,expiry=i_expiry,secType=i_secType)
 
     if cadena_opcs.empty or cadena_opcs_tminus1.empty:
-        log.info("No data to analyze cadena_opcs.empty=%s cadena_opcs_tminus1.empty=%s. Exiting ..."
-                 % (str(cadena_opcs.empty) , str(cadena_opcs_tminus1.empty) ))
+        log2.info("No data to analyze cadena_opcs.empty=%s cadena_opcs_tminus1.empty=%s. Exiting ..."
+                  % (str(cadena_opcs.empty) , str(cadena_opcs_tminus1.empty) ))
         return
 
     ###################################################################################################################
@@ -185,13 +189,13 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
     # subyacente etc. en cada date de todas las operaciones que se han realizado desde el inicio de la estrategia
     cadena_opcs_orders= pd.DataFrame()
     for x in lista_dttm_con_trades:
-        log.info("Extraer options chain para fecha trade: [%s] " % (str(x)))
+        log2.info("Extraer options chain para fecha trade: [%s] " % (str(x)))
         temporal1 =ra.extrae_options_chain(valuation_dttm=x,
                                            symbol=i_symbol,expiry=i_expiry,secType=i_secType)
         cadena_opcs_orders=cadena_opcs_orders.append(temporal1)
 
     if cadena_opcs_orders.empty:
-        log.info("cadena_opcs_orders No data to analyze. Exiting ...")
+        log2.info("cadena_opcs_orders No data to analyze. Exiting ...")
         return
 
     cadena_opcs_orders[['prices_expiry']] = cadena_opcs_orders[['prices_expiry']].apply(pd.to_datetime)
@@ -362,19 +366,27 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
     #caclulo dias a expiracion en el trade
     positions_summary['DTE'] = (positions_summary['portfolio_expiry'] - fecha_valoracion ).astype('timedelta64[D]').astype(int)
     ## hay que calcular aqui la IV de las opciones ATM en el momento del trade, se saca de la cadena de opciones
-    positions_summary['ImplVolATM'] = cadena_opcs.ix[(cadena_opcs['prices_strike'] - cadena_opcs['prices_lastUndPrice']).abs().argsort()[:4] ]['prices_modelImpliedVol'].mean()
+    positions_summary['ImplVolATM'] = cadena_opcs.ix[(cadena_opcs['prices_strike']
+                                                      - cadena_opcs['prices_lastUndPrice']).abs().argsort()[:4] ]['prices_modelImpliedVol'].mean()
     # calcular 1SD con el horizonte de dias DTE
-    positions_summary['1SD'] = positions_summary['prices_lastUndPrice'] * positions_summary['ImplVolATM'] / (365.0/((positions_summary['DTE']) ) )**0.5
+    positions_summary['1SD'] = positions_summary['prices_lastUndPrice'] \
+                               * positions_summary['ImplVolATM'] / (365.0/((positions_summary['DTE']) ) )**0.5
     positions_summary['lastUndPrice_less1SD']=positions_summary['prices_lastUndPrice'] - positions_summary['1SD']
     positions_summary['lastUndPrice_plus1SD']=positions_summary['prices_lastUndPrice'] + positions_summary['1SD']
     positions_summary['prices_midPrice']= ( positions_summary['prices_bidPrice'] + positions_summary['prices_askPrice'] ) / 2
     positions_summary['ValCurrent'] = positions_summary['prices_midPrice'] * np.sign(positions_summary['portfolio_position'])
-    positions_summary['costUnit'] = positions_summary['portfolio_averageCost'] * np.sign(positions_summary['portfolio_position']) / positions_summary['portfolio_multiplier']
+    positions_summary['costUnit'] = positions_summary['portfolio_averageCost'] \
+                                    * np.sign(positions_summary['portfolio_position']) / positions_summary['portfolio_multiplier']
     positions_summary['Dshort'] = positions_summary['prices_modelDelta'] * positions_summary['portfolio_multiplier']
-    positions_summary['DshortPosition'] = positions_summary['prices_modelDelta'] * positions_summary['portfolio_multiplier'] * positions_summary['portfolio_position']
-    positions_summary['GammaPosition'] = positions_summary['prices_modelGamma'] * positions_summary['portfolio_multiplier'] * positions_summary['portfolio_position']
-    positions_summary['ThetaPosition'] = positions_summary['prices_modelTheta'] * positions_summary['portfolio_multiplier'] * positions_summary['portfolio_position']
-    positions_summary['VegaPosition'] = positions_summary['prices_modelVega'] * positions_summary['portfolio_multiplier'] * positions_summary['portfolio_position']
+    positions_summary['DshortPosition'] = positions_summary['prices_modelDelta'] \
+                                          * positions_summary['portfolio_multiplier'] \
+                                          * positions_summary['portfolio_position']
+    positions_summary['GammaPosition'] = positions_summary['prices_modelGamma'] \
+                                         * positions_summary['portfolio_multiplier'] * positions_summary['portfolio_position']
+    positions_summary['ThetaPosition'] = positions_summary['prices_modelTheta'] \
+                                         * positions_summary['portfolio_multiplier'] * positions_summary['portfolio_position']
+    positions_summary['VegaPosition'] = positions_summary['prices_modelVega'] \
+                                        * positions_summary['portfolio_multiplier'] * positions_summary['portfolio_position']
     positions_summary=positions_summary.sort_values(by=['portfolio_right','portfolio_symbol','portfolio_expiry',
                                                         'portfolio_strike'] , ascending=[False, True, True, True])
 
@@ -444,7 +456,7 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
                                                             'Margen_neto'] = 0
     trade_summary_margin_cash.loc[trade_summary_margin_cash['FullInitMarginReq_USD_actual'] > 0,
                                 'Margen_neto'] = trade_summary_margin_cash['FullInitMarginReq_USD_actual'] \
-                                                 - trade_summary_margin_cash['Impacto_encash_ultimo_periodo1h']
+                                                 - trade_summary_margin_cash['Impacto_encash_ultimo_periodo1h'].map(lambda x: max(x,0))
 
     trade_summary_margin_cash['load_dttm']=pd.to_datetime(trade_summary_margin_cash['load_dttm'],
                                                           format="%Y-%m-%d %H:%M:%S")
@@ -640,7 +652,7 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
 
 
     if appendh5 == 1:
-        store = globalconf.open_ib_abt_strategy_tic(scenarioMode=scenarioMode)
+        store = globalconf2.open_ib_abt_strategy_tic(scenarioMode=scenarioMode)
         if scenarioMode == "N":
             loc1 = i_symbol + "/" + i_expiry
         elif scenarioMode == "Y":
@@ -651,7 +663,7 @@ def run_shark_analytics(i_symbol,i_date,i_expiry,i_secType,accountid,scenarioMod
         store.close()
 
     if appendsql == 1:
-        con, meta = globalconf.connect_sqldb()
+        con, meta = globalconf2.connect_sqldb()
         row_datos.to_sql(name=str(SHARK_TIC_TABLE_PREFFIX+i_symbol+i_expiry), con=con, if_exists='append', chunksize=50, index=True)
 
 
@@ -662,7 +674,8 @@ def get_ivol_series(date_ini,date_end):
     df1 = store.select(lvl1._v_pathname)
     return df1.ix[date_ini:date_end]
 
-def get_strategy_start_date(con,meta,symbol,expiry,accountid,scenarioMode,simulName,timedelta1,appendh5,appendsql,log):
+def get_strategy_start_date(con,meta,symbol,expiry,accountid,scenarioMode,simulName,timedelta1,
+                            appendh5,appendsql,log,globalconf):
     if appendh5 == 1:
         # 1.- Comprobar primero si hay ya registros en la ABT para la estrategia
         store_abt = globalconf.open_ib_abt_strategy_tic(scenarioMode)
@@ -707,7 +720,8 @@ def get_strategy_start_date(con,meta,symbol,expiry,accountid,scenarioMode,simulN
 
 
 
-def run_analytics(symbol, expiry, secType,accountid,valuation_dt,scenarioMode,simulName,appendh5,appendsql,toxls,timedelta1,log):
+def run_analytics(symbol, expiry, secType,accountid,valuation_dt,scenarioMode,simulName,
+                  appendh5,appendsql,toxls,timedelta1,log,globalconf):
     """
         Run analytics main method.
     :param symbol:
@@ -727,7 +741,8 @@ def run_analytics(symbol, expiry, secType,accountid,valuation_dt,scenarioMode,si
         log.info("connecting to sql db... ")
         con , meta = globalconf.connect_sqldb()
 
-    start = get_strategy_start_date(con,meta,symbol, expiry,accountid,scenarioMode,simulName,timedelta1,appendh5,appendsql,log)
+    start = get_strategy_start_date(con,meta,symbol, expiry,accountid,scenarioMode,simulName,
+                                    timedelta1,appendh5,appendsql,log,globalconf)
     log.info("Starting date to use: [%s] " % (str(start)) )
     expiry_dt = dt.datetime.strptime(expiry, '%Y%m%d')
     end = min(valuation_dt,expiry_dt)
@@ -740,9 +755,10 @@ def run_analytics(symbol, expiry, secType,accountid,valuation_dt,scenarioMode,si
         if ( d.hour in _rth ) & ( d.weekday() not in weekend ) & ( d.date() not in utils.get_trading_close_holidays(d.year)) :
             log.info( "date to run [%s] " % (str(d)))
             diff += 1
-            run_shark_analytics(i_symbol=symbol, i_date=d,i_expiry=expiry,i_secType=secType,
-                                accountid=accountid,scenarioMode=scenarioMode,
-                                simulName=simulName,appendh5=appendh5,appendsql=appendsql,toxls=toxls,log=log)
+            run_shark_analytics(i_symbol=symbol, i_date=d, i_expiry=expiry, i_secType=secType,
+                                accountid=accountid, scenarioMode=scenarioMode,
+                                simulName=simulName, appendh5=appendh5, appendsql=appendsql,
+                                toxls=toxls, log2=log, globalconf2=globalconf)
         d += delta
 
     if toxls == 1:
@@ -751,8 +767,6 @@ def run_analytics(symbol, expiry, secType,accountid,valuation_dt,scenarioMode,si
 def run_report():
     # i_secType OPT para SPY FOP para ES
     # run_shark_analytics(i_symbol='SPY',i_year=2016,i_month_num=9,i_day_t0=2,i_day_tminus1=1,i_expiry='20161021',i_secType='OPT')
-    globalconf = config.GlobalConfig(level=logger.DEBUG)
-    log = globalconf.log
     accountid = globalconf.get_accountid()
     optchain_def = globalconf.get_tickers_optchain_ib()
     fecha_valoracion = dt.datetime.now()
@@ -762,7 +776,7 @@ def run_report():
                  % (row['symbol'], row['type'], str(row['Expiry']), row['Exchange'], row['Currency'], int(index)))
         run_analytics(symbol=row['symbol'], expiry=str(row['Expiry']), secType=row['type'], accountid=accountid,
                       valuation_dt=fecha_valoracion, scenarioMode="N", simulName="NA", appendh5=1, appendsql=0, toxls=0,
-                      timedelta1=1,log=log)
+                      timedelta1=1,log=log,globalconf=globalconf)
 
 
 if __name__=="__main__":

@@ -228,7 +228,7 @@ def create_opt_chain_abt(year="2016"):
     store_new.close()
 
 
-def extrae_account_snapshot(year,month,day):
+def extrae_account_snapshot_kk(year,month,day):
     """
     DEPRECATED
     Extrae los snapshots horarios de account para una fecha
@@ -364,6 +364,41 @@ def extrae_historical_chain(start_dt,end_dt,symbol,strike,expiry,right):
     return dataframe
 
 
+def extrae_account_snapshot(valuation_dttm,accountid,scenarioMode,simulName):
+    log.info("extrae_account_snapshot para : [%s] " % (str(valuation_dttm)))
+    dataframe = pd.DataFrame()
+    if scenarioMode == "N":
+        store = globalconf.account_store_new()
+        #accountid = globalconf.get_accountid()
+        node=store.get_node("/" + accountid)
+        df1 = store.select(node._v_pathname)
+    elif scenarioMode == "Y":
+        df1 = globalconf.account_dataframe_simulation(simulName=simulName)
+        df1['current_date'] = df1['current_date'].apply(lambda x: str(x))
+        df1 = df1.set_index("current_datetime", drop=0)
+
+    df1.sort_index(inplace=True,ascending=[True])
+    dfprev = df1[df1.index < valuation_dttm.replace(minute=0, second=0)]
+    dfprev = dfprev.ix[-1:]
+    dataframe = dataframe.append(dfprev)
+
+    dataframe['load_dttm'] = valuation_dttm #  dataframe['current_datetime_txt']
+    dataframe = dataframe.set_index('load_dttm')
+    dataframe['fecha_operacion'] = str(valuation_dttm)
+    t_margin = dataframe[['RegTMargin_USD', 'MaintMarginReq_USD', 'InitMarginReq_USD',
+                          'FullMaintMarginReq_USD',
+                          'FullInitMarginReq_USD']].apply(pd.to_numeric).dropna(subset=['FullInitMarginReq_USD'])
+
+
+    t_prem = dataframe[['TotalCashBalance_BASE', 'TotalCashBalance_EUR', 'TotalCashBalance_USD', 'TotalCashValue_USD',
+                        'CashBalance_EUR', 'CashBalance_USD', 'TotalCashValue_C_USD', 'TotalCashValue_S_USD',
+                        'CashBalance_BASE',
+                        'ExchangeRate_EUR']].apply(pd.to_numeric).dropna(subset=['TotalCashValue_USD'])
+
+    if scenarioMode == "N":
+        store.close()
+    return t_margin , t_prem
+
 
 def extrae_account_delta_new(valuation_dttm,accountid,scenarioMode,simulName):
     """
@@ -413,8 +448,8 @@ def extrae_account_delta_new(valuation_dttm,accountid,scenarioMode,simulName):
     return t_margin , t_prem
 
 
-def extrae_portfolio_positions(valuation_dttm,symbol,expiry,secType,
-                               accountid,scenarioMode,simulName):
+def extrae_portfolio_positions(valuation_dttm=None,symbol=None,expiry=None,secType=None,
+                               accountid=None,scenarioMode="N",simulName="NA"):
     """
     Saca la foto del subportfolio tic (para un instrumento y expiracion) a una fecha dada
 
@@ -424,6 +459,10 @@ def extrae_portfolio_positions(valuation_dttm,symbol,expiry,secType,
     :param secType:
     :return:
     """
+    if symbol is None:
+        where1 = None
+    else:
+        where1 = ['symbol=='+symbol,'expiry=='+expiry,'secType=='+secType,'accountName=='+accountid]
     log.info("extrae_portfolio_positions para : [%s] " % (str(valuation_dttm)) )
     dataframe = pd.DataFrame()
     if scenarioMode == "N":
@@ -432,8 +471,10 @@ def extrae_portfolio_positions(valuation_dttm,symbol,expiry,secType,
             #print datetime.strptime(hora._v_pathname, '/%Y/%b/%d/%H').hour , hour
             if int(datetime.strptime(hora._v_pathname, '/%Y/%b/%d/%H').hour) <= valuation_dttm.hour:
                 for minuto in store.get_node(hora._v_pathname):
-                    df1=store.select(minuto._v_pathname,where=['symbol=='+symbol,'expiry=='+expiry,
-                                                               'secType=='+secType,'accountName=='+accountid])
+                    if where1 is None:
+                        df1=store.select(minuto._v_pathname)
+                    else:
+                        df1 = store.select(minuto._v_pathname, where=where1)
                     df1['load_dttm']=datetime.strptime(minuto._v_pathname, '/%Y/%b/%d/%H/%M')
                     dataframe = dataframe.append(df1)
         store.close()
