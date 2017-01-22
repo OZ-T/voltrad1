@@ -245,6 +245,171 @@ def print_emas(symbol="SPX"):
     print(output)
     end_func(client)
 
+def print_account_snapshot(valuation_dt):
+    """
+    valuation dt = YYYY-MM-DD-HH
+    :param valuation_dt:
+    :return:
+    """
+    date1=valuation_dt.split("-")
+    client, log_analytics, globalconf = init_func()
+    accountid = globalconf.get_accountid()
+    x  = dt.datetime(year=int(date1[0]),month=int(date1[1]),day=int(date1[2]),hour=int(date1[3]),minute=59,second=59)
+    t_margin, t_prem = ra.extrae_account_snapshot(valuation_dttm=x, accountid=accountid,
+                                                   scenarioMode="N", simulName="NA")
+
+    t_margin = t_margin.rename(columns={    'RegTMargin_USD':'RegTM',
+                                            'MaintMarginReq_USD':'MaintM',
+                                            'InitMarginReq_USD':'IniM',
+                                            'FullMaintMarginReq_USD':'FMaintM',
+                                            'FullInitMarginReq_USD':'FIniM'
+                              })
+
+    output = t_margin.to_string(formatters={
+                                    'RegTM': '{:,.2f}'.format,
+                                    'MaintM': '{:,.2f}'.format,
+                                    'IniM': '{:,.2f}'.format,
+                                    'FMaintM': '{:,.2f}'.format,
+                                    'FIniM': '{:,.2f}'.format
+                                })
+    t_prem = t_prem.rename(columns={    'TotalCashBalance_BASE':'TCashBASE',
+                                        'TotalCashBalance_EUR':'TCashEUR',
+                                        'TotalCashBalance_USD':'TCashUSD',
+                                        'TotalCashValue_USD':'CashVUSD',
+                                        'CashBalance_EUR':'CashEUR',
+                                        'CashBalance_USD':'CashUSD',
+                                        'TotalCashValue_C_USD':'Cash_C_USD',
+                                        'TotalCashValue_S_USD':'Cash_S_USD',
+                                        'CashBalance_BASE':'CashBASE',
+                                        'ExchangeRate_EUR':'FXEUR'
+                              })
+
+
+    output2 = t_prem.to_string(formatters={
+                                    'TCashBASE': '{:,.2f}'.format,
+                                    'TCashEUR': '{:,.2f}'.format,
+                                    'TCashUSD': '{:,.2f}'.format,
+                                    'CashVUSD': '{:,.2f}'.format,
+                                    'CashEUR': '{:,.2f}'.format,
+                                    'CashUSD': '{:,.2f}'.format,
+                                    'Cash_C_USD': '{:,.2f}'.format,
+                                    'Cash_S_USD': '{:,.2f}'.format,
+                                    'CashBASE': '{:,.2f}'.format,
+                                    'FXEUR': '{:,.2f}'.format
+                                })
+    print("___MARGIN________________________________________________________________")
+    print(output)
+    print("___PREMIUM_______________________________________________________________")
+    print(output2)
+
+    temp_portfolio = ra.extrae_portfolio_positions(valuation_dttm=x,
+                                                   symbol=None, expiry=None, secType=None,
+                                                   accountid=accountid,
+                                                   scenarioMode="N", simulName="NA")
+
+    if not temp_portfolio is None:
+        temp_portfolio = temp_portfolio.drop(['portfolio_current_datetime'], 1)
+        temp_portfolio = temp_portfolio.rename(columns={    'portfolio_averageCost': 'Cost',
+                                                            'portfolio_marketValue': 'MktVal',
+                                                            'portfolio_multiplier': 'mult',
+                                                            'portfolio_position': 'pos',
+                                                            'portfolio_strike': 'str',
+                                                            'portfolio_right': 'P_C',
+                                                            'portfolio_symbol': 'sym',
+                                                            'portfolio_expiry': 'exp',
+                                                            'portfolio_precio_neto': 'NPrc',
+                                                            'portfolio_load_dttm': 'LoDttm',
+                                                            'portfolio_unrealizedPNL': 'PnL'
+                                                            })
+
+        output3 = temp_portfolio.to_string(formatters={
+                                        'Cost': '{:,.2f}'.format,
+                                        'MktVal': '{:,.2f}'.format,
+                                        'mult': '{:,.0f}'.format,
+                                        'pos': '{:,.0f}'.format,
+                                        'str': '{:,.2f}'.format,
+                                        'NPrc': '{:,.2f}'.format,
+                                        'PnL': '{:,.2f}'.format
+                                    })
+
+        print("___PORTFOLIO_______________________________________________________________")
+        print output3
+    end_func(client)
+
+
+def print_account_delta(valuation_dt):
+    """
+    valuation dt = YYYY-MM-DD-HH
+    :param valuation_dt:
+    :return:
+    """
+    date1=valuation_dt.split("-")
+    client, log_analytics, globalconf = init_func()
+    accountid = globalconf.get_accountid()
+    x  = dt.datetime(year=int(date1[0]),month=int(date1[1]),day=int(date1[2]),hour=int(date1[3]),minute=59,second=0)
+    t_margin, t_prem = ra.extrae_account_delta_new(valuation_dttm=x, accountid=accountid,
+                                                   scenarioMode="N", simulName="NA")
+    t_margin = t_margin.rename(columns={    'RegTMargin_USD':'RegTM',
+                                            'MaintMarginReq_USD':'MaintM',
+                                            'InitMarginReq_USD':'IniM',
+                                            'FullMaintMarginReq_USD':'FMaintM',
+                                            'FullInitMarginReq_USD':'FIniM'
+                              })
+
+    output = t_margin.to_string(formatters={
+                                    'RegTM': '{:,.2f}'.format,
+                                    'MaintM': '{:,.2f}'.format,
+                                    'IniM': '{:,.2f}'.format,
+                                    'FMaintM': '{:,.2f}'.format,
+                                    'FIniM': '{:,.2f}'.format
+                                })
+    t_prem = t_prem.rename(columns={    'TotalCashBalance_BASE':'TCashBASE',
+                                        'TotalCashBalance_EUR':'TCashEUR',
+                                        'TotalCashBalance_USD':'TCashUSD',
+                                        'TotalCashValue_USD':'CashVUSD',
+                                        'CashBalance_EUR':'CashEUR',
+                                        'CashBalance_USD':'CashUSD',
+                                        'TotalCashValue_C_USD':'Cash_C_USD',
+                                        'TotalCashValue_S_USD':'Cash_S_USD',
+                                        'CashBalance_BASE':'CashBASE',
+                                        'ExchangeRate_EUR':'FXEUR'
+                              })
+
+
+    output2 = t_prem.to_string(formatters={
+                                    'TCashBASE': '{:,.2f}'.format,
+                                    'TCashEUR': '{:,.2f}'.format,
+                                    'TCashUSD': '{:,.2f}'.format,
+                                    'CashVUSD': '{:,.2f}'.format,
+                                    'CashEUR': '{:,.2f}'.format,
+                                    'CashUSD': '{:,.2f}'.format,
+                                    'Cash_C_USD': '{:,.2f}'.format,
+                                    'Cash_S_USD': '{:,.2f}'.format,
+                                    'CashBASE': '{:,.2f}'.format,
+                                    'FXEUR': '{:,.2f}'.format
+                                })
+    print("__MARGIN___________________________________________________")
+    print(output)
+    print("__PREMIUM__________________________________________________")
+    print(output2)
+    print("__ORDERS___________________________________________________")
+    store = globalconf.open_orders_store()
+    node = store.get_node("/" + accountid)
+    start_dt=x.replace(minute=0, second=0)
+    end_dt=x.replace(minute=59, second=59)
+    #coord1 = "times < " + end_dt + " & times > " + start_dt
+    #c = store.select_as_coordinates(node._v_pathname,coord1)
+    #df1 = store.select(node._v_pathname,where=c)
+    df1 = store.select(node._v_pathname)
+    df1['times'] = df1['times'].apply(lambda x: dt.datetime.strptime(x, '%Y%m%d %H:%M:%S'))
+    df1 = df1[(df1.times <= end_dt) & (df1.times >=start_dt)].drop_duplicates(subset=['execid','times'])
+    df1.sort_index(inplace=True,ascending=[True])
+    print df1[['avgprice', 'conId', 'execid', 'expiry','localSymbol',
+               'price','qty', 'right', 'shares', 'side', 'strike', 'symbol', 'times']]
+
+    store.close()
+    end_func(client)
+
 
 def print_tic_report(symbol,expiry,history=1):
     """
@@ -465,4 +630,5 @@ if __name__ == "__main__":
     #print_emas("SPX")
     #print_summary_underl("SPX")
     #print_fast_move("SPX")
-    print_tic_report(symbol="ES", expiry="20161118",history=3)
+    #print_tic_report(symbol="ES", expiry="20161118",history=3)
+    print_account_delta(valuation_dt="2016-12-29-15")

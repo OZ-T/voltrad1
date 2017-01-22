@@ -210,7 +210,7 @@ def cancel_all_open_orders():
 
 def list_prices_before_trade(symbol,expiry,query):
     """
-    List prices before trade
+    List prices before trade e.g. query = "P2020,C2020"
     """
     query1 = query.split(",")
     client, log_order = init_func()
@@ -231,7 +231,8 @@ def list_prices_before_trade(symbol,expiry,query):
     df1 = pd.DataFrame()
     for id, req1 in ctrt_prc.iteritems():
         subset_dic = {k: req1.get_in_data()[k] for k in ('strike', 'right', 'expiry','symbol')}
-        subset_dic2 = {k: req1.get_out_data()[id][k] for k in ('bidPrice', 'bidSize', 'askPrice', 'askSize','closePrice') }
+        subset_dic2 = {k: req1.get_out_data()[id][k] for k in ('bidPrice', 'bidSize', 'askPrice',
+                                                               'askSize','closePrice','OptImplVol') }
         dict1 = subset_dic.copy()
         dict1.update(subset_dic2)
         temp=pd.DataFrame.from_dict(dict1, orient='index').transpose()
@@ -343,5 +344,6 @@ if __name__=="__main__":
     #place_plain_order(expiry="20170120",symbol="ES",right="C",strike=2200.0,orderType="LMT",quantity=2,lmtPrice=5.0)
     #place_or_modif_spread_order(expiry="20170120",symbol="ES",right="C",strike_l=2300.0,
     #                   strike_s=2350.0,orderType="LMT",quantity=-1,lmtPrice=3.7,orderId=-1)
-    list_option_chain("ES", "20160120", "20170317")
+    #list_option_chain("ES", "20160120", "20170317")
+    list_prices_before_trade(symbol="ES", expiry="20170217", query="P2020,C2030")
 

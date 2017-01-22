@@ -32,6 +32,12 @@ class GlobalConfig(object):
         self.months = {1: 'Jan', 2: 'Feb', 3: 'Mar', 4: 'Apr', 5: 'May', 6: 'Jun',
           7: 'Jul', 8: 'Aug', 9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Dec'}
 
+    def get_logger(self):
+        return self.log
+
+    def log_info(self,string):
+        self.log.info(string)
+
     def get_config_csv(self,name,path,sep=','):
         """
         This is to load into a pandas DataFrame any of the csv with the list of contracts
