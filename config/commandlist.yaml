@@ -53,6 +53,8 @@ accsnap:
   pointer: voldailyanalytics.analytics_methods.print_account_snapshot
 fix_ecalendar:
   pointer: volsetup.fix_h5_economic_calendar.run
+fix_optchain:
+  pointer: volsetup.fix_h5_optchain_ib.run
 
 
 

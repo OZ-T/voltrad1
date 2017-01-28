@@ -284,7 +284,6 @@ def print_account_snapshot(valuation_dt):
                                         'ExchangeRate_EUR':'FXEUR'
                               })
 
-
     output2 = t_prem.to_string(formatters={
                                     'TCashBASE': '{:,.2f}'.format,
                                     'TCashEUR': '{:,.2f}'.format,
