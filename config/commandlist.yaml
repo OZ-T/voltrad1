@@ -51,6 +51,9 @@ accdelta:
   pointer: voldailyanalytics.analytics_methods.print_account_delta
 accsnap:
   pointer: voldailyanalytics.analytics_methods.print_account_snapshot
+fix_ecalendar:
+  pointer: volsetup.fix_h5_economic_calendar.run
+
 
 
 
