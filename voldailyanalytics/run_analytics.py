@@ -363,6 +363,35 @@ def extrae_historical_chain(start_dt,end_dt,symbol,strike,expiry,right):
     store.close()
     return dataframe
 
+def extrae_historical_chain_where(start_dt,end_dt,symbol,strike,expiry,right):
+    """
+    NOT IMPLEENTEDDD
+    :param start_dt:
+    :param end_dt:
+    :param symbol:
+    :param strike:
+    :param expiry:
+    :param right:
+    :return:
+    """
+    contract = symbol + expiry + right + strike
+    log.info("extrae_historical_chain para : start_dt=%s end_dt=%s contract=%s " % (str(start_dt),str(end_dt),contract))
+    store = globalconf.open_historical_optchain_store()
+    dataframe = pd.DataFrame()
+    #pd.concat([store.select(node._v_pathname) for node in store.get_node('df')])
+    #list =
+    node = store.get_node("/" + contract)
+    coord1 = "index < " + end_dt + " & index > " + start_dt
+    c = store.select_as_coordinates(node._v_pathname,coord1)
+    df1 = store.select(node._v_pathname,where=c)
+    df1.sort_index(inplace=True,ascending=[True])
+    #df1 = df1[(df1.index < end_dt) & (df1.index > start_dt)]
+    dataframe = dataframe.append(df1)
+    store.close()
+    return dataframe
+
+
+
 
 def extrae_account_snapshot(valuation_dttm,accountid,scenarioMode,simulName):
     log.info("extrae_account_snapshot para : [%s] " % (str(valuation_dttm)))

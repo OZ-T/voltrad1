@@ -23,6 +23,8 @@ cancelall:
    pointer: volibutils.orders_methods.cancel_all_open_orders
 lstprc:
    pointer: volibutils.orders_methods.list_prices_before_trade
+lstchain:
+  pointer: voldailyanalytics.analytics_methods.print_quasi_realtime_chain
 lstspreadprc:
    pointer: volibutils.orders_methods.list_spread_prices_before_trade
 ticrpt:

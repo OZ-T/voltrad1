@@ -20,6 +20,23 @@ import warnings
 warnings.filterwarnings("ignore")
 HISTORY_LIMIT = 20
 
+def get_contract_details(symbol,conId=None):
+    """
+    In the future will get details fro DB given a ConId
+    There will be a process that populate in background this table DB
+    with all the potential contracts and the corresponding contract ID
+    """
+    db1={
+        "ES":{"secType":"FOP","exchange":"GLOBEX","multiplier":"50","currency":"USD",
+              "underlType":"FUT","underlCurrency":"XXX","underlExchange":"GLOBEX"},
+        "SPY":{"secType":"OPT","exchange":"SMART","multiplier":"100","currency":"USD",
+               "underlType":"STK","underlCurrency":"USD","underlExchange":"SMART"}
+    }
+    #if conId is None:
+    return db1[symbol]
+
+
+
 def init_func():
     globalconf = config.GlobalConfig(level=logger.ERROR)
     log = globalconf.log
@@ -604,7 +621,7 @@ def print_summary_underl(symbol):
     end_func(client)
 
 
-def print_historical_chain(start_dt,end_dt,symbol,strike,expiry,right,type):
+def print_historical_option(start_dt,end_dt,symbol,strike,expiry,right,type):
     """
     Type should be bid, ask or trades
     """
@@ -621,6 +638,44 @@ def print_historical_chain(start_dt,end_dt,symbol,strike,expiry,right,type):
      u'low_bid', u'open_bid', u'reqId_bid', u'volume_bid']
      """
     print df[columns]
+    end_func(client)
+
+def print_quasi_realtime_chain(val_dt,symbol,call_d_range,put_d_range,expiry,type):
+    """
+    Type should be bid, ask or trades
+    Call delta _range 10,15 Put delta_range -15,-10
+    """
+    client , log_analytics, globalconf = init_func()
+    start_dt1 = val_dt +" 23:59:59"
+    valuation_dttm=dt.datetime.strptime(start_dt1, '%Y%m%d %H:%M:%S')
+    end_dt1 = "20991231" +" 23:59:59"
+    c_range = call_d_range.split(",")
+    p_range = put_d_range.split(",")
+    dataframe=pd.DataFrame()
+    df = ra.extrae_options_chain(valuation_dttm, symbol, expiry, get_contract_details(symbol)["secType"])
+    df=df.rename(columns=lambda x: str(x)[7:]) # remove prices_
+    df=df[( (df['modelDelta'] >= float(c_range[0])/100.0 ) & (df['modelDelta'] <= float(c_range[1])/100.0 ) & ( df['right'] == "C" ) )
+            |
+          ((df['modelDelta'] >= float(p_range[0])/100.0) & (df['modelDelta'] <= float(p_range[1])/100.0 ) & (df['right'] == "P"))
+         ]
+    #for x in range(int(c_range[0]),int(c_range[1])):
+        #df=ra.extrae_historical_chain(start_dt1,end_dt1,symbol,str(x),expiry,"C")
+        #df['right']="C"
+        #df['strike']=x
+        #dataframe=dataframe.append(df[:1])
+    df = df.ix[np.max(df.index)]
+    df = df.set_index(['symbol','expiry','right'],append=True)
+    dataframe=dataframe.append(df)
+    columns=[u'strike',u'bidPrice',
+             u'bidSize',u'askPrice',u'askSize',u'modelDelta',u'modelImpliedVol',u'lastUndPrice']
+    """
+    [u'WAP_trades', u'close_trades', u'count_trades', u'currency', u'expiry', u'hasGaps_trades', u'high_trades',
+     u'load_dttm', u'low_trades', u'multiplier', u'open_trades', u'reqId_trades', u'right', u'secType', u'strike',
+     u'symbol', u'volume_trades', u'WAP_ask', u'close_ask', u'count_ask', u'hasGaps_ask', u'high_ask', u'low_ask',
+     u'open_ask', u'reqId_ask', u'volume_ask', u'WAP_bid', u'close_bid', u'count_bid', u'hasGaps_bid', u'high_bid',
+     u'low_bid', u'open_bid', u'reqId_bid', u'volume_bid']
+     """
+    print dataframe[columns]
     end_func(client)
 
 
