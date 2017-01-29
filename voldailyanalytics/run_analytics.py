@@ -28,7 +28,7 @@ OPT_NUM_FIELDS_LST = [u'CallOI',u'PutOI', u'Volume', u'askDelta', u'askGamma',
 # leer del h5 del yahoo biz calendar
 def read_biz_calendar(start_dttm,valuation_dttm):
     log.info("read_biz_calendar: [%s] " % (str(valuation_dttm)))
-    year="2016"
+    year= str(valuation_dttm.year)     # "2016"
     store = globalconf.open_economic_calendar_h5_store()
     sym1= store.get_node("/"+year)
     dataframe = pd.DataFrame()
@@ -58,7 +58,7 @@ def read_biz_calendar(start_dttm,valuation_dttm):
     dataframe.set_index(keys=['event_datetime'], drop=True, inplace=True)
     dataframe = dataframe[['Actual','Briefing_Forecast','For','Market_Expects',
                            'Prior','Revised_From','Statistic','load_dttm']]
-
+    dataframe = dataframe.sort_index(ascending=[True])
     dataframe = dataframe[ (dataframe.index <= valuation_dttm) & (dataframe.index >= start_dttm) ]
     log.info("Number of rows filtered from h5 economic calendar: [%d]" % (len(dataframe)))
     return dataframe

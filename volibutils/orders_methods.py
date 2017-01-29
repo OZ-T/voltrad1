@@ -247,9 +247,11 @@ def list_prices_before_trade(symbol,expiry,query):
         for key in dict1.keys():
             df1.loc[row1, key] = dict1[key]
 
-
     df1 = df1.set_index(['strike','right','expiry','symbol'], drop=True)
-    print(df1)
+    columns  = ['bidPrice','bidSize','askPrice','askSize','','modelDelta','modelImpliedVol','lastUndPrice',
+                'modelGamma','closePrice']
+    cols = [val for val in columns if val in df1.columns]
+    print(df1[cols])
     end_func(client=client)
 
 def list_option_chain(symbol,expiry,expiry_underlying):
@@ -268,16 +270,25 @@ def list_option_chain(symbol,expiry,expiry_underlying):
                                         100)}
     underl_prc = client.getMktData(underl)
     df1 = pd.DataFrame()
+    #for reqId, request in underl_prc.iteritems():
+    #    subset_dic = {k: request.get_in_data()[k] for k in
+    #                set(["symbol","expiry","secType"]) & set(request.get_in_data().keys())}
+    #    subset_dic2 = {k: request.get_out_data()[k] for k in
+    #                set(["closePrice", "lastPrice", "lastSize", "Volume","askSize","askPrice",
+    #                     "bidSize","bidPrice"]) & set(request.get_out_data().keys())} #,'OptImplVol'
+    #    dict1 = subset_dic.copy()
+    #    dict1.update(subset_dic2)
+    #    temp = pd.DataFrame.from_dict(dict1, orient='index').transpose()
+    #    df1 = df1.append(temp)
+
+    row1 = 0
     for reqId, request in underl_prc.iteritems():
-        subset_dic = {k: request.get_in_data()[k] for k in
-                    set(["symbol","expiry","secType"]) & set(request.get_in_data().keys())}
-        subset_dic2 = {k: request.get_out_data()[k] for k in
-                    set(["closePrice", "lastPrice", "lastSize", "Volume","askSize","askPrice",
-                         "bidSize","bidPrice"]) & set(request.get_out_data().keys())} #,'OptImplVol'
-        dict1 = subset_dic.copy()
-        dict1.update(subset_dic2)
-        temp = pd.DataFrame.from_dict(dict1, orient='index').transpose()
-        df1 = df1.append(temp)
+        row1 += 1
+        dict1 = request.get_in_data().copy()
+        if reqId in request.get_out_data():
+            dict1.update(request.get_out_data()[reqId])
+        for key in dict1.keys():
+            df1.loc[row1, key] = dict1[key]
 
     df1 = df1.set_index(["symbol","expiry","secType"], drop=True)
     print(df1)
@@ -338,15 +349,32 @@ def list_spread_prices_before_trade(symbol,expiry,query):
     ctrt_prc = client.getMktData(ctrt)
     log_order.info("[%s]" % (str(ctrt_prc)))
     df1 = pd.DataFrame()
-    for id, req1 in ctrt_prc.iteritems():
-        subset_dic = {k: req1.get_in_data()[k] for k in ('secType','symbol','comboLegsDescrip')}
-        subset_dic2 = {k: req1.get_out_data()[id][k] for k in ('bidPrice', 'bidSize', 'askPrice', 'askSize') }
-        dict1 = subset_dic.copy()
-        dict1.update(subset_dic2)
-        temp=pd.DataFrame.from_dict(dict1, orient='index').transpose()
-        df1=df1.append(temp)
+    #for id, req1 in ctrt_prc.iteritems():
+    #    subset_dic = {k: req1.get_in_data()[k] for k in ('secType','symbol','comboLegsDescrip')}
+    #    subset_dic2 = {k: req1.get_out_data()[id][k] for k in ('bidPrice', 'bidSize', 'askPrice', 'askSize') }
+    #    dict1 = subset_dic.copy()
+    #    dict1.update(subset_dic2)
+    #    temp=pd.DataFrame.from_dict(dict1, orient='index').transpose()
+    #    df1=df1.append(temp)
+
+    row1 = 0
+    for reqId, request in ctrt_prc.iteritems():
+        row1 += 1
+        dict1 = request.get_in_data().copy()
+        if reqId in request.get_out_data():
+            dict1.update(request.get_out_data()[reqId])
+        for key in dict1.keys():
+            df1.loc[row1, key] = dict1[key]
+
+
+
     df1 = df1.set_index(['secType','symbol','comboLegsDescrip'], drop=True)
-    print(df1)
+
+    columns  = ['bidPrice','bidSize','askPrice','askSize','','modelDelta','modelImpliedVol','lastUndPrice',
+                'modelGamma','closePrice']
+    cols = [val for val in columns if val in df1.columns]
+    print(df1[cols])
+
     end_func(client=client)
 
 if __name__=="__main__":

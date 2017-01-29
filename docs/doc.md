@@ -55,7 +55,7 @@ of the workflow for operations with TIC:
 TREND ANALYSIS
 1.- Check daily Coopock for SPX with command: . p coppock
         Check what coppock has to say about the market trend: positive&down, negative&up, ...
-2.- Check Daily summary (YTD, MTD, WTD, DD) for SPX: . p summary "SPX"
+2.- Check Daily instrument summary (YTD, MTD, WTD, DD) for SPX: . p summary "SPX"
 
 RISK ANALYSIS
 1.- Check EMAS and IV Channels for SPX: . p emas "SPX"
@@ -65,3 +65,24 @@ RISK ANALYSIS
         Check if the level of IV (VIX) is inside or outside of bollinger bands (1sd and 2sd)
         so IV will be classified as high, low, extreme high or extreme low
 3.- Check rapid movement indicator: . p fastmove "SPX"        
+
+PRE-TRADE TIC ANALYSIS
+1.- Check DTE and find suitable expiry, also check options with deltas 10-15 accoridng to trend:
+    Command:  . p lstchain "20170127" "ES" "10,15" "-15,-10" "20170421" "trades"
+    This shows the DT for the expiry passed as parameter and filter option chain by deltas
+    Check the size of bid ask 
+2.- Once choosen suitable options candidates for trade based on DTE and deltas, check recent historical
+    prices of the candidates to find/guest best time to open position
+    Command:  . p hist_opt "20170125" "201702022" "SPY" C237.0,C238.0 "20170317" "trades"
+                Type should be bid, ask or trades
+                lst_right_strike like "P2200.0,P2225.0,C2300.0"
+                Arguments:
+                ['start_dt', 'end_dt', 'symbol', 'lst_right_strike', 'expiry', 'type']
+     TODO: Possibly check the indraday coppock to search for an intraday down trend to enter
+3.- Simulate what would look like the TIC is traded at last available Market prices
+
+    Basically run a shark tic report with the simulated portfolio.
+    The simulated portfolio is passed as a string "P237.0,P238.0,C240.0,C241.0"
+    Command: . p simul_tic
+    
+    

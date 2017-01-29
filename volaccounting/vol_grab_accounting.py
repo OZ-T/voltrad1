@@ -75,9 +75,6 @@ def print_portfolio_data():
     store.close()
     print(df1)
 
-
-
-
 def run_get_portfolio_data():
     log=logger("run_get_portfolio_data")
 
@@ -179,6 +176,12 @@ def run_get_portfolio_data():
             WarrantValue_USD	WhatIfPMEnabled_	current_date	current_datetime
             """
             log.info("Appending account data to HDF5 ... ")
+            # Following 3 lines is to fix following error when storing in HDF5:
+            #       [unicode] is not implemented as a table column
+            types = joe.apply(lambda x: pd.lib.infer_dtype(x.values))
+            for col in types[types == 'unicode'].index:
+                joe[col] = joe[col].astype(str)
+            #print joe.dtypes
             store_new.append(    "/"+name , joe, data_columns=True)
         store_new.close()
 

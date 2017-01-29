@@ -130,7 +130,7 @@ def COPP(df, a=11, b=14, n=50, close_nm='close'):
     return df
 
 
-def print_coppock_diario(symbol="SPX"):
+def print_coppock_diario(symbol="SPX",period="1D"):
     client , log_analytics, globalconf = init_func()
     #start_dt1 = dt.datetime.strptime(start_dt, '%Y%m%d')
     #end_dt1 = dt.datetime.strptime(end_dt, '%Y%m%d')
@@ -139,7 +139,7 @@ def print_coppock_diario(symbol="SPX"):
     df["date"] = df.index
     df[[u'close', u'high', u'open', u'low']]=df[[u'close', u'high',u'open',u'low']].apply(pd.to_numeric)
     conversion = {'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last',}
-    df = df.resample('1D', how=conversion).dropna()
+    df = df.resample(period, how=conversion).dropna()
     # conf. semanal: StoCop (60,30,50) NO hay suficiente historico para configuracion semanal del copock
     # conf. diaria: StoCop (12,6,10)
     df = COPP(df, 12, 6, 10)
@@ -621,15 +621,26 @@ def print_summary_underl(symbol):
     end_func(client)
 
 
-def print_historical_option(start_dt,end_dt,symbol,strike,expiry,right,type):
+def print_historical_option(start_dt,end_dt,symbol,lst_right_strike,expiry,type):
     """
     Type should be bid, ask or trades
+    lst_right_strike like "P2200.0,P2225.0,C2300.0"
     """
     client , log_analytics, globalconf = init_func()
     start_dt1 = start_dt #+" 0:00:00"
     end_dt1 = end_dt #+" 23:59:59"
-    df=ra.extrae_historical_chain(start_dt1,end_dt1,symbol,strike,expiry,right)
-    columns = [x for x in df.columns if type in x]
+    conversion = {'open_'+type: 'first', 'high_'+type: 'max', 'low_'+type: 'min', 'close_'+type: 'last' }
+    dataframe = pd.DataFrame()
+    for x in lst_right_strike.split(","):
+        df=ra.extrae_historical_chain(start_dt1,end_dt1,symbol,x[1:],expiry,x[:1])
+        df.index = pd.to_datetime(df.index, format="%Y%m%d  %H:%M:%S")
+        df["date"] = df.index
+        df[[u'close_'+type, u'high_'+type, u'open_'+type, u'low_'+type]] \
+            = df[[u'close_'+type, u'high_'+type, u'open_'+type, u'low_'+type]].apply(pd.to_numeric)
+        df = df.resample('1H', how=conversion).dropna()
+        dataframe[x] = df['close_'+type]
+
+    #columns = [x for x in df.columns if type in x]
     """
     [u'WAP_trades', u'close_trades', u'count_trades', u'currency', u'expiry', u'hasGaps_trades', u'high_trades',
      u'load_dttm', u'low_trades', u'multiplier', u'open_trades', u'reqId_trades', u'right', u'secType', u'strike',
@@ -637,7 +648,7 @@ def print_historical_option(start_dt,end_dt,symbol,strike,expiry,right,type):
      u'open_ask', u'reqId_ask', u'volume_ask', u'WAP_bid', u'close_bid', u'count_bid', u'hasGaps_bid', u'high_bid',
      u'low_bid', u'open_bid', u'reqId_bid', u'volume_bid']
      """
-    print df[columns]
+    print dataframe
     end_func(client)
 
 def print_quasi_realtime_chain(val_dt,symbol,call_d_range,put_d_range,expiry,type):
@@ -675,9 +686,26 @@ def print_quasi_realtime_chain(val_dt,symbol,call_d_range,put_d_range,expiry,typ
      u'open_ask', u'reqId_ask', u'volume_ask', u'WAP_bid', u'close_bid', u'count_bid', u'hasGaps_bid', u'high_bid',
      u'low_bid', u'open_bid', u'reqId_bid', u'volume_bid']
      """
+    dte = (dt.datetime.strptime(expiry, '%Y%m%d') -  dt.datetime.now())
+    print ("DTE = %d " % (dte.days) )
+    print ("____________________________________________________________________________________________________")
     print dataframe[columns]
     end_func(client)
 
+def print_ecalendar():
+    """
+    Print economic calendar for present trading week
+    """
+    day = dt.datetime.today()
+    start = day - dt.timedelta(days=day.weekday())
+    end = start + dt.timedelta(days=6)
+    print(start)
+    print(end)
+
+    client , log_analytics, globalconf = init_func()
+    dataframe = ra.read_biz_calendar(start_dttm=start, valuation_dttm=end)
+    print dataframe
+    end_func(client)
 
 if __name__ == "__main__":
     #print_coppock_diario(start_dt="20160101", end_dt="20170303", symbol="SPX")
