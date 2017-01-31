@@ -57,7 +57,7 @@ def get_order_defaults():
 
 def place_plain_order(expiry,symbol,right,strike,orderType,quantity,lmtPrice,orderId):
     """
-    Place a sinlge option order
+    Place a sinlge option order orderType="LMT"
     """
     if orderId <=0:
         orderId = None
@@ -94,7 +94,7 @@ def place_plain_order(expiry,symbol,right,strike,orderType,quantity,lmtPrice,ord
 
 def place_or_modif_spread_order(expiry,symbol,right,strike_l,strike_s,orderType,quantity,lmtPrice,orderId):
     """
-    Place new option spread order or modify existing order
+    Place new option spread order or modify existing order orderType="LMT"
     Put orderId <= 0 if new order
     """
 

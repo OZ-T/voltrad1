@@ -372,7 +372,7 @@ def print_account_delta(valuation_dt):
     date1=valuation_dt.split("-")
     client, log_analytics, globalconf = init_func()
     accountid = globalconf.get_accountid()
-    x  = dt.datetime(year=int(date1[0]),month=int(date1[1]),day=int(date1[2]),hour=int(date1[3]),minute=59,second=0)
+    x  = dt.datetime(year=int(date1[0]),month=int(date1[1]),day=int(date1[2]),hour=int(date1[3]),minute=0,second=0)
     t_margin, t_prem = ra.extrae_account_delta_new(valuation_dttm=x, accountid=accountid,
                                                    scenarioMode="N", simulName="NA")
     t_margin = t_margin.rename(columns={    'RegTMargin_USD':'RegTM',
@@ -723,5 +723,5 @@ if __name__ == "__main__":
     #print_summary_underl("SPX")
     #print_fast_move("SPX")
     #print_tic_report(symbol="ES", expiry="20161118",history=3)
-    #print_account_delta(valuation_dt="2016-12-29-15")
-    print_volatity("SPY")
+    print_account_delta(valuation_dt="2017-01-31-20")
+    #print_volatity("SPY")

@@ -453,15 +453,12 @@ def extrae_account_delta_new(valuation_dttm,accountid,scenarioMode,simulName):
     dfprev = df1[df1.index < valuation_dttm.replace(minute=0, second=0)]
     #dfprev = df1[df1['current_datetime'] < str(year)+str(month).zfill(2)+str(day).zfill(2)+str(hour).zfill(2)+str(minute).zfill(2)]
     dfprev = dfprev.ix[-1:]
-    dfpost = df1[df1.index > valuation_dttm.replace(minute=59, second=59)]
+    dfpost = df1[df1.index > valuation_dttm.replace(minute=0, second=0)]
     #dfpost = df1[df1['current_datetime'] > str(year)+str(month).zfill(2)+str(day).zfill(2)+str(hour).zfill(2)+str(minute).zfill(2)]
     dfpost = dfpost.ix[:1]
     dataframe = dataframe.append(dfprev)
     dataframe = dataframe.append(dfpost)
 
-    dataframe['load_dttm'] = valuation_dttm #  dataframe['current_datetime_txt']
-    dataframe = dataframe.set_index('load_dttm')
-    dataframe['fecha_operacion'] = str(valuation_dttm)
     t_margin = dataframe[['RegTMargin_USD', 'MaintMarginReq_USD', 'InitMarginReq_USD',
                           'FullMaintMarginReq_USD',
                           'FullInitMarginReq_USD']].apply(pd.to_numeric).diff().dropna(subset=['FullInitMarginReq_USD'])
@@ -471,6 +468,14 @@ def extrae_account_delta_new(valuation_dttm,accountid,scenarioMode,simulName):
                         'CashBalance_EUR', 'CashBalance_USD', 'TotalCashValue_C_USD', 'TotalCashValue_S_USD',
                         'CashBalance_BASE',
                         'ExchangeRate_EUR']].apply(pd.to_numeric).diff().dropna(subset=['TotalCashValue_USD'])
+
+    t_margin['load_dttm'] = valuation_dttm #  dataframe['current_datetime_txt']
+    t_margin = t_margin.set_index('load_dttm')
+    t_margin['fecha_operacion'] = str(valuation_dttm)
+
+    t_prem['load_dttm'] = valuation_dttm #  dataframe['current_datetime_txt']
+    t_prem = t_prem.set_index('load_dttm')
+    t_prem['fecha_operacion'] = str(valuation_dttm)
 
     if scenarioMode == "N":
         store.close()
