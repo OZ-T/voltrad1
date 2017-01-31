@@ -175,6 +175,12 @@ def print_volatity(symbol):
     VIX_BB_2SD_DOWN = vix_ewm - 2 * vix_std
     VIX_BB_1SD_UP = vix_ewm +  vix_std
     VIX_BB_1SD_DOWN = vix_ewm -  vix_std
+
+    VIX_BB_2SD_UP.sort_index(inplace=True)
+    VIX_BB_2SD_DOWN.sort_index(inplace=True)
+    VIX_BB_1SD_UP.sort_index(inplace=True)
+    VIX_BB_1SD_UP.sort_index(inplace=True)
+    df.sort_index(inplace=True)
     df['ALERT_IV'] = np.where(( ( df['vix'] < VIX_BB_1SD_DOWN ) ) , "LOW","------")
     df['ALERT_IV'] = np.where(( ( df['vix'] > VIX_BB_1SD_UP ) ) , "HIGH",df['ALERT_IV'])
     df['ALERT_IV'] = np.where( (df['vix'] < VIX_BB_2SD_DOWN) , "EXTREME_LOW",df['ALERT_IV'])
