@@ -69,11 +69,12 @@ RISK ANALYSIS
 PRE-TRADE TIC ANALYSIS
 1.- Check DTE and find suitable expiry, also check options with deltas 10-15 accoridng to trend:
     Command:  . p lstchain "20170127" "ES" "10,15" "-15,-10" "20170421" "trades"
+			  ['val_dt', 'symbol', 'call_d_range', 'put_d_range', 'expiry', 'type']
     This shows the DT for the expiry passed as parameter and filter option chain by deltas
     Check the size of bid ask 
 2.- Once choosen suitable options candidates for trade based on DTE and deltas, check recent historical
     prices of the candidates to find/guest best time to open position
-    Command:  . p hist_opt "20170125" "201702022" "SPY" C237.0,C238.0 "20170317" "trades"
+    Command:  	
                 Type should be bid, ask or trades
                 lst_right_strike like "P2200.0,P2225.0,C2300.0"
                 Arguments:
