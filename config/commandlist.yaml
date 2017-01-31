@@ -74,5 +74,8 @@ fix_optchain:
   pointer: volsetup.fix_h5_optchain_ib.run
 batch_account:
   pointer:  volaccounting.vol_grab_accounting.run_get_portfolio_data
-
+batch_hist_underlying:
+  pointer:  volquotes.historical_data_loader.run_reader
+batch_hist_options:
+  pointer:  volquotes.historical_opt_chains_loader.run_reader
 

@@ -176,6 +176,7 @@ def print_volatity(symbol):
     VIX_BB_1SD_UP = vix_ewm +  vix_std
     VIX_BB_1SD_DOWN = vix_ewm -  vix_std
 
+<<<<<<< HEAD
     VIX_BB_2SD_UP.sort_index(inplace=True)
     VIX_BB_2SD_DOWN.sort_index(inplace=True)
     VIX_BB_1SD_UP.sort_index(inplace=True)
@@ -185,6 +186,22 @@ def print_volatity(symbol):
     df['ALERT_IV'] = np.where(( ( df['vix'] > VIX_BB_1SD_UP ) ) , "HIGH",df['ALERT_IV'])
     df['ALERT_IV'] = np.where( (df['vix'] < VIX_BB_2SD_DOWN) , "EXTREME_LOW",df['ALERT_IV'])
     df['ALERT_IV'] = np.where(( ( df['vix'] > VIX_BB_2SD_UP ) ) , "EXTREME_HIGH",df['ALERT_IV'])
+=======
+    VIX_BB_2SD_UP=VIX_BB_2SD_UP.sort_index().dropna()
+    VIX_BB_2SD_DOWN=VIX_BB_2SD_DOWN.sort_index().dropna()
+    VIX_BB_1SD_UP=VIX_BB_1SD_UP.sort_index().dropna()
+    VIX_BB_1SD_UP=VIX_BB_1SD_UP.sort_index().dropna()
+    df.sort_index(inplace=True)
+
+    try:
+        df['ALERT_IV'] = np.where(( ( df['vix'] < VIX_BB_1SD_DOWN ) ) , "LOW","------")
+        df['ALERT_IV'] = np.where(( ( df['vix'] > VIX_BB_1SD_UP ) ) , "HIGH",df['ALERT_IV'])
+        df['ALERT_IV'] = np.where( (df['vix'] < VIX_BB_2SD_DOWN) , "EXTREME_LOW",df['ALERT_IV'])
+        df['ALERT_IV'] = np.where(( ( df['vix'] > VIX_BB_2SD_UP ) ) , "EXTREME_HIGH",df['ALERT_IV'])
+    except ValueError as e:
+        print("ValueError raised [" + str(e) + "]  Missing rows for VIX needed to generate alerts ...")
+
+>>>>>>> 4ecd4490f874ae787498fc57ce522e399098a79b
     print df.iloc[-HISTORY_LIMIT:]
     end_func(client)
 
@@ -719,4 +736,5 @@ if __name__ == "__main__":
     #print_summary_underl("SPX")
     #print_fast_move("SPX")
     #print_tic_report(symbol="ES", expiry="20161118",history=3)
-    print_account_delta(valuation_dt="2016-12-29-15")
+    #print_account_delta(valuation_dt="2016-12-29-15")
+    print_volatity("SPY")
