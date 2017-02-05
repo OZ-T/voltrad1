@@ -14,6 +14,8 @@ import time
 from voldailyanalytics import run_analytics as ra
 import json
 from numpy.lib.stride_tricks import as_strided
+from numpy import log, sqrt
+from pylab import axhline, figure, legend, plot, show
 
 import warnings
 
@@ -661,18 +663,158 @@ def print_historical_option(start_dt,end_dt,symbol,lst_right_strike,expiry,type)
     print dataframe
     end_func(client)
 
-
 def print_volatility_cone(symbol):
     """
     Print valotility cone for symbol given as argument
     """
     client , log_analytics, globalconf = init_func()
-    dataframe = pd.DataFrame()
+
+    df = ra.extrae_historical_underl(symbol)
+    df.index = pd.to_datetime(df.index, format="%Y%m%d  %H:%M:%S")
+    df["date"] = df.index
+    df[[u'close', u'high', u'open', u'low']]=df[[u'close', u'high',u'open',u'low']].apply(pd.to_numeric)
+    conversion = {'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last',}
+    df = df.resample('1H', how=conversion).dropna().rename(columns={'close': symbol})
+    df=df.drop(['high','open','low'], 1)
+    df=df.pct_change(1)
+
+
     # use VIX to get the mean 30d 60d 90d and so on from underlying_hist_ib h5
+    vix = ra.extrae_historical_underl("VIX")
+    vix.index = pd.to_datetime(vix.index, format="%Y%m%d  %H:%M:%S")
+    vix["date"] = vix.index
+    vix[[u'close', u'high', u'open', u'low']]=vix[[u'close', u'high',u'open',u'low']].apply(pd.to_numeric)
+    conversion = {'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last',}
+    df['vix'] = vix.resample('1H', how=conversion).dropna().rename(columns={'close': 'vix'})['vix']
+    lst_exp = [30,60,90,120]
+    for length in lst_exp:
+        vix_ewm = pd.Series(pd.Series.ewm(df['vix'], span = length, min_periods = length,
+                         adjust=True, ignore_na=False).mean(), name = 'vix_ema' + str(length))
+        df = df.join(vix_ewm)
+    df = df.dropna()
+    close_data = df[symbol][-300:].values
+    imp_vol_data_30d = df['vix_ema30'][-300:].values
+    imp_vol_data_360d = df['vix_ema90'][-300:].values
 
+    days_to_expiry = [20, 60, 120, 180, 240]
 
-    print dataframe
+    lower = []
+    means = []
+    upper = []
+
+    for expiry in days_to_expiry:
+        np_lower, np_mean, np_upper = calc_sigmas(expiry, close_data)
+        lower.append(np_lower)
+        means.append(np_mean)
+        upper.append(np_upper)
+
+    historical_sigma_20d = calc_daily_sigma(20, close_data)
+    historical_sigma_240d = calc_daily_sigma(240, close_data)
+
+    limit = max(days_to_expiry)
+    x = range(0, limit)
+
+    fig = figure()
+    ax1 = fig.add_subplot(3, 1, 1)
+    plot(days_to_expiry, lower, color='red', label='Lower')
+    plot(days_to_expiry, means, color='grey', label='Average')
+    plot(days_to_expiry, upper, color='blue', label='Upper')
+    axhline(lower[0], linestyle='dashed', color='red')
+    axhline(lower[-1], linestyle='dashed', color='red')
+    axhline(upper[0], linestyle='dashed', color='blue')
+    axhline(upper[-1], linestyle='dashed', color='blue')
+    ax1.set_title('Volatility Cones')
+    legend(bbox_to_anchor=(1., 1.), loc=2)
+
+    ax2 = fig.add_subplot(3, 1, 2)
+    plot(x, historical_sigma_20d[-limit:], label='Historical')
+    plot(x, imp_vol_data_30d[-limit:], label='Implied')
+    axhline(lower[0], linestyle='dashed', color='red')
+    axhline(upper[0], linestyle='dashed', color='blue')
+    ax2.set_title('20 Day Volatilities')
+    ax2.set_xlim(ax1.get_xlim())
+    ax2.set_ylim(ax1.get_ylim())
+    legend(bbox_to_anchor=(1., 1.), loc=2)
+
+    # We only want to plot implied vol. where we have a value for historical
+    imp_vol_data_360d[np.where(np.isnan(historical_sigma_240d))] = np.nan
+
+    ax3 = fig.add_subplot(3, 1, 3)
+    plot(x, historical_sigma_240d[-limit:], label='Historical')
+    plot(x, imp_vol_data_360d[-limit:], label='Implied')
+    axhline(lower[-1], linestyle='dashed', color='red')
+    axhline(upper[-1], linestyle='dashed', color='blue')
+    ax3.set_title('240 Day Volatilities')
+    ax3.set_xlim(ax1.get_xlim())
+    ax3.set_ylim(ax1.get_ylim())
+    legend(bbox_to_anchor=(1., 1.), loc=2)
+    show()
+
+    print df
     end_func(client)
+
+
+def calc_sigmas(N, X, period=20):
+    start = 0
+    end = N
+
+    results = []
+
+    while end <= len(X):
+        sigma = calc_sigma(N, X[start:end])
+        results.append(sigma)
+        # print('N: {}, sigma: {}'.format(N, sigma))
+        start += period
+        end += period
+
+    sigmas = np.array(results)
+    mean = sigmas.mean()
+
+    # Uncomment the following three lines to use z scores instead of minimum
+    # and maximum sigma values
+    #
+    # z_score=2.0
+    # interval = sigmas.std() * z_score
+    # return mean - interval, mean, mean + interval
+    #
+    return sigmas.min(), mean, sigmas.max()
+
+
+def calc_daily_sigma(lookback, data):
+    results = np.zeros(len(data))
+    start = 0
+    end = lookback
+    results[start:end] = np.nan
+    while end < len(data):
+        results[end] = calc_sigma(lookback, data[start:end])
+        start += 1
+        end += 1
+    return results
+
+
+def calc_sigma(N, X):
+    return sqrt(sum((X)**2) / float(N - 1)) * sqrt(252.0)
+
+
+def calculate_log_returns(pnl):
+    lagged_pnl = lag(pnl)
+    returns = log(pnl / lagged_pnl)
+
+    # All values prior to our position opening in pnl will have a
+    # value of inf. This is due to division by 0.0
+    returns[np.isinf(returns)] = 0.
+    # Additionally, any values of 0 / 0 will produce NaN
+    returns[np.isnan(returns)] = 0.
+    return returns
+
+
+def lag(data):
+    lagged = np.roll(data, 1)
+    lagged[0] = 0.
+    return lagged
+
+
+
 
 
 def print_quasi_realtime_chain(val_dt,symbol,call_d_range,put_d_range,expiry,type):
@@ -737,5 +879,6 @@ if __name__ == "__main__":
     #print_summary_underl("SPX")
     #print_fast_move("SPX")
     #print_tic_report(symbol="ES", expiry="20161118",history=3)
-    print_account_delta(valuation_dt="2017-01-31-20")
+    #print_account_delta(valuation_dt="2017-01-31-20")
     #print_volatity("SPY")
+    print_volatility_cone(symbol="SPY")
