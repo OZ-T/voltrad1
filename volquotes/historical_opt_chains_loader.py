@@ -97,7 +97,8 @@ def run_reader():
                 if opt1["strike"] >= (filtro_strikes * (1 - pct_range_opt_chain)) \
                         and opt1["strike"] <= (filtro_strikes * (1 + pct_range_opt_chain)):
 
-                    path_h5 = "/" + str(opt1['symbol']) + str(opt1['expiry']) + str(opt1['right']) + str(opt1['strike'])
+                    path_h5 = "/" + str(opt1['symbol']) + "/" + str(opt1['expiry']) + "/" + \
+                              str(opt1['right']) + "/" + str(opt1['strike'])
                     f = globalconf.open_historical_optchain_store()
                     node = f.get_node(path_h5)
                     last_record_stored = 0

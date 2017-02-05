@@ -76,6 +76,9 @@ fix_optchain:
   pointer: volsetup.fix_h5_optchain_ib.run
 fix_optchain_yhoo:
   pointer: volsetup.fix_h5_yahoo_optchain.run
+fix_histo_optchain:
+  pointer: volsetup.fix_h5_historical_opt.run
+
 batch_account:
   pointer:  volaccounting.vol_grab_accounting.run_get_portfolio_data
 batch_hist_underlying:

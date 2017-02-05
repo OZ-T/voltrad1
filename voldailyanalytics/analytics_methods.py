@@ -668,6 +668,8 @@ def print_volatility_cone(symbol):
     """
     client , log_analytics, globalconf = init_func()
     dataframe = pd.DataFrame()
+    # use VIX to get the mean 30d 60d 90d and so on from underlying_hist_ib h5
+
 
     print dataframe
     end_func(client)
