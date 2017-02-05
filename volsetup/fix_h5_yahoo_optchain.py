@@ -18,9 +18,9 @@ path = 'C:/Users/David/data/'
 
 def run():
     os.chdir(path)
-    optchain_orig = 'optchain_yahoo_hist_db_new.h5'
-    pattern_optchain = 'optchain_yahoo_hist_db_new.h5*'
-    optchain_out = 'optchain_yahoo_hist_db_new_new.h5'
+    optchain_orig = 'optchain_yahoo_hist_db.h5'
+    pattern_optchain = 'optchain_yahoo_hist_db.h5*'
+    optchain_out = 'optchain_yahoo_hist_db_new.h5'
     lst1 = glob.glob(pattern_optchain)
     lst1.remove(optchain_orig)
     print lst1
@@ -51,13 +51,13 @@ def run():
     store_in1.close()
 
     dataframe.sort_index(inplace=True,ascending=[True])
-    names = dataframe['symbol'].unique().tolist()
+    names = dataframe['Underlying'].unique().tolist()
     for name in names:
-        joe = dataframe[dataframe.symbol == name]
+        joe = dataframe[dataframe.Underlying == name]
         print ("Storing " + name + " in ABT ..." + str(len(joe)))
-        joe=joe.sort_values(by=['Symbol', 'load_dttm'])
+        joe=joe.sort_values(by=['Symbol', 'Quote_Time'])
         store_out.append("/" + name, joe, data_columns=True,
-                         min_itemsize={'Chg': 7,'Last': 10,'OpenInt':10,'Vol':10})
+                         min_itemsize={'Chg': 7,'Last': 10,'Open_Int':10,'Vol':10})
     store_out.close()
 
 if __name__ == "__main__":

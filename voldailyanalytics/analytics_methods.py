@@ -661,6 +661,18 @@ def print_historical_option(start_dt,end_dt,symbol,lst_right_strike,expiry,type)
     print dataframe
     end_func(client)
 
+
+def print_volatility_cone(symbol):
+    """
+    Print valotility cone for symbol given as argument
+    """
+    client , log_analytics, globalconf = init_func()
+    dataframe = pd.DataFrame()
+
+    print dataframe
+    end_func(client)
+
+
 def print_quasi_realtime_chain(val_dt,symbol,call_d_range,put_d_range,expiry,type):
     """
     Type should be bid, ask or trades

@@ -218,7 +218,7 @@ def run_shark_analytics(i_symbol, i_date, i_expiry, i_secType, accountid, scenar
     # cruzar esta lista con las cotizacionon la IV
     trade_summary = trade_summary[['orders_localSymbol','orders_avgprice','orders_expiry','orders_current_datetime',
                                    'orders_symbol','orders_load_dttm','orders_multiplier','orders_price','orders_qty',
-                                   'orders_shares','orders_right','orders_side','orders_strike','orders_times',
+                                   'orders_shares   ','orders_right','orders_side','orders_strike','orders_times',
                                    'prices_lastUndPrice','prices_modelImpliedVol','prices_bidPrice','prices_askPrice',
                                    'prices_lastPrice','prices_current_datetime','prices_modelDelta','prices_modelGamma',
                                    'prices_modelTheta','prices_modelVega']]
@@ -719,7 +719,7 @@ def get_strategy_start_date(con,meta,symbol,expiry,accountid,scenarioMode,simulN
     return ret1
 
 
-
+@profile
 def run_analytics(symbol, expiry, secType,accountid,valuation_dt,scenarioMode,simulName,
                   appendh5,appendsql,toxls,timedelta1,log,globalconf):
     """
@@ -735,6 +735,7 @@ def run_analytics(symbol, expiry, secType,accountid,valuation_dt,scenarioMode,si
                         The real historical market data is always used in both cases though
     :return:
     """
+    log.info("---------------------------------------------------------------------------------------------")
     log.info("Run_analytics symbol=%s expiry=%s valuation_dt=%s" % (symbol, expiry, str(valuation_dt)) )
     con , meta = None , None
     if appendsql == 1:
@@ -780,6 +781,9 @@ def run_report():
 
 
 if __name__=="__main__":
-    run_report()
-    #run_analytics(symbol="ES", expiry="20170120", secType="FOP", accountid=accountid,
-    #              valuation_dt=fecha_valoracion,scenarioMode="N",simulName="NA",appendh5=1,appendsql=0,toxls=0,timedelta1=1)
+    #run_report()
+    accountid = globalconf.get_accountid()
+    fecha_valoracion = dt.datetime.now()
+    run_analytics(symbol="ES", expiry="20170217", secType="FOP", accountid=accountid,
+                  valuation_dt=fecha_valoracion,scenarioMode="N",simulName="NA",appendh5=1,
+                  appendsql=0,toxls=0,timedelta1=1,log=log,globalconf=globalconf)

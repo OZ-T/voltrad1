@@ -9,6 +9,8 @@ vol:
   pointer: voldailyanalytics.analytics_methods.print_volatity
 fastmove:
   pointer: voldailyanalytics.analytics_methods.print_fast_move
+cone:
+  pointer: voldailyanalytics.analytics_methods.print_volatility_cone
 
 # pretrade analysis commands
 lstprc:
@@ -72,6 +74,8 @@ fix_ecalendar:
   pointer: volsetup.fix_h5_economic_calendar.run
 fix_optchain:
   pointer: volsetup.fix_h5_optchain_ib.run
+fix_optchain_yhoo:
+  pointer: volsetup.fix_h5_yahoo_optchain.run
 batch_account:
   pointer:  volaccounting.vol_grab_accounting.run_get_portfolio_data
 batch_hist_underlying:

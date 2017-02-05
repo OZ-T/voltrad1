@@ -10,8 +10,10 @@ import numpy as np
 sys.path.append('/home/david/python/voltrad1')
 
 globalconf = config.GlobalConfig()
+path = globalconf.config['paths']['data_folder']
+
 store_in = globalconf.open_historical_optchain_store()
-store_out = pd.HDFStore("/home/david/Dropbox/proyectos/data/" + "historical_optchain_ib_db_new.h5")
+store_out = pd.HDFStore(path + "historical_optchain_ib_db_new.h5")
 root = store_in.root
 print root._v_pathname
 #dataframe = pd.DataFrame()
