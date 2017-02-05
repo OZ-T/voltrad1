@@ -13,8 +13,11 @@ import pandas as pd
 import datetime as dt
 import numpy as np
 
-path = 'C:/Users/David/data/'
+# path = 'C:/Users/David/data/'
 # path = '/home/david/data/'
+
+globalconf = config.GlobalConfig()
+path = globalconf.config['paths']['data_folder']
 
 def run():
     os.chdir(path)
