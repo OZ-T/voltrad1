@@ -8,6 +8,7 @@ import pandas_datareader.data as web
 from opt_pricing_methods import bsm_mcs_euro
 import sys
 from volsetup.logger import logger
+import time
 
 globalconf = config.GlobalConfig()
 log = logger("Run Analytics module")
@@ -24,6 +25,15 @@ OPT_NUM_FIELDS_LST = [u'CallOI',u'PutOI', u'Volume', u'askDelta', u'askGamma',
                    u'modelPvDividend', u'modelTheta', u'modelUndPrice', u'modelVega',
                    u'multiplier', u'strike']
 
+
+def timefunc(f):
+    def f_timer(*args, **kwargs):
+        start = time.time()
+        result = f(*args, **kwargs)
+        end = time.time()
+        log.info( ' __TIMER__ ' + str(f.__name__) + ' took ' + str( end - start ) + ' time')
+        return result
+    return f_timer
 
 # leer del h5 del yahoo biz calendar
 def read_biz_calendar(start_dttm,valuation_dttm):
@@ -64,8 +74,7 @@ def read_biz_calendar(start_dttm,valuation_dttm):
     return dataframe
 
 
-
-
+@timefunc
 def extrae_options_chain(valuation_dttm,symbol,expiry,secType):
     """
         extraer de la hdf5 los datos de cotizaciones para una fecha
@@ -114,6 +123,7 @@ def extrae_options_chain(valuation_dttm,symbol,expiry,secType):
     dataframe = dataframe.add_prefix("prices_")
     return dataframe
 
+@timefunc
 def extrae_options_chain2(start_dttm,end_dttm,symbol,expiry,secType):
     """
         extraer de la hdf5 los datos de cotizaciones entre dos fechas
@@ -247,7 +257,7 @@ def extrae_account_snapshot_kk(year,month,day):
     store.close()
     return dataframe
 
-
+@timefunc
 def extrae_account_snapshot_new(valuation_dttm,accountid,scenarioMode,simulName):
     """
     Extrae los snapshots horarios de account para una fecha
@@ -333,7 +343,7 @@ def extrae_account_delta(year,month,day,hour,minute):
     #log_file.close()	
     return dataframe
 
-
+@timefunc
 def extrae_historical_underl(symbol,start_dt="20160101",end_dt="29991231"):
     log.info("extrae_historical_underl para : start_dt=%s end_dt=%s symbol=%s " % (str(start_dt),str(end_dt),symbol))
     store = globalconf.open_historical_store()
@@ -348,6 +358,7 @@ def extrae_historical_underl(symbol,start_dt="20160101",end_dt="29991231"):
     store.close()
     return dataframe
 
+@timefunc
 def extrae_historical_chain(start_dt,end_dt,symbol,strike,expiry,right):
     contract = symbol + expiry + right + strike
     log.info("extrae_historical_chain para : start_dt=%s end_dt=%s contract=%s " % (str(start_dt),str(end_dt),contract))
@@ -391,8 +402,7 @@ def extrae_historical_chain_where(start_dt,end_dt,symbol,strike,expiry,right):
     return dataframe
 
 
-
-
+@timefunc
 def extrae_account_snapshot(valuation_dttm,accountid,scenarioMode,simulName):
     log.info("extrae_account_snapshot para : [%s] " % (str(valuation_dttm)))
     dataframe = pd.DataFrame()
@@ -429,6 +439,7 @@ def extrae_account_snapshot(valuation_dttm,accountid,scenarioMode,simulName):
     return t_margin , t_prem
 
 
+@timefunc
 def extrae_account_delta_new(valuation_dttm,accountid,scenarioMode,simulName):
     """
     Extrae la delta de las variables de account dado un datetime.
@@ -482,6 +493,7 @@ def extrae_account_delta_new(valuation_dttm,accountid,scenarioMode,simulName):
     return t_margin , t_prem
 
 
+@timefunc
 def extrae_portfolio_positions(valuation_dttm=None,symbol=None,expiry=None,secType=None,
                                accountid=None,scenarioMode="N",simulName="NA"):
     """
@@ -501,16 +513,22 @@ def extrae_portfolio_positions(valuation_dttm=None,symbol=None,expiry=None,secTy
     dataframe = pd.DataFrame()
     if scenarioMode == "N":
         store=globalconf.portfolio_store()
-        for hora in store.get_node("/"+str(valuation_dttm.year)+"/"+valuation_dttm.strftime("%B")[:3]+"/"+str(valuation_dttm.day)):
-            #print datetime.strptime(hora._v_pathname, '/%Y/%b/%d/%H').hour , hour
-            if int(datetime.strptime(hora._v_pathname, '/%Y/%b/%d/%H').hour) <= valuation_dttm.hour:
-                for minuto in store.get_node(hora._v_pathname):
-                    if where1 is None:
-                        df1=store.select(minuto._v_pathname)
-                    else:
-                        df1 = store.select(minuto._v_pathname, where=where1)
-                    df1['load_dttm']=datetime.strptime(minuto._v_pathname, '/%Y/%b/%d/%H/%M')
-                    dataframe = dataframe.append(df1)
+        node1=store.get_node("/"+str(valuation_dttm.year)+"/"+valuation_dttm.strftime("%B")[:3]+"/"+str(valuation_dttm.day))
+        try:
+            for hora in node1:
+                #print datetime.strptime(hora._v_pathname, '/%Y/%b/%d/%H').hour , hour
+                if int(datetime.strptime(hora._v_pathname, '/%Y/%b/%d/%H').hour) <= valuation_dttm.hour:
+                    for minuto in store.get_node(hora._v_pathname):
+                        if where1 is None:
+                            df1=store.select(minuto._v_pathname)
+                        else:
+                            df1 = store.select(minuto._v_pathname, where=where1)
+                        df1['load_dttm']=datetime.strptime(minuto._v_pathname, '/%Y/%b/%d/%H/%M')
+                        dataframe = dataframe.append(df1)
+        except TypeError:
+            log.info("No option data to analyze (t). Exiting ...")
+            store.close()
+            return
         store.close()
     elif scenarioMode == "Y":
         df1 = globalconf.portfolio_dataframe_simulation(simulName=simulName)
@@ -544,6 +562,7 @@ def extrae_portfolio_positions(valuation_dttm=None,symbol=None,expiry=None,secTy
     dataframe = dataframe.add_prefix("portfolio_")
     return dataframe
 
+@timefunc
 def extrae_fecha_inicio_estrategia(symbol,expiry,accountid,scenarioMode,simulName):
     """
 
@@ -567,6 +586,7 @@ def extrae_fecha_inicio_estrategia(symbol,expiry,accountid,scenarioMode,simulNam
         ret1 = datetime.now() + timedelta(days=99999)
     return ret1
 
+@timefunc
 def extrae_detalle_operaciones(valuation_dttm,symbol,expiry,secType,accountid,scenarioMode,simulName):
     """
     Extrae el detalle de todas las ordenes ejecutadas para un simbolo y expiracion

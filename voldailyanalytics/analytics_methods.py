@@ -37,8 +37,6 @@ def get_contract_details(symbol,conId=None):
     #if conId is None:
     return db1[symbol]
 
-
-
 def init_func():
     globalconf = config.GlobalConfig(level=logger.ERROR)
     log = globalconf.log

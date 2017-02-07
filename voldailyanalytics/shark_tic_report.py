@@ -4,6 +4,7 @@
 # In[50]:
 
 import run_analytics as ra
+from run_analytics import timefunc
 import pandas as pd
 import numpy as np
 import datetime as dt
@@ -41,6 +42,7 @@ datos_toxls=pd.DataFrame()
 #   5.- se obtiene del h5 account los impactos (deltas) en Cash (comisiones, primas cobradas) y margin en cada uno de los datetimes
 #       en que se ha realizado operaciones (este historico se obtiene en el punto 4 anterior)
 #
+@timefunc
 def run_shark_analytics(i_symbol, i_date, i_expiry, i_secType, accountid, scenarioMode,
                         simulName, appendh5, appendsql, toxls, log2, globalconf2, ):
     log2.info(" ------------- Running for valuation date: [%s] ------------- " % (str(i_date)))
@@ -674,6 +676,7 @@ def get_ivol_series(date_ini,date_end):
     df1 = store.select(lvl1._v_pathname)
     return df1.ix[date_ini:date_end]
 
+@timefunc
 def get_strategy_start_date(con,meta,symbol,expiry,accountid,scenarioMode,simulName,timedelta1,
                             appendh5,appendsql,log,globalconf):
     if appendh5 == 1:
@@ -718,8 +721,7 @@ def get_strategy_start_date(con,meta,symbol,expiry,accountid,scenarioMode,simulN
     ret1=ret1.replace(minute=59, second=59) # el datetime de valoracion siemrpe ha ser el ultimo minuto para asegurar coger todos los trades
     return ret1
 
-
-@profile
+@timefunc
 def run_analytics(symbol, expiry, secType,accountid,valuation_dt,scenarioMode,simulName,
                   appendh5,appendsql,toxls,timedelta1,log,globalconf):
     """
@@ -784,6 +786,6 @@ if __name__=="__main__":
     #run_report()
     accountid = globalconf.get_accountid()
     fecha_valoracion = dt.datetime.now()
-    run_analytics(symbol="ES", expiry="20170217", secType="FOP", accountid=accountid,
+    run_analytics(symbol="SPY", expiry="20170317", secType="OPT", accountid=accountid,
                   valuation_dt=fecha_valoracion,scenarioMode="N",simulName="NA",appendh5=1,
                   appendsql=0,toxls=0,timedelta1=1,log=log,globalconf=globalconf)
