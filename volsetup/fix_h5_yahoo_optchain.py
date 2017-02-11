@@ -52,13 +52,13 @@ def run():
             print "store_in1", len(df1), optchain_orig
     store_in1.close()
 
-    dataframe = dataframe.reset_index().set_index("Quote_Time")
-    dataframe.sort_index(inplace=True,ascending=[True])
+    dataframe = dataframe.reset_index().drop('index',axis=1).set_index("Quote_Time")
+    #dataframe.sort_index(inplace=True,ascending=[True])
     names = dataframe['Underlying'].unique().tolist()
     for name in names:
         joe = dataframe[dataframe.Underlying == name]
         print ("Storing " + name + " in ABT ..." + str(len(joe)))
-        joe=joe.sort_values(by=['Symbol'])
+        joe=joe.sort_values(by=['Symbol','Quote_Time_txt'])
         store_out.append("/" + name, joe, data_columns=True,
                          min_itemsize={'Chg': 7,'Last': 10,'Open_Int':10,'Vol':10})
     store_out.close()

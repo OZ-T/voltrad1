@@ -73,8 +73,8 @@ for symbol,row in optchain_def.iterrows():
                 joe = clean_cols_for_hdf2(joe)
 
                 try:
-                    f.append("/" + symbol, joe, data_columns=True
-                             ,min_itemsize={'JSON': 420,'Symbol': 25,'Root': 10})
+                    f.append("/" + symbol, joe, data_columns=True)
+                #             ,min_itemsize={'JSON': 420,'Symbol': 25,'Root': 10})
                 # ,'OpenInt':10,'Vol':10}) PENDIENTE recrear el hdf5 con longitudes por defecto
                 except ValueError as e:
                     log.warn("ValueError raised [" + str(e) + "]  Creating ancilliary file ...")
