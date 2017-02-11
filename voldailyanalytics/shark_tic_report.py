@@ -45,7 +45,8 @@ datos_toxls=pd.DataFrame()
 @timefunc
 def run_shark_analytics(i_symbol, i_date, i_expiry, i_secType, accountid, scenarioMode,
                         simulName, appendh5, appendsql, toxls, log2, globalconf2, ):
-    log2.info(" ------------- Running for valuation date: [%s] ------------- " % (str(i_date)))
+    log2.info(" ------------- Running [%s] [%s] for valuation date: [%s] ------------- " %
+              ( str(i_symbol), str(i_expiry), str(i_date)))
 
     # fechas en que se calcula la foto de la estrategia
     fecha_valoracion=i_date
@@ -140,11 +141,14 @@ def run_shark_analytics(i_symbol, i_date, i_expiry, i_secType, accountid, scenar
     #print "underl_prc_df ",underl_prc_df
     # si el dataset esta vacio no se puede continuar en la analitica.
     if underl_prc_df.empty:
-        print "No option data to analyze (t). Exiting ..."
+        log2.info( "No option data to analyze (t). Exiting ...")
         return
     # esto me da el ultimo precio disponible en la H5 del subyacente antes de la fecha de valoracion
     underl_prc = float(underl_prc_df.ix[np.max(underl_prc_df.index)]['prices_lastUndPrice'])
     hora_max=np.max(underl_prc_df.index)
+    if hora_max.hour < i_date.hour:
+        log2.info( "No option data to analyze (t). Exiting ...")
+        return
 
     ###################################################################################################################
     ## Lo mismo pero para t-1 (ayer)
@@ -152,7 +156,7 @@ def run_shark_analytics(i_symbol, i_date, i_expiry, i_secType, accountid, scenar
     underl_prc_df_tminus1 = cadena_opcs_tminus1[['prices_lastUndPrice',
                                                  'prices_load_dttm']].groupby(['prices_load_dttm']).agg(lambda x: stats.mode(x)[0][0])
     if underl_prc_df_tminus1.empty:
-        print "No option data to analyze (t-1). Exiting ..."
+        log2.info( "No option data to analyze (t-1). Exiting ...")
         return
     underl_prc_tminus1 = float(underl_prc_df_tminus1.ix[np.max(underl_prc_df_tminus1.index)]['prices_lastUndPrice'])
     hora_max_tminus1=np.max(underl_prc_df_tminus1.index)
@@ -648,6 +652,8 @@ def run_shark_analytics(i_symbol, i_date, i_expiry, i_secType, accountid, scenar
                               'DToperaciones':str(lista_dttm_con_trades),
                               'MargenNeto': margen_neto
                               },index=[hora_max.strftime("%Y-%m-%d %H:%M:%S")])
+
+    log2.info(">>>>>>>>>>>>>>>>>>>>>> Almacenando resultados en ABT...")
     if toxls ==1:
         global datos_toxls
         datos_toxls=datos_toxls.append(row_datos)
