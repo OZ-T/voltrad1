@@ -89,7 +89,7 @@ def run_shark_analytics(i_symbol, i_date, i_expiry, i_secType, accountid, scenar
     else:
         # scenario case
         x=max(lista_dttm_con_trades)
-        log2.info("Extraer posiciones para fecha trade: [%s] " % (str(x)))
+        #log2.info("Extraer posiciones para fecha trade: [%s] " % (str(x)))
         posiciones = ra.extrae_portfolio_positions(valuation_dttm=x,
                                                    symbol=i_symbol, expiry=i_expiry, secType=i_secType,
                                                    accountid=accountid,
@@ -693,6 +693,7 @@ def get_strategy_start_date(con,meta,symbol,expiry,accountid,scenarioMode,simulN
             store_abt.close()
             # add one hour to run from the next hour
             ret1 += dt.timedelta(hours=timedelta1)
+            ret1 = ret1.replace(minute=59, second=59)
             return ret1
         except (IndexError, AttributeError) :
             log.info("There are no rows for the TIC strategy in the ABT H5")
@@ -713,6 +714,7 @@ def get_strategy_start_date(con,meta,symbol,expiry,accountid,scenarioMode,simulN
                 (df1_abt.loc[df1_abt.DTMaxdatost == np.max(df1_abt.DTMaxdatost)]['DTMaxdatost']).unique()[0])
             # add one hour to run from the next hour
             ret1 += dt.timedelta(hours=timedelta1)
+            ret1 = ret1.replace(minute=59, second=59)
             return ret1
 
     # 2.- si la estrategia no existe en la ABT se toma la fecha de inicio la fecha de la primera operacion
@@ -756,7 +758,7 @@ def run_analytics(symbol, expiry, secType,accountid,valuation_dt,scenarioMode,si
     while d <= end:
         #print "date while " , d
         if ( d.hour in _rth ) & ( d.weekday() not in weekend ) & ( d.date() not in utils.get_trading_close_holidays(d.year)) :
-            log.info( "date to run [%s] " % (str(d)))
+            #log.info( "date to run [%s] " % (str(d)))
             diff += 1
             run_shark_analytics(i_symbol=symbol, i_date=d, i_expiry=expiry, i_secType=secType,
                                 accountid=accountid, scenarioMode=scenarioMode,
@@ -784,8 +786,21 @@ def run_report():
 
 if __name__=="__main__":
     #run_report()
+    #################################################################################################################
+    # Parameters START
+    symbol="SPY"
+    expiry = "20170317"
+    secType = "OPT"
     accountid = globalconf.get_accountid()
-    fecha_valoracion = dt.datetime.now()
-    run_analytics(symbol="SPY", expiry="20170317", secType="OPT", accountid=accountid,
-                  valuation_dt=fecha_valoracion,scenarioMode="N",simulName="NA",appendh5=1,
-                  appendsql=0,toxls=0,timedelta1=1,log=log,globalconf=globalconf)
+    fecha_valoracion = dt.datetime.now() #dt.datetime(year=2017,month=2,day=2) #
+    scenarioMode = "N"
+    simulName = "spy0317dls"
+    appendh5 = 1
+    appendsql = 0
+    toxls = 0
+    timedelta1 = 1
+    # Parameters END
+    #################################################################################################################
+    run_analytics(symbol=symbol, expiry=expiry, secType=secType, accountid=accountid,
+                  valuation_dt=fecha_valoracion,scenarioMode=scenarioMode,simulName=simulName,appendh5=appendh5,
+                  appendsql=appendsql,toxls=toxls,timedelta1=timedelta1,log=log,globalconf=globalconf)

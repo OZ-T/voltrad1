@@ -52,7 +52,7 @@ def run():
             print "store_in1", len(df1), optchain_orig
     store_in1.close()
 
-    dataframe = dataframe.reset_index().drop('index',axis=1).set_index("Quote_Time")
+    dataframe = dataframe.reset_index().set_index("Quote_Time")
     #dataframe.sort_index(inplace=True,ascending=[True])
     names = dataframe['Underlying'].unique().tolist()
     for name in names:
@@ -65,4 +65,3 @@ def run():
 
 if __name__ == "__main__":
     run()
-
