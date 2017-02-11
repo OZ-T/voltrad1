@@ -582,7 +582,7 @@ def extrae_fecha_inicio_estrategia(symbol,expiry,accountid,scenarioMode,simulNam
     try:
         ret1=pd.to_datetime((df1.loc[df1.times == np.min(df1.times)]['times']).unique()[0])
     except IndexError:
-        print "There are no operations for the strategy in the orders H5 db"
+        log.info("There are no operations for the strategy %s %s in the orders H5 db" % ( str(symbol) , str(expiry) )  )
         ret1 = datetime.now() + timedelta(days=99999)
     return ret1
 
