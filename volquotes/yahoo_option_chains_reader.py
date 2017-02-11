@@ -56,23 +56,25 @@ for symbol,row in optchain_def.iterrows():
             log.info("expiry=%s" % (str(j)))
             try:
                 joe = pd.DataFrame()
-                call_data = option.get_call_data(expiry=j).reset_index()
-                put_data = option.get_put_data(expiry=j).reset_index()
+                call_data = option.get_call_data(expiry=j)
+                put_data = option.get_put_data(expiry=j)
                 #call_data.Expiry = j   fix error reading dates in get_call_data pandas code
                 #put_data.Expiry = j   fix error reading dates in get_call_data pandas code
                 if call_data.values.any():
                     joe = joe.append(call_data)
                 if put_data.values.any():
                     joe = joe.append(put_data)
-                joe = joe.sort_values(by=['Symbol', 'Quote_Time'])
+                #joe = joe.sort_values(by=['Symbol', 'Quote_Time'])
+                joe = joe.sort_index()
                 joe['Quote_Time_txt'] = joe['Quote_Time'].dt.strftime("%Y-%m-%d %H:%M:%S")
                 joe['Last_Trade_Date_txt'] = joe['Last_Trade_Date'].dt.strftime("%Y-%m-%d %H:%M:%S")
+                joe = joe.reset_index().set_index("Quote_Time")
                 joe['Expiry_txt'] = joe['Expiry'].dt.strftime("%Y-%m-%d %H:%M:%S")
                 joe = clean_cols_for_hdf2(joe)
 
                 try:
-                    f.append("/" + symbol, joe, data_columns=True)
-                    #         ,min_itemsize={'JSON': 500,'Symbol': 25,'Root': 10})
+                    f.append("/" + symbol, joe, data_columns=True
+                             ,min_itemsize={'JSON': 420,'Symbol': 25,'Root': 10})
                 # ,'OpenInt':10,'Vol':10}) PENDIENTE recrear el hdf5 con longitudes por defecto
                 except ValueError as e:
                     log.warn("ValueError raised [" + str(e) + "]  Creating ancilliary file ...")

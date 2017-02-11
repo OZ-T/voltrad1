@@ -40,7 +40,6 @@ def run():
                 print "store_in1", len(df1), x
         store_in1.close()
 
-
     store_in1 = pd.HDFStore(path + optchain_orig)
     store_out = pd.HDFStore(path + optchain_out)
     root1 = store_in1.root
@@ -53,12 +52,13 @@ def run():
             print "store_in1", len(df1), optchain_orig
     store_in1.close()
 
+    dataframe = dataframe.reset_index().set_index("Quote_Time")
     dataframe.sort_index(inplace=True,ascending=[True])
     names = dataframe['Underlying'].unique().tolist()
     for name in names:
         joe = dataframe[dataframe.Underlying == name]
         print ("Storing " + name + " in ABT ..." + str(len(joe)))
-        joe=joe.sort_values(by=['Symbol', 'Quote_Time'])
+        joe=joe.sort_values(by=['Symbol'])
         store_out.append("/" + name, joe, data_columns=True,
                          min_itemsize={'Chg': 7,'Last': 10,'Open_Int':10,'Vol':10})
     store_out.close()
