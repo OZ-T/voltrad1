@@ -334,7 +334,8 @@ def print_account_snapshot(valuation_dt):
                                                    scenarioMode="N", simulName="NA")
 
     if not temp_portfolio is None:
-        temp_portfolio['CB'] = temp_portfolio['portfolio_averageCost'] / temp_portfolio['portfolio_position']
+        temp_portfolio['CB'] = temp_portfolio['portfolio_averageCost'] / temp_portfolio['portfolio_multiplier'] * \
+                                    np.sign(temp_portfolio['portfolio_position'])
         temp_portfolio = temp_portfolio.drop(['portfolio_current_datetime'], 1)
         temp_portfolio = temp_portfolio.rename(columns={    'portfolio_averageCost': 'Cost',
                                                             'portfolio_marketValue': 'MktVal',
