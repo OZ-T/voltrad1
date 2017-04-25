@@ -7,3 +7,5 @@ shell/gw.sh.orig
 volibutils/__pycache__/
 *.log
 *.pid
+/docs/html/
+/docs/latex/

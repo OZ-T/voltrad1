@@ -1,3 +1,6 @@
+"""@package docstring
+"""
+
 # sacado del libro python for finance
 
 import numpy as np

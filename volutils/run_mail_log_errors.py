@@ -1,4 +1,6 @@
-
+"""@package docstring
+This is for running mail based alerts. Incomplete
+"""
 import re
 import sys
 import glob

@@ -1,8 +1,7 @@
-'''
-Created on 16 Nov 2016
-
-@author: rob
-'''
+"""@package docstring
+This is for running in batch python methods as commands
+Based on Rob Carver code
+"""
 
 import inspect
 from yaml import load as yload
@@ -109,6 +108,8 @@ def fill_args_and_run_func(func, full_funcname, type_casting=dict(),args1=None):
 
     #print("Finished")
 
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
 if __name__ == '__main__':
     """
     Load the function and config information
@@ -157,5 +158,6 @@ if __name__ == '__main__':
         raise Exception("NOT FOUND: function %s in module %s  specified for function reference %s \n Check file %s" % (funcname, mod, func_reference_name, config_file))
         
     fill_args_and_run_func(func, full_funcname, type_casting,args1=args1)
-    
+
+#endif /* DOXYGEN_SHOULD_SKIP_THIS */
     

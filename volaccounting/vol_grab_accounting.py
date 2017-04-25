@@ -1,3 +1,7 @@
+"""@package docstring
+ Methods for accounting related tasks
+"""
+
 import volibutils.sync_client as ib
 from volsetup import config
 import numpy as np

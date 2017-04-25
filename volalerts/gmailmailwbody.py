@@ -1,3 +1,5 @@
+"""@package docstring
+"""
 
 import logging.handlers
 import smtplib

@@ -1,4 +1,7 @@
-#from datetime import datetime, timedelta
+"""@package docstring
+ Utility classes and methods.
+"""
+
 import math
 import datetime
 import datetime as dt
@@ -7,8 +10,12 @@ from pandas.tseries.holiday import AbstractHolidayCalendar, Holiday, nearest_wor
     USMartinLutherKingJr, USPresidentsDay, GoodFriday, USMemorialDay, \
     USLaborDay, USThanksgivingDay
 
-
 class USTradingCalendar(AbstractHolidayCalendar):
+    """
+    !@brief This class is representing a US Calendar standard includes holidays.
+    
+     @param self
+    """
     rules = [
         Holiday('NewYearsDay', month=1, day=1, observance=nearest_workday),
         USMartinLutherKingJr,
@@ -23,22 +30,22 @@ class USTradingCalendar(AbstractHolidayCalendar):
 
 
 def get_trading_close_holidays(year):
+    """
+    Returns a curve with holidays in the year passed as argument
+    :param year: 
+    :return: 
+    """
     inst = USTradingCalendar()
 
     return inst.holidays(dt.datetime(year-1, 12, 31), dt.datetime(year, 12, 31))
 
 
 
-
-
-
-
-
-
-
-
-
 class BusinessHours:
+    """
+    !@brief This class used for calculating business hours between two datetimes
+    @param self
+    """
     def __init__(self, datetime1, datetime2, worktiming=[9, 17],weekends=[6, 7]):
         self.weekends = weekends
         self.worktiming = worktiming

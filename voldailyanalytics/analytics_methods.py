@@ -1,4 +1,10 @@
 # coding: utf-8
+
+"""@package docstring
+Documentation for this module.
+More details.
+"""
+
 import volibutils.sync_client as ib
 from volsetup import config
 import datetime as dt

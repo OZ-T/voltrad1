@@ -1,5 +1,7 @@
 # -*- coding: UTF-8 -*-
 
+"""@package docstring
+"""
 import smtplib
 import datetime
 

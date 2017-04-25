@@ -8,6 +8,7 @@ import sqlalchemy
 from sqlalchemy import Table, Column, Integer, String, ForeignKey
 from datetime import datetime, timedelta
 from volsetup.logger import logger
+import sqlite3
 
 class GlobalConfig(object):
 
@@ -270,6 +271,13 @@ class GlobalConfig(object):
         meta = sqlalchemy.MetaData(bind=con, reflect=True)
         return con, meta
 
+    def connect_sqllite(self,name):
+        """
+        Returns a connection to a sqllite DB
+        :return:
+        """
+        conn = sqlite3.connect(name)
+        return conn
 
 
 if __name__ == "__main__":
