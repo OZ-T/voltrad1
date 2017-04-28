@@ -1,8 +1,6 @@
 # coding: utf-8
 
-"""@package docstring
-Documentation for this module.
-More details.
+"""Analytical methods useful for daily trading and strategy
 """
 
 import volibutils.sync_client as ib
@@ -30,7 +28,8 @@ HISTORY_LIMIT = 20
 
 def get_contract_details(symbol,conId=None):
     """
-    In the future will get details fro DB given a ConId
+    Get contract details method.
+    In the future will get details from DB given a ConId
     There will be a process that populate in background this table DB
     with all the potential contracts and the corresponding contract ID
     """
@@ -44,6 +43,10 @@ def get_contract_details(symbol,conId=None):
     return db1[symbol]
 
 def init_func():
+    """
+    Initialization method.
+    Initialize both global config object and display width for console printing
+    """
     globalconf = config.GlobalConfig(level=logger.ERROR)
     log = globalconf.log
     client = None
@@ -55,6 +58,9 @@ def init_func():
 
 
 def end_func(client):
+    """
+    Clean up method to disconnect and free resources    
+    """
     if client is not None:
         client.disconnect()
 
