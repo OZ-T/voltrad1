@@ -1,6 +1,5 @@
-"""@package docstring
+""" Module with orders related methods.
 """
-
 
 import volibutils.sync_client as ib
 from volsetup import config
@@ -14,6 +13,9 @@ from volsetup.logger import logger
 from volutils import utils as utils
 
 def run_get_orders():
+    """
+    Method to retrieve orders -everything from the last business day-, intended for batch usage     
+    """
     log=logger("run_get_orders")
 
     if dt.datetime.now().date() in utils.get_trading_close_holidays(dt.datetime.now().year):

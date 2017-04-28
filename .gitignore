@@ -9,3 +9,5 @@ volibutils/__pycache__/
 *.pid
 /docs/html/
 /docs/latex/
+/docs/sphinx/_build/
+

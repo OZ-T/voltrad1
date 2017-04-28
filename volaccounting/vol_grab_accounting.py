@@ -1,12 +1,9 @@
-"""@package docstring
- Methods for accounting related tasks
+""" package for accounting tasks
 """
 
 import volibutils.sync_client as ib
 from volsetup import config
-import numpy as np
 import datetime as dt
-import pickle
 import pandas as pd
 from volsetup.logger import logger
 import swigibpy as sy
@@ -15,6 +12,9 @@ from volibutils.RequestUnderlyingData import RequestUnderlyingData
 from volutils import utils as utils
 
 def print_portfolio_data():
+    """ Print portfolio data to console.
+    Summary information about account and portfolio.
+    """
     days = 10
     globalconf = config.GlobalConfig(level=logger.ERROR)
     log = globalconf.log
@@ -80,8 +80,10 @@ def print_portfolio_data():
     print(df1)
 
 def run_get_portfolio_data():
+    """ Stores in HDF5 snapshot of portfolio data.
+    Intended for batch run, Summary information about account and portfolio.
+    """
     log=logger("run_get_portfolio_data")
-
     if dt.datetime.now().date() in utils.get_trading_close_holidays(dt.datetime.now().year):
         log.info("This is a US Calendar holiday. Ending process ... ")
         return
@@ -134,7 +136,6 @@ def run_get_portfolio_data():
             joe.index=pd.to_datetime(joe['current_datetime'], format="%Y%m%d%H%M%S")
             joe.drop('current_datetime',axis=1,inplace=True)
             joe['current_datetime_txt'] = joe.index.strftime("%Y-%m-%d %H:%M:%S")
-
             node=store_new.get_node("/" + name)
             if node:
                 log.info("Getting columns names in account store HDF5 ... ")
@@ -145,40 +146,6 @@ def run_get_portfolio_data():
                 colsfinal = list(set(cols).intersection(colsjoe))
                 joe = joe[colsfinal]
 
-            """
-            AccountCode_	AccountOrGroup_BASE	AccountOrGroup_EUR	AccountOrGroup_USD	AccountReady_	AccountType_
-            AccruedCash_BASE	AccruedCash_C_USD	AccruedCash_EUR	AccruedCash_S_USD	AccruedCash_USD	AccruedDividend_C_USD
-            AccruedDividend_S_USD	AccruedDividend_USD	AvailableFunds,_C_USD	AvailableFunds_S_USD	AvailableFunds_USD	Billable_C_USD
-            Billable_S_USD	Billable_USD	BuyingPower_USD	CashBalance_BASE	CashBalance_EUR	CashBalance_USD	CorporateBondValue_BASE
-            CorporateBondValue_EUR	CorporateBondValue_USD	Currency_BASE	Currency_EUR	Currency_USD	Cushion_
-            DayTradesRemainingTplus1_	DayTradesRemainingTplus2_	DayTradesRemainingTplus3_	DayTradesRemainingTplus4_
-            DayTradesRemaining_	EquityWithLoanValue_C_USD	EquityWithLoanValue_S_USD	EquityWithLoanValue_USD	ExcessLiquidity_C_USD
-            ExcessLiquidity_S_USD	ExcessLiquidity_USD	ExchangeRate_BASE	ExchangeRate_EUR	ExchangeRate_USD	FullAvailableFunds_C_USD
-            FullAvailableFunds_S_USD	FullAvailableFunds_USD	FullExcessLiquidity_C_USD	FullExcessLiquidity_S_USD
-            FullExcessLiquidity_USD	FullInitMarginReq_C_USD	FullInitMarginReq_S_USD	FullInitMarginReq_USD	FullMaintMarginReq_C_USD
-            FullMaintMarginReq_S_USD	FullMaintMarginReq_USD	FundValue_BASE	FundValue_EUR	FundValue_USD	FutureOptionValue_BASE
-            FutureOptionValue_EUR	FutureOptionValue_USD	FuturesPNL_BASE	FuturesPNL_EUR	FuturesPNL_USD	FxCashBalance_BASE
-            FxCashBalance_EUR	FxCashBalance_USD	GrossPositionValue_S_USD	GrossPositionValue_USD	IndianStockHaircut_C_USD
-            IndianStockHaircut_S_USD	IndianStockHaircut_USD	InitMarginReq_C_USD	InitMarginReq_S_USD	InitMarginReq_USD
-            IssuerOptionValue_BASE	IssuerOptionValue_EUR	IssuerOptionValue_USD	Leverage_S_	LookAheadAvailableFunds_C_USD
-            LookAheadAvailableFunds_S_USD	LookAheadAvailableFunds_USD	LookAheadExcessLiquidity_C_USD	LookAheadExcessLiquidity_S_USD
-            LookAheadExcessLiquidity_USD	LookAheadInitMarginReq_C_USD	LookAheadInitMarginReq_S_USD	LookAheadInitMarginReq_USD
-            LookAheadMaintMarginReq_C_USD	LookAheadMaintMarginReq_S_USD	LookAheadMaintMarginReq_USD	LookAheadNextChange_
-            MaintMarginReq_C_USD	MaintMarginReq_S_USD	MaintMarginReq_USD	MoneyMarketFundValue_BASE	MoneyMarketFundValue_EUR
-            MoneyMarketFundValue_USD	MutualFundValue_BASE	MutualFundValue_EUR	MutualFundValue_USD	NetDividend_BASE
-            NetDividend_EUR	NetDividend_USD	NetLiquidationByCurrency_BASE	NetLiquidationByCurrency_EUR	NetLiquidationByCurrency_USD
-            NetLiquidationUncertainty_USD	NetLiquidation_C_USD	NetLiquidation_S_USD	NetLiquidation_USD	OptionMarketValue_BASE
-            OptionMarketValue_EUR	OptionMarketValue_USD	PASharesValue_C_USD	PASharesValue_S_USD	PASharesValue_USD
-            PostExpirationExcess_C_USD	PostExpirationExcess_S_USD	PostExpirationExcess_USD	PostExpirationMargin_C_USD
-            PostExpirationMargin_S_USD	PostExpirationMargin_USD	PreviousDayEquityWithLoanValue_S_USD
-            PreviousDayEquityWithLoanValue_USD	RealCurrency_BASE	RealCurrency_EUR	RealCurrency_USD	RealizedPnL_BASE
-            RealizedPnL_EUR	RealizedPnL_USD	RegTEquity_S_USD	RegTEquity_USD	RegTMargin_S_USD	RegTMargin_USD	SMA_S_USD
-            SMA_USD	SegmentTitle_C_	SegmentTitle_S_	StockMarketValue_BASE	StockMarketValue_EUR	StockMarketValue_USD
-            TBillValue_BASE	TBillValue_EUR	TBillValue_USD	TBondValue_BASE	TBondValue_EUR	TBondValue_USD	TotalCashBalance_BASE
-            TotalCashBalance_EUR	TotalCashBalance_USD	TotalCashValue_C_USD	TotalCashValue_S_USD	TotalCashValue_USD
-            TradingType_S_	UnrealizedPnL_BASE	UnrealizedPnL_EUR	UnrealizedPnL_USD	WarrantValue_BASE	WarrantValue_EUR
-            WarrantValue_USD	WhatIfPMEnabled_	current_date	current_datetime
-            """
             log.info("Appending account data to HDF5 ... ")
             # Following 3 lines is to fix following error when storing in HDF5:
             #       [unicode] is not implemented as a table column
@@ -190,6 +157,40 @@ def run_get_portfolio_data():
         store_new.close()
 
 if __name__=="__main__":
-    run_get_portfolio_data()
-    #print_portfolio_data()
+    #run_get_portfolio_data()
+    print_portfolio_data()
 
+"""
+AccountCode_	AccountOrGroup_BASE	AccountOrGroup_EUR	AccountOrGroup_USD	AccountReady_	AccountType_
+AccruedCash_BASE	AccruedCash_C_USD	AccruedCash_EUR	AccruedCash_S_USD	AccruedCash_USD	AccruedDividend_C_USD
+AccruedDividend_S_USD	AccruedDividend_USD	AvailableFunds,_C_USD	AvailableFunds_S_USD	AvailableFunds_USD	Billable_C_USD
+Billable_S_USD	Billable_USD	BuyingPower_USD	CashBalance_BASE	CashBalance_EUR	CashBalance_USD	CorporateBondValue_BASE
+CorporateBondValue_EUR	CorporateBondValue_USD	Currency_BASE	Currency_EUR	Currency_USD	Cushion_
+DayTradesRemainingTplus1_	DayTradesRemainingTplus2_	DayTradesRemainingTplus3_	DayTradesRemainingTplus4_
+DayTradesRemaining_	EquityWithLoanValue_C_USD	EquityWithLoanValue_S_USD	EquityWithLoanValue_USD	ExcessLiquidity_C_USD
+ExcessLiquidity_S_USD	ExcessLiquidity_USD	ExchangeRate_BASE	ExchangeRate_EUR	ExchangeRate_USD	FullAvailableFunds_C_USD
+FullAvailableFunds_S_USD	FullAvailableFunds_USD	FullExcessLiquidity_C_USD	FullExcessLiquidity_S_USD
+FullExcessLiquidity_USD	FullInitMarginReq_C_USD	FullInitMarginReq_S_USD	FullInitMarginReq_USD	FullMaintMarginReq_C_USD
+FullMaintMarginReq_S_USD	FullMaintMarginReq_USD	FundValue_BASE	FundValue_EUR	FundValue_USD	FutureOptionValue_BASE
+FutureOptionValue_EUR	FutureOptionValue_USD	FuturesPNL_BASE	FuturesPNL_EUR	FuturesPNL_USD	FxCashBalance_BASE
+FxCashBalance_EUR	FxCashBalance_USD	GrossPositionValue_S_USD	GrossPositionValue_USD	IndianStockHaircut_C_USD
+IndianStockHaircut_S_USD	IndianStockHaircut_USD	InitMarginReq_C_USD	InitMarginReq_S_USD	InitMarginReq_USD
+IssuerOptionValue_BASE	IssuerOptionValue_EUR	IssuerOptionValue_USD	Leverage_S_	LookAheadAvailableFunds_C_USD
+LookAheadAvailableFunds_S_USD	LookAheadAvailableFunds_USD	LookAheadExcessLiquidity_C_USD	LookAheadExcessLiquidity_S_USD
+LookAheadExcessLiquidity_USD	LookAheadInitMarginReq_C_USD	LookAheadInitMarginReq_S_USD	LookAheadInitMarginReq_USD
+LookAheadMaintMarginReq_C_USD	LookAheadMaintMarginReq_S_USD	LookAheadMaintMarginReq_USD	LookAheadNextChange_
+MaintMarginReq_C_USD	MaintMarginReq_S_USD	MaintMarginReq_USD	MoneyMarketFundValue_BASE	MoneyMarketFundValue_EUR
+MoneyMarketFundValue_USD	MutualFundValue_BASE	MutualFundValue_EUR	MutualFundValue_USD	NetDividend_BASE
+NetDividend_EUR	NetDividend_USD	NetLiquidationByCurrency_BASE	NetLiquidationByCurrency_EUR	NetLiquidationByCurrency_USD
+NetLiquidationUncertainty_USD	NetLiquidation_C_USD	NetLiquidation_S_USD	NetLiquidation_USD	OptionMarketValue_BASE
+OptionMarketValue_EUR	OptionMarketValue_USD	PASharesValue_C_USD	PASharesValue_S_USD	PASharesValue_USD
+PostExpirationExcess_C_USD	PostExpirationExcess_S_USD	PostExpirationExcess_USD	PostExpirationMargin_C_USD
+PostExpirationMargin_S_USD	PostExpirationMargin_USD	PreviousDayEquityWithLoanValue_S_USD
+PreviousDayEquityWithLoanValue_USD	RealCurrency_BASE	RealCurrency_EUR	RealCurrency_USD	RealizedPnL_BASE
+RealizedPnL_EUR	RealizedPnL_USD	RegTEquity_S_USD	RegTEquity_USD	RegTMargin_S_USD	RegTMargin_USD	SMA_S_USD
+SMA_USD	SegmentTitle_C_	SegmentTitle_S_	StockMarketValue_BASE	StockMarketValue_EUR	StockMarketValue_USD
+TBillValue_BASE	TBillValue_EUR	TBillValue_USD	TBondValue_BASE	TBondValue_EUR	TBondValue_USD	TotalCashBalance_BASE
+TotalCashBalance_EUR	TotalCashBalance_USD	TotalCashValue_C_USD	TotalCashValue_S_USD	TotalCashValue_USD
+TradingType_S_	UnrealizedPnL_BASE	UnrealizedPnL_EUR	UnrealizedPnL_USD	WarrantValue_BASE	WarrantValue_EUR
+WarrantValue_USD	WhatIfPMEnabled_	current_date	current_datetime
+"""

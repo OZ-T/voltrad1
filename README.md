@@ -4,6 +4,10 @@
 
 `Version 0.2`
 
+Sphinx howto:
+    http://raxcloud.blogspot.com.es/2013/02/documenting-python-code-using-sphinx.html
+
+
 [Blablio Digital ocean](https://blablio.mooo.com:45451/tree)
 
 

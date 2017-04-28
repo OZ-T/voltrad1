@@ -1,4 +1,4 @@
-"""@package docstring
+"""Volatility cones calculation methods
 """
 
 
@@ -9,6 +9,9 @@ from pylab import axhline, figure, legend, plot, show
 
 
 def main():
+    """
+    Main calculation method     
+    """
     prices = pd.read_csv('AAPL.csv', index_col=0, parse_dates=True)
     prices.sort_index(inplace=True)
 
@@ -77,6 +80,10 @@ def main():
 
 
 def calc_sigmas(N, X, period=20):
+    """
+    Sigmas calculation method     
+    """
+
     start = 0
     end = N
 
@@ -103,6 +110,10 @@ def calc_sigmas(N, X, period=20):
 
 
 def calc_daily_sigma(lookback, data):
+    """
+    daily sigma calculation method     
+    """
+
     results = np.zeros(len(data))
     start = 0
     end = lookback
@@ -115,10 +126,18 @@ def calc_daily_sigma(lookback, data):
 
 
 def calc_sigma(N, X):
+    """
+    sigma calculation method     
+    """
+
     return sqrt(sum((X)**2) / float(N - 1)) * sqrt(252.0)
 
 
 def calculate_log_returns(pnl):
+    """
+    Log returns calculation method     
+    """
+
     lagged_pnl = lag(pnl)
     returns = log(pnl / lagged_pnl)
 
@@ -131,6 +150,10 @@ def calculate_log_returns(pnl):
 
 
 def lag(data):
+    """
+    Lag calculation method     
+    """
+
     lagged = np.roll(data, 1)
     lagged[0] = 0.
     return lagged
