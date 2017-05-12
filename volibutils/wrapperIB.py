@@ -1,8 +1,22 @@
 from swigibpy import EWrapper
 import time
 from swigibpy import EPosixClientSocket, ExecutionFilter
-
 from volibutils.IButils import bs_resolve, action_ib_fill
+import ConfigParser
+
+FILL_CODE = 1234
+MEANINGLESS_NUMBER = 999999
+MAX_WAIT = 99999
+
+def return_IB_connection_info():
+    """
+    Returns the tuple host, port, clientID required by eConnect
+    """
+    host = ""
+    port = ""
+    clientid = ""
+    return (host, port, clientid)
+
 
 class IBWrapper(EWrapper):
     """

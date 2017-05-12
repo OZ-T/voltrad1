@@ -11,10 +11,10 @@ Contents:
 .. toctree::
    :maxdepth: 4
 
-   setup
    volaccounting
    volalerts
    volblotter
+   volcones
    voldailyanalytics
    volfindata
    volibutils
@@ -24,6 +24,7 @@ Contents:
    volsetup
    volstrateg
    volutils
+   volvaluations
 
 
 Indices and tables

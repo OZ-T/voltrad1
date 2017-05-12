@@ -1,5 +1,5 @@
 import token, tokenize
-from six.moves import cStringIO as StringIO
+from io import StringIO
 import json
 from pandas.io.json import json_normalize
 import requests

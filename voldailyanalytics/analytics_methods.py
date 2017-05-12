@@ -67,17 +67,18 @@ def end_func(client):
 
 def windowed_view(x, window_size):
     """Creat a 2d windowed view of a 1d array.
-    `x` must be a 1d numpy array.
-    `numpy.lib.stride_tricks.as_strided` is used to create the view.
-    The data is not copied.
-    Example:
-    >>> x = np.array([1, 2, 3, 4, 5, 6])
-    >>> windowed_view(x, 3)
-    array([[1, 2, 3],
-           [2, 3, 4],
-           [3, 4, 5],
-           [4, 5, 6]])
     """
+    #`x` must be a 1d numpy array.
+    #`numpy.lib.stride_tricks.as_strided` is used to create the view.
+    #The data is not copied.
+    #Example:
+    #>>> x = np.array([1, 2, 3, 4, 5, 6])
+    #>>> windowed_view(x, 3)
+    #array([[1, 2, 3],
+    #       [2, 3, 4],
+    #       [3, 4, 5],
+    #       [4, 5, 6]])
+
     y = as_strided(x, shape=(x.size - window_size + 1, window_size),
                    strides=(x.strides[0], x.strides[0]))
     return y

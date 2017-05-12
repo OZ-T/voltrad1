@@ -8,7 +8,7 @@ from pytz import timezone
 import time
 import pandas as pd
 import numpy as np
-import pandas_datareader.data as web
+#import pandas_datareader.data as web
 from opt_pricing_methods import bsm_mcs_euro
 import sys
 from volsetup.logger import logger

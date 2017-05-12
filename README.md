@@ -7,6 +7,7 @@
 Sphinx howto:
     http://raxcloud.blogspot.com.es/2013/02/documenting-python-code-using-sphinx.html
 
+sphinx-apidoc -A "David de Lucas" -F -o docs .
 
 [Blablio Digital ocean](https://blablio.mooo.com:45451/tree)
 

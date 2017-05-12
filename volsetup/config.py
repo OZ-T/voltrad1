@@ -1,3 +1,7 @@
+"""
+Configuration classes and methods for Voltrad1
+"""
+
 import platform
 import os
 import pandas as pd
@@ -11,7 +15,9 @@ from volsetup.logger import logger
 import sqlite3
 
 class GlobalConfig(object):
-
+    """
+    GlobalConfig class
+    """
     def __init__(self,level=logger.DEBUG):
         # first try to find config file in user home (ubuntu)
         self.log = logger("voltrad1", level)
@@ -34,9 +40,17 @@ class GlobalConfig(object):
           7: 'Jul', 8: 'Aug', 9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Dec'}
 
     def get_logger(self):
+        """
+        return logger object        
+        """
         return self.log
 
     def log_info(self,string):
+        """
+        log info message
+        :param string: 
+        :return: 
+        """
         self.log.info(string)
 
     def get_config_csv(self,name,path,sep=','):
@@ -62,48 +76,80 @@ class GlobalConfig(object):
         return self.get_config_csv(name,path,sep=",")
 
     def get_tickers_optchain_ib(self):
+        """
+        get_tickers_optchain_ib
+        :return: 
+        """
         name=self.config['use_case_ib_options']['underlying_list']
         path=self.config['paths']['config_folder']
         return self.get_config_csv(name,path,sep=",")
 
     def get_tickers_historical_ib(self):
+        """
+        get_tickers_historical_ib
+        :return: 
+        """
         name=self.config['use_case_historical_ib']['underlying_list']
         path=self.config['paths']['config_folder']
         return self.get_config_csv(name,path,sep=",")
 
     def open_yahoo_h5_store_fix(self):
+        """
+        open_yahoo_h5_store_fix
+        :return: 
+        """
         name = self.config['use_case_yahoo_options']['hdf5_db_nm_new']
         path=self.config['paths']['data_folder']
         return pd.HDFStore(path + name)
 
     def open_yahoo_h5_store_fix_error(self):
+        """
+        open_yahoo_h5_store_fix_error
+        :return: 
+        """
         name = self.config['use_case_yahoo_options']['hdf5_db_nm_new'] + datetime.now().strftime('%Y%m%d%H%M%S')
         path = self.config['paths']['data_folder']
         return pd.HDFStore(path + name)
 
-
     def open_orders_store(self):
+        """
+        open_orders_store
+        :return: 
+        """
         name=self.config['db']['hdf5_orders_db']
         path=self.config['paths']['data_folder']
         return pd.HDFStore(path + name)
 
     def open_table(self,name):
+        """
+        open_table
+        :param name: 
+        :return: 
+        """
         path=self.config['paths']['data_folder']
         return pd.HDFStore(path + name)
 
     def open_historical_store(self):
+        """
+        open_historical_store
+        :return: 
+        """
         name=self.config['db']['hdf5_historical_db']
         path=self.config['paths']['data_folder']
         return pd.HDFStore(path + name)
 
     def open_historical_optchain_store(self):
+        """
+        open_historical_optchain_store
+        :return: 
+        """
         name = self.config['db']['hdf5_historical_chain_db']
         path=self.config['paths']['data_folder']
         return pd.HDFStore(path + name)
 
     def open_ib_abt_strategy_tic(self,scenarioMode):
         """
-
+        open_ib_abt_strategy_tic
         :param scenarioMode: If the valuation analytics is run against real portfolio data (paper or real account)
                                 or against simulated orders & portfolio. In the later case the portfolio and orders are
                                 read not from the H5 db but from customized excel templates
@@ -118,16 +164,28 @@ class GlobalConfig(object):
         return pd.HDFStore(path + name)
 
     def open_economic_calendar_h5_store(self):
+        """
+        open_economic_calendar_h5_store
+        :return: 
+        """
         name=self.config['db']['hdf5_economic_calendar_db']
         path=self.config['paths']['data_folder']
         return pd.HDFStore(path + name)
 
     def open_economic_calendar_h5_store_error(self):
+        """
+        open_economic_calendar_h5_store_error
+        :return: 
+        """
         name=self.config['db']['hdf5_economic_calendar_db'] + datetime.now().strftime('%Y%m%d%H%M%S')
         path=self.config['paths']['data_folder']
         return pd.HDFStore(path + name)
 
     def portfolio_store(self):
+        """
+        portfolio_store
+        :return: 
+        """
         name=self.config['db']['hdf5_portfolio_db']
         path=self.config['paths']['data_folder']
         return pd.HDFStore(path + name)
@@ -278,7 +336,6 @@ class GlobalConfig(object):
         """
         conn = sqlite3.connect(name)
         return conn
-
 
 if __name__ == "__main__":
     object = GlobalConfig();

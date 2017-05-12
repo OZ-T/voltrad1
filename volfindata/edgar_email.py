@@ -1,6 +1,6 @@
 import smtplib
 import datetime
-from twilio.rest import TwilioRestClient
+from twilio.rest import Client
 import feedparser
 import openpyxl
 import xml.etree.ElementTree as ET
@@ -10,57 +10,76 @@ import time
 import io
 import itertools as IT
 
-CompanyNameList = []
-TickerList = []
-ProcessedList = []
-ReportingOwnerRelationshipList = []
-TransactionSharesList = []
-PricePerShareList = []
-TotalValueList = []
-transactionCodeList = []
-DorIList = []
-portfolio = []
-bought_price = []
-stocks_sent = []
-checked = []
+if __name__ == "__main__":
+    CompanyNameList = []
+    TickerList = []
+    ProcessedList = []
+    ReportingOwnerRelationshipList = []
+    TransactionSharesList = []
+    PricePerShareList = []
+    TotalValueList = []
+    transactionCodeList = []
+    DorIList = []
+    portfolio = []
+    bought_price = []
+    stocks_sent = []
+    checked = []
 
-# EdgarScrape
-# This script scrapes the Edgar database (by the Security Exchange Commission) and looks for "insider buys"
-# by officers of public companies.
-# This includes CEOs, COOs, etc. If they make a purchase big enough through the direct market
-# (i.e. not a vesting of stock or something),
-# the script texts and emails you an alert to buy the stock.
-# The script also maintains a portfolio in text files and constantly checks for prices using Yahoo Finance.
-# If the stock has gained 2% or
-# lost 5%, the script emails and texts and alert for you to sell that stock.
+    # EdgarScrape
+    # This script scrapes the Edgar database (by the Security Exchange Commission) and looks for "insider buys"
+    # by officers of public companies.
+    # This includes CEOs, COOs, etc. If they make a purchase big enough through the direct market
+    # (i.e. not a vesting of stock or something),
+    # the script texts and emails you an alert to buy the stock.
+    # The script also maintains a portfolio in text files and constantly checks for prices using Yahoo Finance.
+    # If the stock has gained 2% or
+    # lost 5%, the script emails and texts and alert for you to sell that stock.
 
 
-#----------------------------------------------------------------------------------#
-#PULL FROM STOCK SCREEN EXCEL AND CURRENT PORTFOLIO
+    #----------------------------------------------------------------------------------#
+    #PULL FROM STOCK SCREEN EXCEL AND CURRENT PORTFOLIO
 
-wb = openpyxl.load_workbook(filename = 'stock_screenv2.xlsx')
-sheet = wb.active
+    wb = openpyxl.load_workbook(filename = 'stock_screenv2.xlsx')
+    sheet = wb.active
 
-print('Getting info from cells...')
-for row in range(2, sheet.max_row + 1):
-    company_name      = sheet['A' + str(row)].value
-    ticker            = sheet['B' + str(row)].value
-    CompanyNameList.append(company_name)
-    TickerList.append(ticker)
+    print('Getting info from cells...')
+    for row in range(2, sheet.max_row + 1):
+        company_name      = sheet['A' + str(row)].value
+        ticker            = sheet['B' + str(row)].value
+        CompanyNameList.append(company_name)
+        TickerList.append(ticker)
 
-wb.save('stock_screenv2.xlsx')
+    wb.save('stock_screenv2.xlsx')
 
-with open('portfolio.txt', 'r') as f:
-    stocks = f.readlines()
-    for item in stocks:
-        item = item.strip()
-        portfolio.append(item)
+    with open('portfolio.txt', 'r') as f:
+        stocks = f.readlines()
+        for item in stocks:
+            item = item.strip()
+            portfolio.append(item)
 
-with open('bought_price.txt', 'r') as f:
-    price = f.readlines()
-    for item in price:
-        item = item.strip()
-        bought_price.append(item)
+    with open('bought_price.txt', 'r') as f:
+        price = f.readlines()
+        for item in price:
+            item = item.strip()
+            bought_price.append(item)
+
+    url = 'http://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=&company=&dateb=&owner=only&start=0&count=100&output=atom'
+    print ('monitoring feed...')
+    run_counter = 0
+
+    def job(url):
+        global run_counter
+        time.sleep(5)
+        run_counter += 1
+        if run_counter % 100 == 0:
+            print ('Completed ' + str(run_counter) + ' passes.')
+            print ('--------------')
+        edgar_feed(url)
+        check_price()
+
+    while True:
+        job()
+
 
 #----------------------------------------------------------------------------------#
 #COMMUNICATION FUNCTIONS
@@ -80,7 +99,7 @@ def email(tradingSymbol, link):
 def text_phone(tradingSymbol):
     accountSID = '***************'
     authToken = '***************'
-    twilioCli = TwilioRestClient(accountSID, authToken)
+    twilioCli = Client(accountSID, authToken)
     myTwilioNumber = '***************'
     myCellPhone = '+***************'
     message = twilioCli.messages.create(body='Yo, buy this stock: ' + str(tradingSymbol), from_=myTwilioNumber, to=myCellPhone)
@@ -88,7 +107,7 @@ def text_phone(tradingSymbol):
 def text_error(link):
     accountSID = '***************'
     authToken = '***************'
-    twilioCli = TwilioRestClient(accountSID, authToken)
+    twilioCli = Client(accountSID, authToken)
     myTwilioNumber = '***************'
     myCellPhone = '+***************'
     message = twilioCli.messages.create(body='There was an error on Python at this address: ' + str(link), from_=myTwilioNumber, to=myCellPhone)
@@ -96,7 +115,7 @@ def text_error(link):
 def text_scott(tradingSymbol):
     accountSID = '***************'
     authToken = '***************'
-    twilioCli = TwilioRestClient(accountSID, authToken)
+    twilioCli = Client(accountSID, authToken)
     myTwilioNumber = '***************'
     myCellPhone = '+***************'
     message = twilioCli.messages.create(body='Yo, buy this stock: ' + str(tradingSymbol), from_=myTwilioNumber, to=myCellPhone)
@@ -104,7 +123,7 @@ def text_scott(tradingSymbol):
 def text_carl(tradingSymbol):
     accountSID = '***************'
     authToken = '***************'
-    twilioCli = TwilioRestClient(accountSID, authToken)
+    twilioCli = Client(accountSID, authToken)
     myTwilioNumber = '***************'
     myCellPhone = '+***************'
     message = twilioCli.messages.create(body='Yo, buy this stock: ' + str(tradingSymbol), from_=myTwilioNumber, to=myCellPhone) 
@@ -258,21 +277,21 @@ def check_price():
             #Text me
                 accountSID = '***************'
                 authToken = '***************'
-                twilioCli = TwilioRestClient(accountSID, authToken)
+                twilioCli = Client(accountSID, authToken)
                 myTwilioNumber = '***************'
                 myCellPhone = '+***************'
                 message = twilioCli.messages.create(body='Yo, sell this stock (2% gain): ' + str(ticker), from_=myTwilioNumber, to=myCellPhone)
             #Text Scott
                 accountSID = '***************'
                 authToken = '***************'
-                twilioCli = TwilioRestClient(accountSID, authToken)
+                twilioCli = Client(accountSID, authToken)
                 myTwilioNumber = '***************'
                 myCellPhone = '+***************'
                 message = twilioCli.messages.create(body='Yo, sell this stock (2% gain): ' + str(ticker), from_=myTwilioNumber, to=myCellPhone)
             #Text Carl
                 accountSID = '***************'
                 authToken = '***************'
-                twilioCli = TwilioRestClient(accountSID, authToken)
+                twilioCli = Client(accountSID, authToken)
                 myTwilioNumber = '***************'
                 myCellPhone = '+***************'
                 message = twilioCli.messages.create(body='Yo, sell this stock (2% gain): ' + str(ticker), from_=myTwilioNumber, to=myCellPhone)                
@@ -312,21 +331,21 @@ def check_price():
             #Text me
                 accountSID = '***************'
                 authToken = '***************'
-                twilioCli = TwilioRestClient(accountSID, authToken)
+                twilioCli = Client(accountSID, authToken)
                 myTwilioNumber = '+***************'
                 myCellPhone = '+***************'
                 message = twilioCli.messages.create(body='Yo, sell this stock (5% loss): ' + str(ticker), from_=myTwilioNumber, to=myCellPhone)
             #Text Scott
                 accountSID = '***************'
                 authToken = '***************'
-                twilioCli = TwilioRestClient(accountSID, authToken)
+                twilioCli = Client(accountSID, authToken)
                 myTwilioNumber = '***************'
                 myCellPhone = '+***************'
                 message = twilioCli.messages.create(body='Yo, sell this stock (5% loss): ' + str(ticker), from_=myTwilioNumber, to=myCellPhone)
             #Text Carl
                 accountSID = '***************'
                 authToken = '***************'
-                twilioCli = TwilioRestClient(accountSID, authToken)
+                twilioCli = Client(accountSID, authToken)
                 myTwilioNumber = '***************'
                 myCellPhone = '+***************'
                 message = twilioCli.messages.create(body='Yo, sell this stock (5% loss): ' + str(ticker), from_=myTwilioNumber, to=myCellPhone)                
@@ -360,21 +379,5 @@ def check_price():
 #-------------------------------------------------------------------------------------#
 #SCRIPT BODY
 #Stock screen: Market Cap < $500m, D/E < 1.5, P/E < 1.5
-    
-url = 'http://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=&company=&dateb=&owner=only&start=0&count=100&output=atom'
-print ('monitoring feed...')
-run_counter = 0
-def job():
-    global run_counter
-    time.sleep(5)
-    run_counter += 1
-    if run_counter % 100 == 0:
-        print ('Completed ' + str(run_counter) + ' passes.')
-        print ('--------------')
-    edgar_feed(url)
-    check_price()
-
-while True:
-    job()
 
 

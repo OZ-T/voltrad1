@@ -12,22 +12,6 @@ volalerts.alerts_methods module
     :undoc-members:
     :show-inheritance:
 
-volalerts.gmaillogging module
------------------------------
-
-.. automodule:: volalerts.gmaillogging
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-volalerts.gmailmailwbody module
--------------------------------
-
-.. automodule:: volalerts.gmailmailwbody
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 
 Module contents
 ---------------
