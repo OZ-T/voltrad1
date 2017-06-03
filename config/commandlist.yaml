@@ -1,3 +1,10 @@
+# Account
+acc_to_h5:
+  pointer:  volaccounting.vol_grab_accounting.run_get_portfolio_data
+acc_to_console:
+  pointer:  volaccounting.vol_grab_accounting.print_portfolio_data
+
+
 # trend and risk indicators
 coppock:
    pointer: voldailyanalytics.analytics_methods.print_coppock_diario
@@ -79,8 +86,6 @@ fix_optchain_yhoo:
 fix_histo_optchain:
   pointer: volsetup.fix_h5_historical_opt.run
 
-batch_account:
-  pointer:  volaccounting.vol_grab_accounting.run_get_portfolio_data
 batch_hist_underlying:
   pointer:  volquotes.historical_data_loader.run_reader
 batch_hist_options:
