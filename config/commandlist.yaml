@@ -3,6 +3,11 @@ acc_to_h5:
   pointer:  volaccounting.vol_grab_accounting.run_get_portfolio_data
 acc_to_console:
   pointer:  volaccounting.vol_grab_accounting.print_portfolio_data
+# Orders
+orders_to_h5:
+  pointer:  volblotter.vol_grab_orders.run_get_orders
+fix_orders_h5:
+  pointer:  volsetup.fix_h5_orders.run
 
 
 # trend and risk indicators

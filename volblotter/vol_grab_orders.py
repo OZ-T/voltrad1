@@ -67,7 +67,6 @@ def run_get_orders():
             try:
                 f.append("/" + name, joe, data_columns=joe.columns)
             except ValueError as e:
-
                 log.warn("ValueError raised [" + str(e) + "]  Creating ancilliary file ...")
                 aux = globalconf.open_orders_store_value_error()
                 aux.append("/" + name, joe, data_columns=True)
