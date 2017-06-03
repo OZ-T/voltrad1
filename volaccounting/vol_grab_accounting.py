@@ -6,10 +6,12 @@ from volsetup import config
 import datetime as dt
 import pandas as pd
 from volsetup.logger import logger
-import swigibpy as sy
 from volibutils.RequestOptionData import RequestOptionData
 from volibutils.RequestUnderlyingData import RequestUnderlyingData
 from volutils import utils as utils
+from tables.exceptions import NaturalNameWarning
+import glob
+import os
 
 def print_portfolio_data():
     """ Print portfolio data to console.
@@ -113,8 +115,17 @@ def run_get_portfolio_data():
         dataframe['current_date'] = dt.datetime.now().strftime('%Y%m%d')
         dataframe['current_datetime'] = dt.datetime.now().strftime('%Y%m%d%H%M%S')
         log.info("Appending portfolio data to HDF5 ... ")
-        f.append(c_year + "/" + c_month + "/" + c_day + "/" + c_hour + "/" + c_minute, dataframe,
-                 data_columns=dataframe.columns)
+        try:
+            f.append(c_year + "/" + c_month + "/" + c_day + "/" + c_hour + "/" + c_minute, dataframe,
+                    data_columns=dataframe.columns)
+        except NaturalNameWarning as e:
+            log.warn("NaturalNameWarning raised [" + str(e))
+        except (ValueError) as e:
+            log.warn("ValueError raised [" + str(e) + "]  Creating ancilliary file ...")
+            aux = globalconf.portfolio_store_error()
+            aux.append(c_year + "/" + c_month + "/" + c_day + "/" + c_hour + "/" + c_minute, dataframe,
+                     data_columns=dataframe.columns)
+            aux.close()
         f.close()  # Close file
 
     if summarylist:
@@ -153,8 +164,64 @@ def run_get_portfolio_data():
             for col in types[types == 'unicode'].index:
                 joe[col] = joe[col].astype(str)
             #print joe.dtypes
-            store_new.append(    "/"+name , joe, data_columns=True)
+            try:
+                store_new.append("/" + name, joe, data_columns=True)
+            except NaturalNameWarning as e:
+                log.warn("NaturalNameWarning raised [" + str(e))
+            except (ValueError) as e:
+                log.warn("ValueError raised [" + str(e) + "]  Creating ancilliary file ...")
+                aux = globalconf.account_store_new()
+                aux.append("/" + name, joe, data_columns=True)
+                aux.close()
         store_new.close()
+
+
+# globalconf = config.GlobalConfig()
+# path = globalconf.config['paths']['data_folder']
+#
+# def fix_h5_account():
+#     os.chdir(path)
+#     orders_orig = 'account_db_new.h5'
+#     pattern_orders = 'account_db_new.h5*'
+#     orders_out = 'account_db_complete.h5'
+#     lst1 = glob.glob(pattern_orders)
+#     lst1.remove(orders_orig)
+#     print (lst1)
+#     dataframe = pd.DataFrame()
+#     for x in lst1:
+#         store_in1 = pd.HDFStore(path + x)
+#         root1 = store_in1.root
+#         print (root1._v_pathname)
+#         for lvl1 in root1:
+#             print (lvl1._v_pathname)
+#             if lvl1:
+#                 df1 = store_in1.select(lvl1._v_pathname)
+#                 dataframe = dataframe.append(df1)
+#                 print ("store_in1", len(df1), x)
+#         store_in1.close()
+#
+#
+#     store_in1 = pd.HDFStore(path + orders_orig)
+#     store_out = pd.HDFStore(path + orders_out)
+#     root1 = store_in1.root
+#     print (root1._v_pathname)
+#     for lvl1 in root1:
+#         print (lvl1._v_pathname)
+#         if lvl1:
+#             df1 = store_in1.select(lvl1._v_pathname)
+#             dataframe = dataframe.append(df1)
+#             print ("store_in1", len(df1), orders_orig)
+#     store_in1.close()
+#
+#     dataframe.sort_index(inplace=True,ascending=[True])
+#     names = dataframe['account'].unique().tolist()
+#     for name in names:
+#         print ("Storing " + name + " in ABT ..." + str(len(dataframe)))
+#         joe = dataframe[dataframe.account == name]
+#         joe=joe.sort_values(by=['current_datetime'])
+#         store_out.append("/" + name, joe, data_columns=True)
+#     store_out.close()
+
 
 if __name__=="__main__":
     run_get_portfolio_data()

@@ -193,6 +193,12 @@ class GlobalConfig(object):
         path=self.config['paths']['data_folder']
         return pd.HDFStore(path + name)
 
+    def portfolio_store_error(self):
+        name=self.config['db']['hdf5_portfolio_db'] + datetime.now().strftime('%Y%m%d%H%M%S')
+        path=self.config['paths']['data_folder']
+        return pd.HDFStore(path + name)
+
+
     def portfolio_dataframe_simulation(self,simulName):
         name=self.config['simulation']['simulation_template']
         path=self.config['simulation']['data_folder']
@@ -215,6 +221,12 @@ class GlobalConfig(object):
         name = self.config['db']['hdf5_account_db_new']
         path=self.config['paths']['data_folder']
         return pd.HDFStore(path + name)
+
+    def account_store_new_error(self):
+        name = self.config['db']['hdf5_account_db_new'] + datetime.now().strftime('%Y%m%d%H%M%S')
+        path=self.config['paths']['data_folder']
+        return pd.HDFStore(path + name)
+
 
     def open_ib_h5_store(self):
         name=self.config['use_case_ib_options']['hdf5_db_nm']
