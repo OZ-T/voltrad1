@@ -171,8 +171,8 @@ if __name__=="__main__kk":
     b = datetime.datetime(year=2016, month=9, day=23, hour=4,minute=20)
 
     bh=BusinessHours(a,b,worktiming=[15,21],weekends=[6,7])
-    print bh.gethours()
-    print bh.getdays()
+    print (bh.gethours())
+    print (bh.getdays())
 
 
     #c= int(math.ceil(  office_time_between(a,b,start = timedelta(hours = 15),stop = timedelta(hours = 21)).total_seconds() / 60.0 / 60.0 / 7.0 ))
@@ -185,8 +185,8 @@ if __name__ == '__main__':
     #                   '2016-05-30', '2016-07-04', '2016-09-05', '2016-11-24',
     #                   '2016-12-26'],
     #                  dtype='datetime64[ns]', freq=None)
-    print dt.datetime.now().date() + dt.timedelta(days=1)
+    print (dt.datetime.now().date() + dt.timedelta(days=1))
 
     if (dt.datetime.now().date()+ dt.timedelta(days=1)) in get_trading_close_holidays(dt.datetime.now().year):
-        print "Holidayyyyy!!!!"
+        print ("Holidayyyyy!!!!")
 
