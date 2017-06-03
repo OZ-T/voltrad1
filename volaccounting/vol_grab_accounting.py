@@ -170,7 +170,7 @@ def run_get_portfolio_data():
                 log.warn("NaturalNameWarning raised [" + str(e))
             except (ValueError) as e:
                 log.warn("ValueError raised [" + str(e) + "]  Creating ancilliary file ...")
-                aux = globalconf.account_store_new()
+                aux = globalconf.account_store_new_error()
                 aux.append("/" + name, joe, data_columns=True)
                 aux.close()
         store_new.close()
