@@ -8,16 +8,14 @@ from pytz import timezone
 import time
 import pandas as pd
 import numpy as np
-#import pandas_datareader.data as web
-from opt_pricing_methods import bsm_mcs_euro
-import sys
+# import pandas_datareader.data as web
+from voldailyanalytics.opt_pricing_methods import bsm_mcs_euro
 from volsetup.logger import logger
-import time
 
 globalconf = config.GlobalConfig()
 log = logger("Run Analytics module")
 
-OPT_NUM_FIELDS_LST = [u'CallOI',u'PutOI', u'Volume', u'askDelta', u'askGamma',
+OPT_NUM_FIELDS_LST = [u'CallOI', u'PutOI', u'Volume', u'askDelta', u'askGamma', 
                    u'askImpliedVol', u'askOptPrice', u'askPrice', u'askPvDividend',
                    u'askSize', u'askTheta', u'askUndPrice', u'askVega', u'bidDelta',
                    u'bidGamma', u'bidImpliedVol', u'bidOptPrice', u'bidPrice',
@@ -39,8 +37,9 @@ def timefunc(f):
         return result
     return f_timer
 
+
 # leer del h5 del yahoo biz calendar
-def read_biz_calendar(start_dttm,valuation_dttm):
+def read_biz_calendar(start_dttm, valuation_dttm):
     log.info("read_biz_calendar: [%s] " % (str(valuation_dttm)))
     year= str(valuation_dttm.year)     # "2016"
     store = globalconf.open_economic_calendar_h5_store()

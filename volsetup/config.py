@@ -5,7 +5,10 @@ Configuration classes and methods for Voltrad1
 import platform
 import os
 import pandas as pd
-import ConfigParser
+try:
+        import configparser
+except:
+        from six.moves import configparser
 import h5py as h5
 from sys import platform
 import sqlalchemy
@@ -33,7 +36,7 @@ class GlobalConfig(object):
         if not os.path.exists(config_file):
             # use the config file in the user folder (windows)
             config_file = os.path.join(os.path.expanduser("~"), 'voltrad1.ini')
-        config = ConfigParser.ConfigParser()
+        config = configparser.ConfigParser()
         config.read(config_file)
         self.config=config._sections
         self.months = {1: 'Jan', 2: 'Feb', 3: 'Mar', 4: 'Apr', 5: 'May', 6: 'Jun',

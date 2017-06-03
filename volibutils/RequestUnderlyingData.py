@@ -21,17 +21,17 @@ class RequestUnderlyingData():
         self.c.secType=secType
         self.c.conId = 0
         self.c.includeExpired = False
-        if expiry <> "" and expiry <> "0":
+        if expiry != "" and expiry != "0":
             self.c.expiry=expiry
         if int(strike) > 0:
             self.c.strike=int(strike)
-        if right <> "":
+        if right != "":
             self.c.right=right
-        if multiplier <> "":
+        if multiplier != "":
             self.c.multiplier=multiplier
-        if exchange <> "":
+        if exchange != "":
             self.c.exchange=exchange
-        if currency <> "" and currency <> "XXX":
+        if currency != "" and currency != "XXX":
             self.c.currency=str(currency)
         self.requestId=requestId
         self.init_output_data()

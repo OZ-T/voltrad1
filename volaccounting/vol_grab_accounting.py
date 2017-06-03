@@ -157,8 +157,8 @@ def run_get_portfolio_data():
         store_new.close()
 
 if __name__=="__main__":
-    #run_get_portfolio_data()
-    print_portfolio_data()
+    run_get_portfolio_data()
+    #print_portfolio_data()
 
 """
 AccountCode_	AccountOrGroup_BASE	AccountOrGroup_EUR	AccountOrGroup_USD	AccountReady_	AccountType_

@@ -156,7 +156,7 @@ def print_coppock_diario(symbol="SPX",period="1D"):
     # conf. semanal: StoCop (60,30,50) NO hay suficiente historico para configuracion semanal del copock
     # conf. diaria: StoCop (12,6,10)
     df = COPP(df, 12, 6, 10)
-    print df.iloc[-HISTORY_LIMIT:] # pinta los ultimos 30 dias del coppock
+    print(df.iloc[-HISTORY_LIMIT:]) # pinta los ultimos 30 dias del coppock
     end_func(client)
 
 
@@ -202,7 +202,7 @@ def print_volatity(symbol):
     except ValueError as e:
         print("ValueError raised [" + str(e) + "]  Missing rows for VIX needed to generate alerts ...")
 
-    print df.iloc[-HISTORY_LIMIT:]
+    print( df.iloc[-HISTORY_LIMIT:])
     end_func(client)
 
 def print_fast_move(symbol):
@@ -239,7 +239,7 @@ def print_fast_move(symbol):
     al2.SetDefaultColor(Color.DARK_RED);
     al2.SetPaintingStrategy(PaintingStrategy.HISTOGRAM);
     """
-    print df.iloc[-HISTORY_LIMIT:]
+    print( df.iloc[-HISTORY_LIMIT:])
     end_func(client)
 
 
@@ -375,7 +375,7 @@ def print_account_snapshot(valuation_dt):
                                     })
 
         print("___PORTFOLIO_______________________________________________________________")
-        print output3
+        print( output3)
     end_func(client)
 
 
@@ -446,8 +446,8 @@ def print_account_delta(valuation_dt):
     df1['times'] = df1['times'].apply(lambda x: dt.datetime.strptime(x, '%Y%m%d %H:%M:%S'))
     df1 = df1[(df1.times <= end_dt) & (df1.times >=start_dt)].drop_duplicates(subset=['execid','times'])
     df1.sort_index(inplace=True,ascending=[True])
-    print df1[['avgprice', 'conId', 'execid', 'expiry','localSymbol',
-               'price','qty', 'right', 'shares', 'side', 'strike', 'symbol', 'times']]
+    print( df1[['avgprice', 'conId', 'execid', 'expiry','localSymbol',
+               'price','qty', 'right', 'shares', 'side', 'strike', 'symbol', 'times']])
 
     store.close()
     end_func(client)
@@ -595,8 +595,8 @@ def print_tic_report(symbol,expiry,history=1):
     for i in range(0,dataframe.__len__()):
         parsed=json.loads(dataframe['portfolio'][i])
         #print json.dumps(parsed, indent=4, sort_keys=True)
-        print dataframe.index[i]
-        print pd.DataFrame(parsed)
+        print( dataframe.index[i])
+        print( pd.DataFrame(parsed))
     end_func(client)
 
 
@@ -607,7 +607,7 @@ def print_historical_underl(start_dt, end_dt, symbol):
     start_dt1 = start_dt  # +" 0:00:00"
     end_dt1 = end_dt  # +" 23:59:59"
     df = ra.extrae_historical_underl(symbol,start_dt1,end_dt1)
-    print df
+    print( df)
     end_func(client)
 
 
@@ -674,7 +674,7 @@ def print_historical_option(start_dt,end_dt,symbol,lst_right_strike,expiry,type)
      u'open_ask', u'reqId_ask', u'volume_ask', u'WAP_bid', u'close_bid', u'count_bid', u'hasGaps_bid', u'high_bid',
      u'low_bid', u'open_bid', u'reqId_bid', u'volume_bid']
      """
-    print dataframe
+    print( dataframe)
     end_func(client)
 
 def print_volatility_cone(symbol):
@@ -764,7 +764,7 @@ def print_volatility_cone(symbol):
     legend(bbox_to_anchor=(1., 1.), loc=2)
     show()
 
-    print df
+    print( df )
     end_func(client)
 
 
@@ -869,7 +869,7 @@ def print_quasi_realtime_chain(val_dt,symbol,call_d_range,put_d_range,expiry,typ
     dte = (dt.datetime.strptime(expiry, '%Y%m%d') -  dt.datetime.now())
     print ("DTE = %d " % (dte.days) )
     print ("____________________________________________________________________________________________________")
-    print dataframe[columns]
+    print (dataframe[columns])
     end_func(client)
 
 def print_ecalendar():
@@ -884,7 +884,7 @@ def print_ecalendar():
 
     client , log_analytics, globalconf = init_func()
     dataframe = ra.read_biz_calendar(start_dttm=start, valuation_dttm=end)
-    print dataframe
+    print (dataframe)
     end_func(client)
 
 if __name__ == "__main__":

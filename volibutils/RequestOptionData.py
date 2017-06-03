@@ -94,16 +94,16 @@ class RequestOptionData():
             self.c.secType = secType
             self.c.conId = 0
             self.c.includeExpired = False
-            if expiry <> "":
+            if expiry != "":
                 self.c.expiry = expiry
             self.c.strike = int(strike)
-            if right <> "":
+            if right != "":
                 self.c.right = right
-            if multiplier <> "":
+            if multiplier != "":
                 self.c.multiplier = multiplier
-            if exchange <> "":
+            if exchange != "":
                 self.c.exchange = exchange
-            if currency <> "":
+            if currency != "":
                 self.c.currency = str(currency)
         else:
             self.c = contract

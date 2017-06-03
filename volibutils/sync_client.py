@@ -636,7 +636,7 @@ class syncEWrapper(EWrapper):
     def fundamentalData(self, reqId, data):
         self.print_this_func_info()
     def error(self,*err):
-        if err[1] <> 300:
+        if err[1] != 300:
             self.print_this_func_info()
         ## Any errors not on this list we just treat as information
         ERRORS_TO_TRIGGER=[502, 504, 326]
