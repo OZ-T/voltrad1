@@ -175,52 +175,52 @@ def run_get_portfolio_data():
                 aux.close()
         store_new.close()
 
+def fix_h5_account():
+    globalconf = config.GlobalConfig()
+    path = globalconf.config['paths']['data_folder']
+    os.chdir(path)
+    acc_orig = 'account_db_new.h5'
+    pattern_acc = 'account_db_new.h5*'
+    acc_out = 'account_db_complete.h5'
+    lst1 = glob.glob(pattern_acc)
+    lst1.remove(acc_orig)
+    if not lst1:
+        print("No ancilliary files to append, exiting ... ")
+        pass
+    print(lst1)
+    dataframe = pd.DataFrame()
+    for x in lst1:
+        store_in1 = pd.HDFStore(path + x)
+        root1 = store_in1.root
+        print (root1._v_pathname)
+        for lvl1 in root1:
+            print (lvl1._v_pathname)
+            if lvl1:
+                df1 = store_in1.select(lvl1._v_pathname)
+                dataframe = dataframe.append(df1)
+                print ("store_in1", len(df1), x)
+        store_in1.close()
 
-# globalconf = config.GlobalConfig()
-# path = globalconf.config['paths']['data_folder']
-#
-# def fix_h5_account():
-#     os.chdir(path)
-#     orders_orig = 'account_db_new.h5'
-#     pattern_orders = 'account_db_new.h5*'
-#     orders_out = 'account_db_complete.h5'
-#     lst1 = glob.glob(pattern_orders)
-#     lst1.remove(orders_orig)
-#     print (lst1)
-#     dataframe = pd.DataFrame()
-#     for x in lst1:
-#         store_in1 = pd.HDFStore(path + x)
-#         root1 = store_in1.root
-#         print (root1._v_pathname)
-#         for lvl1 in root1:
-#             print (lvl1._v_pathname)
-#             if lvl1:
-#                 df1 = store_in1.select(lvl1._v_pathname)
-#                 dataframe = dataframe.append(df1)
-#                 print ("store_in1", len(df1), x)
-#         store_in1.close()
-#
-#
-#     store_in1 = pd.HDFStore(path + orders_orig)
-#     store_out = pd.HDFStore(path + orders_out)
-#     root1 = store_in1.root
-#     print (root1._v_pathname)
-#     for lvl1 in root1:
-#         print (lvl1._v_pathname)
-#         if lvl1:
-#             df1 = store_in1.select(lvl1._v_pathname)
-#             dataframe = dataframe.append(df1)
-#             print ("store_in1", len(df1), orders_orig)
-#     store_in1.close()
-#
-#     dataframe.sort_index(inplace=True,ascending=[True])
-#     names = dataframe['account'].unique().tolist()
-#     for name in names:
-#         print ("Storing " + name + " in ABT ..." + str(len(dataframe)))
-#         joe = dataframe[dataframe.account == name]
-#         joe=joe.sort_values(by=['current_datetime'])
-#         store_out.append("/" + name, joe, data_columns=True)
-#     store_out.close()
+    store_in1 = pd.HDFStore(path + acc_orig)
+    store_out = pd.HDFStore(path + acc_out)
+    root1 = store_in1.root
+    print (root1._v_pathname)
+    for lvl1 in root1:
+        print (lvl1._v_pathname)
+        if lvl1:
+            df1 = store_in1.select(lvl1._v_pathname)
+            dataframe = dataframe.append(df1)
+            print ("store_in1", len(df1), acc_orig)
+    store_in1.close()
+
+    dataframe.sort_index(inplace=True,ascending=[True])
+    names = dataframe['account'].unique().tolist()
+    for name in names:
+        print ("Storing " + name + " in ABT ..." + str(len(dataframe)))
+        joe = dataframe[dataframe.account == name]
+        joe=joe.sort_values(by=['current_datetime'])
+        store_out.append("/" + name, joe, data_columns=True)
+    store_out.close()
 
 
 if __name__=="__main__":
