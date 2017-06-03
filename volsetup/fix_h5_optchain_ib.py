@@ -8,7 +8,7 @@ import glob
 import fnmatch
 import os
 import sys
-import config as config
+import volsetup.config as config
 import pandas as pd
 import datetime as dt
 import numpy as np

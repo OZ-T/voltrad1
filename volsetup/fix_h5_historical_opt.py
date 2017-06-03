@@ -3,7 +3,7 @@
 #  ValueError: Trying to store a string with len [3] in [multiplier] column but
 #  this column has a limit of [2]!
 import sys
-import config as config
+import volsetup.config as config
 import pandas as pd
 import datetime as dt
 import numpy as np
@@ -17,10 +17,10 @@ def run():
     store_in = globalconf.open_historical_optchain_store()
     store_out = pd.HDFStore(path + "historical_optchain_ib_db_new.h5")
     root = store_in.root
-    print root._v_pathname
+    print (root._v_pathname)
     #dataframe = pd.DataFrame()
     for lvl1 in root:
-        print lvl1._v_pathname
+        print (lvl1._v_pathname)
         if lvl1:
             df1 = store_in.select(lvl1._v_pathname)
             symbols = df1['symbol'].unique().tolist()
