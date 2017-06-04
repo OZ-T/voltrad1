@@ -1,6 +1,8 @@
 # Operations
+ib_time:
+  pointer:  operations.broker.get_ib_time
 acc_to_h5:
-  pointer:  operations.vol_grab_accounting.run_get_portfolio_data
+  pointer:  operations.accounting.run_get_portfolio_data
 acc_to_console:
   pointer:  operations.accounting.print_10_days_acc_summary_and_current_positions
 # Orders

@@ -23,10 +23,12 @@ def read_acc_summary_and_portfolio_from_ib(globalconf, log):
 
     # Get the executions (gives you everything for last business day)
     acclist, summarylist = client.get_potfolio_data(11)
+    # Make a deep copy before disconnecting from IB, which we'll return
+    ret_acclist, ret_summarylist = acclist.copy(), summarylist.copy()
     client.disconnect()
     log.info("acclist length [%d] " % (len(acclist)))
     log.info("summarylist length [%d]" % (len(summarylist)))
-    return acclist, summarylist
+    return ret_acclist, ret_summarylist
 
 
 def read_historical_acc_summary_from_h5(globalconf, log, accountid):
@@ -244,8 +246,9 @@ def fix_h5_account():
 
 
 if __name__=="__main__":
-    run_get_portfolio_data()
+    #run_get_portfolio_data()
     #print_portfolio_from_ib()
+    print_10_days_acc_summary_and_current_positions()
 
 """
 AccountCode_	AccountOrGroup_BASE	AccountOrGroup_EUR	AccountOrGroup_USD	AccountReady_	AccountType_
