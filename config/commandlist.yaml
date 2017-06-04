@@ -5,6 +5,10 @@ acc_to_h5:
   pointer:  operations.accounting.run_get_portfolio_data
 acc_to_console:
   pointer:  operations.accounting.print_10_days_acc_summary_and_current_positions
+fix_acc_h5:
+  pointer:  operations.accounting.consolidate_anciliary_h5_account
+
+
 # Orders
 orders_to_h5:
   pointer:  volblotter.vol_grab_orders.run_get_orders
