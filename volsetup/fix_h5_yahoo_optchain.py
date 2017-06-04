@@ -53,7 +53,7 @@ def run():
     log.info(("Root pathname of the input store: ", root1._v_pathname))
     log.info(("Root pathname of the output store: ", root2._v_pathname))
     for lvl1 in root1:
-        print lvl1._v_pathname
+        print (lvl1._v_pathname)
         if lvl1:
             df1 = store_in1.select(lvl1._v_pathname)
             dataframe = dataframe.append(df1)
