@@ -9,12 +9,13 @@ fix_acc_h5:
   pointer:  operations.accounting.consolidate_anciliary_h5_account
 fix_port_h5:
   pointer:  operations.accounting.consolidate_anciliary_h5_portfolio
-
-# Orders
 batch_orders_to_h5:
   pointer:  operations.orders.store_orders_from_ib_to_h5
 fix_orders_h5:
   pointer:  operations.orders.consolidate_anciliary_h5_orders
+
+fix_optchain:
+  pointer: volsetup.fix_h5_optchain_ib.run
 
 
 # trend and risk indicators
@@ -91,8 +92,6 @@ batch_tic_rpt:
    pointer: voldailyanalytics.shark_tic_report.run_report
 fix_ecalendar:
   pointer: volsetup.fix_h5_economic_calendar.run
-fix_optchain:
-  pointer: volsetup.fix_h5_optchain_ib.run
 fix_optchain_yhoo:
   pointer: volsetup.fix_h5_yahoo_optchain.run
 fix_histo_optchain:
