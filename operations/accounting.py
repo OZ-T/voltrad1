@@ -178,7 +178,7 @@ def store_acc_summary_and_portfolio_from_ib_to_h5():
     clientid1 = int(globalconf.config['ib_api']['clientid_data'])
     client.connect(clientid1=clientid1)
 
-    acclist, summarylist = read_acc_summary_and_portfolio_from_ib(globalconf, log)
+    acclist, summarylist = read_acc_summary_and_portfolio_from_ib(client, globalconf, log)
     log.info("acclist length [%d] " % ( len(acclist) ))
     log.info("summarylist length [%d]" % ( len(summarylist) ))
 
