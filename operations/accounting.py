@@ -200,8 +200,8 @@ def store_acc_summary_and_portfolio_from_ib_to_h5():
         dataframe2.sort_values(by=['current_datetime'], inplace=True)
         dataframe2.index=pd.to_datetime(dataframe2['current_datetime'], format="%Y%m%d%H%M%S")
         dataframe2.drop('current_datetime',axis=1,inplace=True)
+        dataframe2.drop('multiplier', axis=1, inplace=True)
         dataframe2['current_datetime_txt'] = dataframe2.index.strftime("%Y-%m-%d %H:%M:%S")
-
         write_acc_summary_to_h5(globalconf, log, dataframe2, store_new)
     else:
         log.info("Nothing to append to HDF5 ... ")
