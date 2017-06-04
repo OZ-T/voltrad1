@@ -40,40 +40,33 @@ def read_historical_portfolio_from_h5(globalconf, log, accountid):
     """
     Read from h5 the complete history of the portfolio and returns as dataframe
     """
+    store = globalconf.portfolio_store()
+    node = store.get_node("/" + accountid)
+    df1 = store.select(node._v_pathname)
+    df1['date1']=df1.index.map(lambda x: x.date())
+    df1= df1.drop_duplicates(subset=['date1'],keep='last')
+    store.close()
+    return df1
 
 
-def write_portfolio_to_h5(globalconf, log, acclist):
+def write_portfolio_to_h5(globalconf, log, dataframe, store):
     """
     Write to h5 the portfolio snapshot passed as argument
     """
-    months = globalconf.months
-    now = dt.datetime.now()  # Get current time
-    c_month = months[now.month]  # Get current month
-    c_day = str(now.day)  # Get current day
-    c_year = str(now.year)  # Get current year
-    c_hour = str(now.hour)
-    c_minute = str(now.minute)
-
-    if acclist:
-        dataframe = pd.DataFrame.from_dict(acclist).transpose()
-        f = globalconf.portfolio_store()
-        dataframe['current_date'] = dt.datetime.now().strftime('%Y%m%d')
-        dataframe['current_datetime'] = dt.datetime.now().strftime('%Y%m%d%H%M%S')
-        log.info("Appending portfolio data to HDF5 ... ")
+    log.info("Appending portfolio data to HDF5 ... ")
+    names=dataframe['accountName'].unique().tolist()
+    for name in names:
+        joe = dataframe.loc[dataframe['accountName']==name]
         try:
-            f.append(c_year + "/" + c_month + "/" + c_day + "/" + c_hour + "/" + c_minute, dataframe,
-                    data_columns=dataframe.columns)
+            store.append("/" + name, joe, data_columns=True)
         except NaturalNameWarning as e:
             log.warn("NaturalNameWarning raised [" + str(e))
         except (ValueError) as e:
             log.warn("ValueError raised [" + str(e) + "]  Creating ancilliary file ...")
             aux = globalconf.portfolio_store_error()
-            aux.append(c_year + "/" + c_month + "/" + c_day + "/" + c_hour + "/" + c_minute, dataframe,
-                     data_columns=dataframe.columns)
+            aux.append("/" + name, joe, data_columns=True)
             aux.close()
-        f.close()  # Close file
-    else:
-        log.info("Nothing to append to HDF5 ... ")
+        store.close()
 
 
 def write_acc_summary_to_h5(globalconf, log, dataframe2,store_new):
@@ -122,7 +115,7 @@ def print_10_days_acc_summary_and_current_positions():
     """
     days = 10
     globalconf = config.GlobalConfig(level=logger.ERROR)
-    log = globalconf.log
+    log = logger("print_10_days_acc_summary_and_current_positions")
     client = ib.IBClient(globalconf)
     clientid1 = int(globalconf.config['ib_api']['clientid_orders'])
     client.connect(clientid1=clientid1)
@@ -188,7 +181,16 @@ def store_acc_summary_and_portfolio_from_ib_to_h5():
     acclist, summarylist = read_acc_summary_and_portfolio_from_ib(globalconf, log)
     log.info("acclist length [%d] " % ( len(acclist) ))
     log.info("summarylist length [%d]" % ( len(summarylist) ))
-    write_portfolio_to_h5(globalconf, log, acclist)
+
+    if acclist:
+        dataframe = pd.DataFrame.from_dict(acclist).transpose()
+        store = globalconf.portfolio_store()
+        dataframe['current_date'] = dt.datetime.now().strftime('%Y%m%d')
+        dataframe['current_datetime'] = dt.datetime.now().strftime('%Y%m%d%H%M%S')
+        write_portfolio_to_h5(globalconf, log, dataframe, store)
+    else:
+        log.info("Nothing to append to HDF5 ... ")
+
 
     if summarylist:
         store_new = globalconf.account_store_new()
@@ -206,6 +208,94 @@ def store_acc_summary_and_portfolio_from_ib_to_h5():
         log.info("Nothing to append to HDF5 ... ")
 
     client.disconnect()
+
+def consolidate_anciliary_h5_portfolio():
+    """
+    Used as command to consolidate in the main h5 anciliary h5 generated due to column length exceptions
+    """
+    globalconf = config.GlobalConfig()
+    log = logger("consolidate_anciliary_h5_portfolio")
+    path = globalconf.config['paths']['data_folder']
+    os.chdir(path)
+    if not os.path.exists(path + "/portfolio_backups"):
+        os.makedirs(path + "/portfolio_backups")
+
+    port_orig = 'portfolio_db.h5'
+    pattern_port = 'portfolio_db.h5*'
+    port_out = 'portfolio_db_complete.h5'
+
+    lst1 = glob.glob(pattern_port)
+    lst1.remove(port_orig)
+    dataframe = pd.DataFrame()
+    old_format = False
+    if not lst1:
+        log.info("No ancilliary files to append ... ")
+    else:
+        log.info(("List of ancilliary files that will be appended: ", lst1))
+        for x in lst1:
+            store_in1 = pd.HDFStore(path + x)
+            root1 = store_in1.root
+            log.info(("Root pathname of the input store: ", root1._v_pathname))
+            for lvl1 in root1:
+                log.info(("Level 1 pathname in the root if the H5: ", x, lvl1._v_pathname))
+                if lvl1:
+                    try:
+                        df1 = store_in1.select(lvl1._v_pathname)
+                        dataframe = dataframe.append(df1)
+                        log.info(("Store_in1", len(df1), x))
+                    except (TypeError) as e:
+                        log.info("This is the old format of the portfolio file...")
+                        old_format = True
+                        break
+            if old_format:
+                for lvl1 in root1:
+                    for lvl2 in store_in1.get_node(lvl1._v_pathname):
+                        for lvl3 in store_in1.get_node(lvl2._v_pathname):
+                            for lvl4 in store_in1.get_node(lvl3._v_pathname):
+                                for lvl5 in store_in1.get_node(lvl4._v_pathname):
+                                    log.info(("Pathname level 5: ", x, lvl5._v_pathname))
+                                    if lvl5:
+                                        df1 = store_in1.select(lvl5._v_pathname)
+                                        dataframe = dataframe.append(df1)
+
+            store_in1.close()
+            os.rename(path + x, path + "/portfolio_backups/" + x)
+
+    store_in1 = pd.HDFStore(path + port_orig)
+    store_out = pd.HDFStore(path + port_out)
+    root1 = store_in1.root
+    root2 = store_out.root
+    old_format = False
+    log.info(("Root pathname of the input store: ", root1._v_pathname, " and output the store: ", root2._v_pathname))
+    for lvl1 in root1:
+        log.info(("Level 1 pathname in the root if the H5: ", port_orig, lvl1._v_pathname))
+        if lvl1:
+            try:
+                df1 = store_in1.select(lvl1._v_pathname)
+                dataframe = dataframe.append(df1)
+                log.info(("Store_in1", len(df1), port_orig))
+            except (TypeError) as e:
+                log.info("This is the old format of the portfolio file...")
+                old_format = True
+                break
+    if old_format:
+        for lvl1 in root1:
+            for lvl2 in store_in1.get_node(lvl1._v_pathname):
+                for lvl3 in store_in1.get_node(lvl2._v_pathname):
+                    for lvl4 in store_in1.get_node(lvl3._v_pathname):
+                        for lvl5 in store_in1.get_node(lvl4._v_pathname):
+                            log.info(("Pathname level 5: ", port_orig, lvl5._v_pathname))
+                            if lvl5:
+                                df1 = store_in1.select(lvl5._v_pathname)
+                                dataframe = dataframe.append(df1)
+
+    store_in1.close()
+    os.rename(path + port_orig, path + "/portfolio_backups/" + datetime.now().strftime('%Y%m%d%H%M%S') + port_orig)
+    dataframe.sort_values(by=['current_datetime'], inplace=True)
+    write_portfolio_to_h5(globalconf, log, dataframe, store_out)
+    store_out.close()
+    os.rename(path + port_out, path + port_orig)
+
 
 def consolidate_anciliary_h5_account():
     """
@@ -265,7 +355,7 @@ def consolidate_anciliary_h5_account():
 
 
 if __name__=="__main__":
-    consolidate_anciliary_h5_account()
+    consolidate_anciliary_h5_portfolio()
     #run_get_portfolio_data()
     #print_portfolio_from_ib()
     #print_10_days_acc_summary_and_current_positions()
