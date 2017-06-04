@@ -11,6 +11,7 @@ import pandas as pd
 from datetime import datetime
 from volsetup.logger import logger
 
+
 def run():
     """
     Used as command to consolidate in the main h5 anciliary h5 generated due to column length exceptions

@@ -3,9 +3,10 @@
 #27-nov-2016 Fix error:
 #  ValueError: Trying to store a value with len [XX] in [CallOI??] column but
 #  this column has a limit of [XXX]!
+
 import glob
 import os
-import config as config
+import volsetup.config as config
 import pandas as pd
 from datetime import datetime
 from volsetup.logger import logger
