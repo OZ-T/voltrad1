@@ -57,7 +57,7 @@ def run():
         if lvl1:
             df1 = store_in1.select(lvl1._v_pathname)
             dataframe = dataframe.append(df1)
-            log.info(("Store_in1 length and name", len(df1), acc_orig))
+            log.info(("Store_in1 length and name", len(df1), optchain_orig))
     store_in1.close()
     os.rename(path + optchain_orig, path + "/optchain_ib_backups/" + datetime.now().strftime('%Y%m%d%H%M%S') + optchain_orig)
 
