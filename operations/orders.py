@@ -2,22 +2,20 @@
 """
 
 import volibutils.sync_client as ib
-from volsetup import config
-import datetime as dt
-import pickle
-import pandas as pd
-import swigibpy as sy
-from volibutils.RequestOptionData import RequestOptionData
-from volibutils.RequestUnderlyingData import RequestUnderlyingData
 from volsetup.logger import logger
 from volutils import utils as utils
+import glob
+import os
+import volsetup.config as config
+import pandas as pd
+import datetime as dt
 
-def run_get_orders():
+
+def store_orders_from_ib_to_h5():
     """
     Method to retrieve orders -everything from the last business day-, intended for batch usage     
     """
-    log=logger("run_get_orders")
-
+    log=logger("store_orders_from_ib_to_h5")
     if dt.datetime.now().date() in utils.get_trading_close_holidays(dt.datetime.now().year):
         log.info("This is a US Calendar holiday. Ending process ... ")
         return
@@ -27,13 +25,6 @@ def run_get_orders():
     client = ib.IBClient(globalconf)
     clientid1 = int(globalconf.config['ib_api']['clientid_data'])
     client.connect(clientid1=clientid1)
-    months = globalconf.months
-    now = dt.datetime.now()  # Get current time
-    c_month = months[now.month]  # Get current month
-    c_day = str(now.day)  # Get current day
-    c_year = str(now.year)  # Get current year
-    c_hour = str(now.hour)
-    c_minute = str(now.minute)
 
     ## Get the executions (gives you everything for last business day)
     execlist = client.get_executions(10)
@@ -41,15 +32,10 @@ def run_get_orders():
     log.info("execlist length = [%d]" % ( len(execlist) ))
     if execlist:
         dataframe = pd.DataFrame.from_dict(execlist).transpose()
-        #print("dataframe = ",dataframe)
         f = globalconf.open_orders_store()
         dataframe['current_date'] = dt.datetime.now().strftime('%Y%m%d')
         dataframe['current_datetime'] = dt.datetime.now().strftime('%Y%m%d%H%M%S')
         log.info("Appending orders to HDF5 store ...")
-        #f.append(c_year + "/" + c_month + "/" + c_day + "/" + c_hour + "/" + c_minute, dataframe,
-        #         data_columns=dataframe.columns)
-        #f.close()  Close file
-
         # sort the dataframe
         #dataframe.sort(columns=['account'], inplace=True) DEPRECATED
         dataframe=dataframe.sort_values(by=['account'])
@@ -72,9 +58,56 @@ def run_get_orders():
                 aux.append("/" + name, joe, data_columns=True)
                 aux.close()
         f.close()
-
     else:
         log.info("No orders to append ...")
 
+
+def consolidate_anciliary_h5_orders():
+    globalconf = config.GlobalConfig()
+    path = globalconf.config['paths']['data_folder']
+    # path = '/home/david/data/'
+    # http://stackoverflow.com/questions/2225564/get-a-filtered-list-of-files-in-a-directory
+    os.chdir(path)
+    orders_orig = 'orders_db.h5'
+    pattern_orders = 'orders_db.h5*'
+    orders_out = 'orders_db_new.h5'
+    lst1 = glob.glob(pattern_orders)
+    lst1.remove(orders_orig)
+    print (lst1)
+    dataframe = pd.DataFrame()
+    for x in lst1:
+        store_in1 = pd.HDFStore(path + x)
+        root1 = store_in1.root
+        print (root1._v_pathname)
+        for lvl1 in root1:
+            print (lvl1._v_pathname)
+            if lvl1:
+                df1 = store_in1.select(lvl1._v_pathname)
+                dataframe = dataframe.append(df1)
+                print ("store_in1", len(df1), x)
+        store_in1.close()
+
+    store_in1 = pd.HDFStore(path + orders_orig)
+    store_out = pd.HDFStore(path + orders_out)
+    root1 = store_in1.root
+    print (root1._v_pathname)
+    for lvl1 in root1:
+        print (lvl1._v_pathname)
+        if lvl1:
+            df1 = store_in1.select(lvl1._v_pathname)
+            dataframe = dataframe.append(df1)
+            print ("store_in1", len(df1), orders_orig)
+    store_in1.close()
+
+    dataframe.sort_index(inplace=True,ascending=[True])
+    names = dataframe['account'].unique().tolist()
+    for name in names:
+        print ("Storing " + name + " in ABT ..." + str(len(dataframe)))
+        joe = dataframe[dataframe.account == name]
+        joe=joe.sort_values(by=['current_datetime'])
+        store_out.append("/" + name, joe, data_columns=True)
+    store_out.close()
+
 if __name__=="__main__":
     run_get_orders()
+

@@ -11,10 +11,10 @@ fix_port_h5:
   pointer:  operations.accounting.consolidate_anciliary_h5_portfolio
 
 # Orders
-orders_to_h5:
-  pointer:  volblotter.vol_grab_orders.run_get_orders
+batch_orders_to_h5:
+  pointer:  operations.orders.store_orders_from_ib_to_h5
 fix_orders_h5:
-  pointer:  volsetup.fix_h5_orders.run
+  pointer:  operations.orders.consolidate_anciliary_h5_orders
 
 
 # trend and risk indicators
