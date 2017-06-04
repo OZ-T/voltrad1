@@ -76,58 +76,42 @@ def write_portfolio_to_h5(globalconf, log, acclist):
         log.info("Nothing to append to HDF5 ... ")
 
 
-def write_acc_summary_to_h5(globalconf, log, summarylist):
+def write_acc_summary_to_h5(globalconf, log, dataframe2,store_new):
     """
     Write to h5 the account summary passed as argument
     """
-    if summarylist:
-        dataframe2 = pd.DataFrame.from_dict(summarylist).transpose()
-        # print("dataframe = ",dataframe)
-        dataframe2['current_date'] = dt.datetime.now().strftime('%Y%m%d')
-        dataframe2['current_datetime'] = dt.datetime.now().strftime('%Y%m%d%H%M%S')
-        # sort the dataframe
-        dataframe2.sort_values(by=['AccountCode_'], inplace=True)
-        # set the index to be this and don't drop
-        dataframe2.set_index(keys=['AccountCode_'], drop=False,inplace=True)
-        # get a list of names
-        names=dataframe2['AccountCode_'].unique().tolist()
-        store_new = globalconf.account_store_new()
-        for name in names:
-            # now we can perform a lookup on a 'view' of the dataframe
-            joe = dataframe2.loc[dataframe2['AccountCode_']==name]
-            joe.sort_values(by=['current_datetime'], inplace=True)
-            joe.index=pd.to_datetime(joe['current_datetime'], format="%Y%m%d%H%M%S")
-            joe.drop('current_datetime',axis=1,inplace=True)
-            joe['current_datetime_txt'] = joe.index.strftime("%Y-%m-%d %H:%M:%S")
-            node=store_new.get_node("/" + name)
-            if node:
-                log.info("Getting columns names in account store HDF5 ... ")
-                dftot = store_new.select(node._v_pathname)
-                cols = list(dftot.columns.values)
-                cols.sort()
-                colsjoe=list(joe.columns.values)
-                colsfinal = list(set(cols).intersection(colsjoe))
-                joe = joe[colsfinal]
+    # get a list of names
+    names=dataframe2['AccountCode_'].unique().tolist()
+    for name in names:
+        # now we can perform a lookup on a 'view' of the dataframe
+        joe = dataframe2.loc[dataframe2['AccountCode_']==name]
+        node=store_new.get_node("/" + name)
+        if node:
+            log.info("Getting columns names in account store HDF5 ... ")
+            dftot = store_new.select(node._v_pathname)
+            cols = list(dftot.columns.values)
+            cols.sort()
+            colsjoe=list(joe.columns.values)
+            colsfinal = list(set(cols).intersection(colsjoe))
+            joe = joe[colsfinal]
 
-            log.info("Appending account data to HDF5 ... ")
-            # Following 3 lines is to fix following error when storing in HDF5:
-            #       [unicode] is not implemented as a table column
-            types = joe.apply(lambda x: pd.lib.infer_dtype(x.values))
-            for col in types[types == 'unicode'].index:
-                joe[col] = joe[col].astype(str)
-            #print joe.dtypes
-            try:
-                store_new.append("/" + name, joe, data_columns=True)
-            except NaturalNameWarning as e:
-                log.warn("NaturalNameWarning raised [" + str(e))
-            except (ValueError) as e:
-                log.warn("ValueError raised [" + str(e) + "]  Creating ancilliary file ...")
-                aux = globalconf.account_store_new_error()
-                aux.append("/" + name, joe, data_columns=True)
-                aux.close()
+        log.info("Appending account data to HDF5 ... ")
+        # Following 3 lines is to fix following error when storing in HDF5:
+        #       [unicode] is not implemented as a table column
+        types = joe.apply(lambda x: pd.lib.infer_dtype(x.values))
+        for col in types[types == 'unicode'].index:
+            joe[col] = joe[col].astype(str)
+        #print joe.dtypes
+        try:
+            store_new.append("/" + name, joe, data_columns=True)
+        except NaturalNameWarning as e:
+            log.warn("NaturalNameWarning raised [" + str(e))
+        except (ValueError) as e:
+            log.warn("ValueError raised [" + str(e) + "]  Creating ancilliary file ...")
+            aux = globalconf.account_store_new_error()
+            aux.append("/" + name, joe, data_columns=True)
+            aux.close()
         store_new.close()
-    else:
-        log.info("Nothing to append to HDF5 ... ")
 
 
 def print_10_days_acc_summary_and_current_positions():
@@ -205,7 +189,22 @@ def store_acc_summary_and_portfolio_from_ib_to_h5():
     log.info("acclist length [%d] " % ( len(acclist) ))
     log.info("summarylist length [%d]" % ( len(summarylist) ))
     write_portfolio_to_h5(globalconf, log, acclist)
-    write_acc_summary_to_h5(globalconf, log, summarylist)
+
+    if summarylist:
+        store_new = globalconf.account_store_new()
+        dataframe2 = pd.DataFrame.from_dict(summarylist).transpose()
+        # print("dataframe = ",dataframe)
+        dataframe2['current_date'] = dt.datetime.now().strftime('%Y%m%d')
+        dataframe2['current_datetime'] = dt.datetime.now().strftime('%Y%m%d%H%M%S')
+        dataframe2.sort_values(by=['current_datetime'], inplace=True)
+        dataframe2.index=pd.to_datetime(dataframe2['current_datetime'], format="%Y%m%d%H%M%S")
+        dataframe2.drop('current_datetime',axis=1,inplace=True)
+        dataframe2['current_datetime_txt'] = dataframe2.index.strftime("%Y-%m-%d %H:%M:%S")
+
+        write_acc_summary_to_h5(globalconf, log, dataframe2, store_new)
+    else:
+        log.info("Nothing to append to HDF5 ... ")
+
     client.disconnect()
 
 def consolidate_anciliary_h5_account():
@@ -216,7 +215,9 @@ def consolidate_anciliary_h5_account():
     log = globalconf.log
     path = globalconf.config['paths']['data_folder']
     os.chdir(path)
-    os.mkdir(path + "/account_backups")
+    if not os.path.exists(path + "/account_backups"):
+        os.makedirs(path + "/account_backups")
+
     acc_orig = 'account_db_new.h5'
     pattern_acc = 'account_db_new.h5*'
     acc_out = 'account_db_complete.h5'
@@ -224,52 +225,47 @@ def consolidate_anciliary_h5_account():
     lst1 = glob.glob(pattern_acc)
     lst1.remove(acc_orig)
     if not lst1:
-        print("No ancilliary files to append, exiting ... ")
-        pass
-    log.info("List of ancilliary files that will be appended: ", lst1)
+        log.info("No ancilliary files to append, exiting ... ")
+        return
+
+    log.info(("List of ancilliary files that will be appended: ", lst1))
     dataframe = pd.DataFrame()
     for x in lst1:
         store_in1 = pd.HDFStore(path + x)
         root1 = store_in1.root
-        log.info("Root pathname of the input store: ", root1._v_pathname)
+        log.info(("Root pathname of the input store: ", root1._v_pathname))
         for lvl1 in root1:
-            log.info("Level 1 pathname in the root if the H5: ", lvl1._v_pathname)
+            log.info(("Level 1 pathname in the root if the H5: ", lvl1._v_pathname))
             if lvl1:
                 df1 = store_in1.select(lvl1._v_pathname)
                 dataframe = dataframe.append(df1)
-                log.info("Store_in1", len(df1), x)
+                log.info(("Store_in1", len(df1), x))
         store_in1.close()
         os.rename(path + x, path + "/account_backups/" + x)
 
     store_in1 = pd.HDFStore(path + acc_orig)
     store_out = pd.HDFStore(path + acc_out)
     root1 = store_in1.root
-    log.info("Root pathname of the input store: ", root1._v_pathname)
+    log.info(("Root pathname of the input store: ", root1._v_pathname))
     root2 = store_out.root
-    log.info("Root pathname of the output store: ", root2._v_pathname)
+    log.info(("Root pathname of the output store: ", root2._v_pathname))
 
     for lvl1 in root1:
         print (lvl1._v_pathname)
         if lvl1:
             df1 = store_in1.select(lvl1._v_pathname)
             dataframe = dataframe.append(df1)
-            log.info("Store_in1 length and name", len(df1), acc_orig)
+            log.info(("Store_in1 length and name", len(df1), acc_orig))
     store_in1.close()
     os.rename(path + acc_orig, path + "/account_backups/" + datetime.now().strftime('%Y%m%d%H%M%S') + acc_orig)
-
     dataframe.sort_index(inplace=True,ascending=[True])
-    names = dataframe['account'].unique().tolist()
-    for name in names:
-        print ("Storing accountid: " + name + " in ABT ... Length: " + str(len(dataframe)))
-        joe = dataframe[dataframe.account == name]
-        joe=joe.sort_values(by=['current_datetime'])
-        store_out.append("/" + name, joe, data_columns=True)
+    write_acc_summary_to_h5(globalconf, log, dataframe, store_out)
     store_out.close()
     os.rename(path + acc_out, path + acc_orig)
 
 
 if __name__=="__main__":
-    pass
+    consolidate_anciliary_h5_account()
     #run_get_portfolio_data()
     #print_portfolio_from_ib()
     #print_10_days_acc_summary_and_current_positions()
