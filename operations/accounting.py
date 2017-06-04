@@ -6,44 +6,67 @@ from volsetup import config
 import datetime as dt
 import pandas as pd
 from volsetup.logger import logger
-from volibutils.RequestOptionData import RequestOptionData
-from volibutils.RequestUnderlyingData import RequestUnderlyingData
 from volutils import utils as utils
 from tables.exceptions import NaturalNameWarning
 import glob
 import os
 
-def print_portfolio_data():
-    """ Print portfolio data to console.
-    Summary information about account and portfolio.
-    """
-    days = 10
-    globalconf = config.GlobalConfig(level=logger.ERROR)
-    log = globalconf.log
-    #this is to try to fit in one line each row od a dataframe when printing to console
-    pd.set_option('display.max_rows', 500)
-    pd.set_option('display.max_columns', 500)
-    pd.set_option('display.width', 1000)
 
+def read_acc_summary_and_portfolio_from_ib(globalconf, log):
+    """
+    Read portfolio data and account summary from IB and returns two dataframes.
+    """
     log.info("Getting portfolio and account data from IB ... ")
     client = ib.IBClient(globalconf)
     clientid1 = int(globalconf.config['ib_api']['clientid_orders'])
     client.connect(clientid1=clientid1)
 
-    now = dt.datetime.now()  # Get current time
-    ## Get the executions (gives you everything for last business day)
+    # Get the executions (gives you everything for last business day)
     acclist, summarylist = client.get_potfolio_data(11)
     client.disconnect()
-    log.info("acclist length [%d] " % ( len(acclist) ))
-    log.info("summarylist length [%d]" % ( len(summarylist) ))
+    log.info("acclist length [%d] " % (len(acclist)))
+    log.info("summarylist length [%d]" % (len(summarylist)))
+    return acclist, summarylist
+
+
+def read_historical_acc_summary_from_h5(globalconf, log, accountid):
+    """
+    Read from h5 the complete history of the account summary and returns as dataframe
+   
+    """
+    store = globalconf.account_store_new()
+    node = store.get_node("/" + accountid)
+    df1 = store.select(node._v_pathname)
+    df1['date1']=df1.index.map(lambda x: x.date())
+    df1= df1.drop_duplicates(subset=['date1'],keep='last')
+    store.close()
+    return df1
+
+def print_10_days_acc_summary_and_current_positions():
+    """ 
+    print_10_days_acc_summary_and_current_positions
+    Read portfolio data from IB and print to console.
+    Summary information about account and portfolio for last 10 days is read from H5 and printed to console also.
+    """
+    days = 10
+    globalconf = config.GlobalConfig(level=logger.ERROR)
+    log = globalconf.log
+    # this is to try to fit in one line each row od a dataframe when printing to console
+    pd.set_option('display.max_rows', 500)
+    pd.set_option('display.max_columns', 500)
+    pd.set_option('display.width', 1000)
+    now = dt.datetime.now()  # Get current time
+
+    acclist, summarylist = read_acc_summary_and_portfolio_from_ib(globalconf, log)
+
     print("Real time valuation: %s" % (str(now)))
     if acclist:
         dataframe = pd.DataFrame.from_dict(acclist).transpose()
         dataframe['current_date'] = dt.datetime.now().strftime('%Y%m%d')
         dataframe['current_datetime'] = dt.datetime.now().strftime('%Y%m%d%H%M%S')
         columns1 = [u'averageCost', u'conId', u'expiry', u'localSymbol', u'right',
-                               u'marketPrice', u'marketValue', u'multiplier',
-                               u'position',u'strike', u'symbol', u'unrealizedPNL']
+                    u'marketPrice', u'marketValue', u'multiplier',
+                    u'position', u'strike', u'symbol', u'unrealizedPNL']
         dataframe = dataframe[columns1]
         print("Portfolio = ")
         print(dataframe)
@@ -56,11 +79,11 @@ def print_portfolio_data():
         dataframe2.sort_values(by=['AccountCode_'], inplace=True)
         # set the index to be this and don't drop
         dataframe2.set_index(keys=['AccountCode_'], drop=False,inplace=True)
-        dataframe2=dataframe2[[u'Cushion_',
-                               u'FullInitMarginReq_USD',
-                               u'FullMaintMarginReq_USD',u'GrossPositionValue_USD',
-                               u'NetLiquidation_USD',u'RegTEquity_USD',
-                               u'TotalCashBalance_BASE',u'UnrealizedPnL_BASE']]
+        dataframe2 = dataframe2[[u'Cushion_',
+                                 u'FullInitMarginReq_USD',
+                                 u'FullMaintMarginReq_USD', u'GrossPositionValue_USD',
+                                 u'NetLiquidation_USD', u'RegTEquity_USD',
+                                 u'TotalCashBalance_BASE', u'UnrealizedPnL_BASE']]
         print("____________________________________________________________________________________________")
         print("Summary = ")
         print(dataframe2)
@@ -68,17 +91,14 @@ def print_portfolio_data():
     print("____________________________________________________________________________________________")
     print("Summary Account Last %d days valuation:" % (days))
     accountid = globalconf.get_accountid()
-    store = globalconf.account_store_new()
-    node = store.get_node("/" + accountid)
-    df1 = store.select(node._v_pathname)
-    df1['date1']=df1.index.map(lambda x: x.date())
-    df1= df1.drop_duplicates(subset=['date1'],keep='last')
+
+    df1 = read_historical_acc_summary_from_h5(globalconf, log, accountid)
+
     df1 = df1[[u'FullInitMarginReq_USD',
-               u'FullMaintMarginReq_USD',u'GrossPositionValue_USD',
+               u'FullMaintMarginReq_USD', u'GrossPositionValue_USD',
                u'RegTMargin_USD',
-               u'TotalCashBalance_BASE',u'UnrealizedPnL_BASE']]
+               u'TotalCashBalance_BASE', u'UnrealizedPnL_BASE']]
     df1 = df1.ix[-10:]
-    store.close()
     print(df1)
 
 def run_get_portfolio_data():
@@ -225,7 +245,7 @@ def fix_h5_account():
 
 if __name__=="__main__":
     run_get_portfolio_data()
-    #print_portfolio_data()
+    #print_portfolio_from_ib()
 
 """
 AccountCode_	AccountOrGroup_BASE	AccountOrGroup_EUR	AccountOrGroup_USD	AccountReady_	AccountType_

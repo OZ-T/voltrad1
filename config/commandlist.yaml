@@ -1,8 +1,8 @@
-# Account
+# Operations
 acc_to_h5:
-  pointer:  volaccounting.vol_grab_accounting.run_get_portfolio_data
+  pointer:  operations.vol_grab_accounting.run_get_portfolio_data
 acc_to_console:
-  pointer:  volaccounting.vol_grab_accounting.print_portfolio_data
+  pointer:  operations.accounting.print_10_days_acc_summary_and_current_positions
 # Orders
 orders_to_h5:
   pointer:  volblotter.vol_grab_orders.run_get_orders
@@ -69,7 +69,7 @@ cancelall:
 ticrpt:
    pointer: voldailyanalytics.analytics_methods.print_tic_report
 portfolio:
-   pointer: volaccounting.vol_grab_accounting.print_portfolio_data
+   pointer: operations.vol_grab_accounting.print_portfolio_from_ib
 accdelta:
   pointer: voldailyanalytics.analytics_methods.print_account_delta
 accsnap:
