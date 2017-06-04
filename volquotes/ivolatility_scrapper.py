@@ -7,6 +7,12 @@ import numpy as np
 import pandas as pd
 from volsetup.logger import logger
 
+
+#   Han modificado la WEB, cmbiar el codigo
+#   FIXME
+#   http://www.ivolatility.com/home.j
+#
+
 def download(url,log, user_agent='wswp',  num_retries=2):
     headers = {'User-agent': user_agent}
     request = urllib2.Request(url, headers=headers)

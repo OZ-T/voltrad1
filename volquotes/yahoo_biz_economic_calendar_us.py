@@ -30,6 +30,18 @@ from volsetup.logger import logger
 import requests
 import bs4
 
+# This is broken
+# usar esta URL
+#
+#
+#
+#
+# https://finance.yahoo.com/calendar/economic?from=2017-06-04&to=2017-06-10&day=2017-06-06
+#
+
+
+
+
 def run_reader():
     globalconf = config.GlobalConfig()
     log = logger("yahoo biz eco calendar download")
