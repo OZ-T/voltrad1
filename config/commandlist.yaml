@@ -2,16 +2,13 @@
 ib_time:
   pointer:  operations.broker.get_ib_time
 batch_acc_to_h5:
-  pointer:  operations.accounting.run_get_portfolio_data
-acc_to_console:
+  pointer:  operations.accounting.store_acc_summary_and_portfolio_from_ib_to_h5
+print_acc_port:
   pointer:  operations.accounting.print_10_days_acc_summary_and_current_positions
 fix_acc_h5:
   pointer:  operations.accounting.consolidate_anciliary_h5_account
 fix_port_h5:
   pointer:  operations.accounting.consolidate_anciliary_h5_portfolio
-
-
-
 
 # Orders
 orders_to_h5:
