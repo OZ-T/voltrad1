@@ -124,7 +124,7 @@ def print_10_days_acc_summary_and_current_positions():
     pd.set_option('display.max_columns', 500)
     pd.set_option('display.width', 1000)
     now = dt.datetime.now()  # Get current time
-    acclist, summarylist = read_acc_summary_and_portfolio_from_ib(globalconf, log)
+    acclist, summarylist = read_acc_summary_and_portfolio_from_ib(client, globalconf, log)
     print("Real time valuation: %s" % (str(now)))
     if acclist:
         dataframe = pd.DataFrame.from_dict(acclist).transpose()
@@ -190,7 +190,6 @@ def store_acc_summary_and_portfolio_from_ib_to_h5():
         write_portfolio_to_h5(globalconf, log, dataframe, store)
     else:
         log.info("Nothing to append to HDF5 ... ")
-
 
     if summarylist:
         store_new = globalconf.account_store_new()
@@ -292,6 +291,7 @@ def consolidate_anciliary_h5_portfolio():
     store_in1.close()
     os.rename(path + port_orig, path + "/portfolio_backups/" + datetime.now().strftime('%Y%m%d%H%M%S') + port_orig)
     dataframe.sort_values(by=['current_datetime'], inplace=True)
+    dataframe = dataframe.dropna(subset=['current_datetime'])
     write_portfolio_to_h5(globalconf, log, dataframe, store_out)
     store_out.close()
     os.rename(path + port_out, path + port_orig)
