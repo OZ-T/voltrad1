@@ -200,7 +200,6 @@ def store_acc_summary_and_portfolio_from_ib_to_h5():
         dataframe2.sort_values(by=['current_datetime'], inplace=True)
         dataframe2.index=pd.to_datetime(dataframe2['current_datetime'], format="%Y%m%d%H%M%S")
         dataframe2.drop('current_datetime',axis=1,inplace=True)
-        dataframe2.drop('multiplier', axis=1, inplace=True)
         dataframe2['current_datetime_txt'] = dataframe2.index.strftime("%Y-%m-%d %H:%M:%S")
         write_acc_summary_to_h5(globalconf, log, dataframe2, store_new)
     else:
@@ -292,6 +291,7 @@ def consolidate_anciliary_h5_portfolio():
     os.rename(path + port_orig, path + "/portfolio_backups/" + datetime.now().strftime('%Y%m%d%H%M%S') + port_orig)
     dataframe.sort_values(by=['current_datetime'], inplace=True)
     dataframe = dataframe.dropna(subset=['current_datetime'])
+    dataframe.drop('multiplier', axis=1, inplace=True)
     write_portfolio_to_h5(globalconf, log, dataframe, store_out)
     store_out.close()
     os.rename(path + port_out, path + port_orig)
