@@ -211,16 +211,24 @@ class GlobalConfig(object):
         dataframe = pd.read_excel(open(path + name, 'rb'), sheetname='account_'+simulName)
         return dataframe
 
+
     def orders_dataframe_simulation(self,simulName):
         name=self.config['simulation']['simulation_template']
         path=self.config['simulation']['data_folder']
         dataframe = pd.read_excel(open(path + name, 'rb'), sheetname='orders_'+simulName)
         return dataframe
 
+
     def account_store_new(self):
         name = self.config['db']['hdf5_account_db_new']
         path=self.config['paths']['data_folder']
         return pd.HDFStore(path + name)
+
+
+    def account_store_by_name(self, name):
+        path=self.config['paths']['data_folder']
+        return pd.HDFStore(path + name)
+
 
     def account_store_new_error(self):
         name = self.config['db']['hdf5_account_db_new'] + datetime.now().strftime('%Y%m%d%H%M%S')
