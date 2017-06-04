@@ -17,7 +17,7 @@ def run():
     """
     globalconf = config.GlobalConfig()
     path = globalconf.config['paths']['data_folder']
-    log = globalconf.log
+    log = logger("fix_h5 optchain")
     os.chdir(path)
     if not os.path.exists(path + "/optchain_ib_backups"):
         os.makedirs(path + "/optchain_ib_backups")
