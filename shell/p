@@ -1,4 +1,4 @@
 #!/bin/bash
-VOLTRAD1_PATH=/home/david/voltrad1
-PYTHONPATH=$VOLTRAD1_PATH
+export VOLTRAD1_PATH=/home/david/voltrad1
+export PYTHONPATH=$VOLTRAD1_PATH
 /home/david/anaconda3/bin/python "$VOLTRAD1_PATH/volutils/run.py" $@
