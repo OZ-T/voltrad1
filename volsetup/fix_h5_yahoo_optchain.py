@@ -25,7 +25,7 @@ def run():
 
     optchain_orig = 'optchain_yahoo_hist_db.h5'
     pattern_optchain = 'optchain_yahoo_hist_db.h5*'
-    optchain_out = 'optchain_ib_hist_db_complete.h5'
+    optchain_out = 'optchain_yahoo_hist_db_complete.h5'
     lst1 = glob.glob(pattern_optchain)
     lst1.remove(optchain_orig)
     if not lst1:
