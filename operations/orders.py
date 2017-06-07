@@ -76,7 +76,7 @@ def consolidate_anciliary_h5_orders():
     print (lst1)
     dataframe = pd.DataFrame()
     for x in lst1:
-        store_in1 = pd.HDFStore(path + x)
+        store_in1 = pd.HDFStore(path + x,mode='w')
         root1 = store_in1.root
         print (root1._v_pathname)
         for lvl1 in root1:
@@ -87,8 +87,8 @@ def consolidate_anciliary_h5_orders():
                 print ("store_in1", len(df1), x)
         store_in1.close()
 
-    store_in1 = pd.HDFStore(path + orders_orig)
-    store_out = pd.HDFStore(path + orders_out)
+    store_in1 = pd.HDFStore(path + orders_orig,mode='w')
+    store_out = pd.HDFStore(path + orders_out,mode='w')
     root1 = store_in1.root
     print (root1._v_pathname)
     for lvl1 in root1:
@@ -109,5 +109,5 @@ def consolidate_anciliary_h5_orders():
     store_out.close()
 
 if __name__=="__main__":
-    run_get_orders()
+    store_orders_from_ib_to_h5()
 

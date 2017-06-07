@@ -14,13 +14,13 @@ def partition_data_set_by_option_expiry():
     hdf5_path = "C:/Users/David/data/optchain_yahoo_hist_db.h5"
     hdf5_out_template = "C:/Users/David/data/optchain_yahoo_db_expiry_"
 
-    store_file = pd.HDFStore(hdf5_path)
+    store_file = pd.HDFStore(hdf5_path,mode='w')
     root1 = store_file.root
     list = [x._v_pathname for x in root1]
     store_file.close()
     print (list)
     for node in list:
-        store_file = pd.HDFStore(hdf5_path)
+        store_file = pd.HDFStore(hdf5_path,mode='w')
         node1 = store_file.get_node(node)
         if node1:
             df1 = store_file.select(node1._v_pathname)
@@ -39,7 +39,7 @@ def partition_data_set_by_option_expiry():
             # names = df1['Expiry'].unique().tolist()
             names = df1['Expiry'].dt.strftime("%Y-%m").unique().tolist()
             for x in names:
-                out_store_file = pd.HDFStore(hdf5_out_template + x + ".h5")
+                out_store_file = pd.HDFStore(hdf5_out_template + x + ".h5",mode='w')
                 # now we can perform a lookup on a 'view' of the dataframe
                 dataframe = df1.loc[df1['Expiry'].dt.strftime("%Y-%m") == x]
                 print(("Node: ", node1._v_pathname, "Total rows in input ds: ", len(df1), "No. Rows for expiry: ", len(dataframe), "Expiry Month: ", x))

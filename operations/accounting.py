@@ -232,7 +232,7 @@ def consolidate_anciliary_h5_portfolio():
     else:
         log.info(("List of ancilliary files that will be appended: ", lst1))
         for x in lst1:
-            store_in1 = pd.HDFStore(path + x)
+            store_in1 = pd.HDFStore(path + x,mode='w')
             root1 = store_in1.root
             log.info(("Root pathname of the input store: ", root1._v_pathname))
             for lvl1 in root1:
@@ -260,8 +260,8 @@ def consolidate_anciliary_h5_portfolio():
             store_in1.close()
             os.rename(path + x, path + "/portfolio_backups/" + x)
 
-    store_in1 = pd.HDFStore(path + port_orig)
-    store_out = pd.HDFStore(path + port_out)
+    store_in1 = pd.HDFStore(path + port_orig,mode='w')
+    store_out = pd.HDFStore(path + port_out,mode='w')
     root1 = store_in1.root
     root2 = store_out.root
     old_format = False
@@ -323,7 +323,7 @@ def consolidate_anciliary_h5_account():
     log.info(("List of ancilliary files that will be appended: ", lst1))
     dataframe = pd.DataFrame()
     for x in lst1:
-        store_in1 = pd.HDFStore(path + x)
+        store_in1 = pd.HDFStore(path + x,mode='w')
         root1 = store_in1.root
         log.info(("Root pathname of the input store: ", root1._v_pathname))
         for lvl1 in root1:
@@ -335,8 +335,8 @@ def consolidate_anciliary_h5_account():
         store_in1.close()
         os.rename(path + x, path + "/account_backups/" + x)
 
-    store_in1 = pd.HDFStore(path + acc_orig)
-    store_out = pd.HDFStore(path + acc_out)
+    store_in1 = pd.HDFStore(path + acc_orig,mode='w')
+    store_out = pd.HDFStore(path + acc_out,mode='w')
     root1 = store_in1.root
     log.info(("Root pathname of the input store: ", root1._v_pathname))
     root2 = store_out.root
