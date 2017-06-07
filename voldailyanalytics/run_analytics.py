@@ -209,7 +209,7 @@ def create_opt_chain_abt(year="2016"):
     # sort the dataframe
     dataframe=dataframe[dataframe.current_datetime.notnull()]
 
-    types = dataframe.apply(lambda x: pd.api.types.infer_dtype(x.values))
+    types = dataframe.apply(lambda x: pd.lib.infer_dtype(x.values))
     #print str(types)
     for col in types[types=='floating'].index:
         dataframe[col] = dataframe[col].map(lambda x: np.nan if x > 1e200 else x)

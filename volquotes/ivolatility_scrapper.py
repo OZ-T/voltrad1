@@ -151,7 +151,7 @@ if __name__=="__main__":
     dataframe = dataframe.reset_index().set_index('load_dttm')
     dataframe = dataframe.drop('index', 1)
     dataframe['load_dttm_txt'] = dataframe.index.strftime("%Y-%m-%d %H:%M:%S")
-    types = dataframe.apply(lambda x: pd.api.types.infer_dtype(x.values))
+    types = dataframe.apply(lambda x: pd.lib.infer_dtype(x.values))
     for col in types[types == 'unicode'].index:
         dataframe[col] = dataframe[col].astype(str)
     log.info("Storing data in HDF5 ...")
