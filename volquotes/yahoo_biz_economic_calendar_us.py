@@ -82,7 +82,7 @@ def run_reader():
     dataframe['load_dttm'] = load_dttm
 
     # Fix the error "TypeError: [unicode] is not implemented as a table column" when runing to_hdf
-    types = dataframe.apply(lambda x: pd.lib.infer_dtype(x.values))
+    types = dataframe.apply(lambda x: pd.api.types.infer_dtype(x.values))
     for col in types[types == 'unicode'].index:
         dataframe[col] = dataframe[col].astype(str)
     dataframe.columns = [str(c) for c in dataframe.columns]

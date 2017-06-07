@@ -91,7 +91,7 @@ def write_acc_summary_to_h5(globalconf, log, dataframe2,store_new):
         log.info("Appending account data to HDF5 ... ")
         # Following 3 lines is to fix following error when storing in HDF5:
         #       [unicode] is not implemented as a table column
-        types = joe.apply(lambda x: pd.lib.infer_dtype(x.values))
+        types = joe.apply(lambda x: pd.api.types.infer_dtype(x.values))
         for col in types[types == 'unicode'].index:
             joe[col] = joe[col].astype(str)
         #print joe.dtypes

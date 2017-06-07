@@ -44,7 +44,7 @@ def partition_data_set_by_option_expiry():
                 dataframe = df1.loc[df1['Expiry'].dt.strftime("%Y-%m") == x]
                 print(("Node: ", node1._v_pathname, "Total rows in input ds: ", len(df1), "No. Rows for expiry: ", len(dataframe), "Expiry Month: ", x))
                 # Following code is to FIX ERROR: TypeError: [unicode] is not implemented as a table column START
-                types = dataframe.apply(lambda x: pd.lib.infer_dtype(x.values))
+                types = dataframe.apply(lambda x: pd.api.types.infer_dtype(x.values))
                 for col in types[types == 'unicode'].index:
                     dataframe[col] = dataframe[col].astype(str)
                 dataframe.columns = [str(c) for c in dataframe.columns]

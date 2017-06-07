@@ -19,7 +19,7 @@ import sys
 from volsetup.logger import logger
 
 def clean_cols_for_hdf2(df):
-    types = df.apply(lambda x: pd.lib.infer_dtype(x.values))
+    types = df.apply(lambda x: pd.api.types.infer_dtype(x.values))
     for col in types[types=='mixed'].index:
         df[col] = df[col].astype(str)
     for col in types[types=='unicode'].index:
