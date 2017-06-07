@@ -29,7 +29,7 @@ def run():
     print (lst1)
     dataframe = pd.DataFrame()
     for x in lst1:
-        store_in1 = pd.HDFStore(path + x)
+        store_in1 = pd.HDFStore(path + x,mode='w')
         root1 = store_in1.root
         print (root1._v_pathname)
         for lvl1 in root1:
@@ -41,8 +41,8 @@ def run():
         store_in1.close()
 
 
-    store_in1 = pd.HDFStore(path + optchain_orig)
-    store_out = pd.HDFStore(path + optchain_out)
+    store_in1 = pd.HDFStore(path + optchain_orig,mode='w')
+    store_out = pd.HDFStore(path + optchain_out,mode='w')
     root1 = store_in1.root
     print (root1._v_pathname)
     for lvl1 in root1:
