@@ -775,8 +775,8 @@ class IBClient():
         for reqId, request in requests.iteritems():
             num1 += 1
             num2 += 1
-            self.log.info("Requesting MktData [%s] for reqId=[%d] [%d]"
-                  % (datetime.now().strftime('%Y-%m-%d %H:%M:%S'),reqId, request.getRequestId()))
+            # self.log.info("Requesting MktData [%s] for reqId=[%d] [%d]"
+            #       % (datetime.now().strftime('%Y-%m-%d %H:%M:%S'),reqId, request.getRequestId()))
             self.myEClientSocket.reqMktData(id=request.getRequestId(),
                                             contract=request.getInstance(),
                                             genericTicks=request.getGenericTicks(),
