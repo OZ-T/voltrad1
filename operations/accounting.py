@@ -292,6 +292,7 @@ def consolidate_anciliary_h5_portfolio():
     os.rename(path + port_orig, path + "/portfolio_backups/" + datetime.now().strftime('%Y%m%d%H%M%S') + port_orig)
     dataframe.sort_values(by=['current_datetime'], inplace=True)
     dataframe = dataframe.dropna(subset=['current_datetime'])
+    dataframe.drop('multiplier', axis=1, inplace=True)
     # dataframe.drop('multiplier', axis=1, inplace=True)
     write_portfolio_to_h5(globalconf, log, dataframe, store_out)
     store_out.close()
