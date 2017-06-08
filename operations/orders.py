@@ -61,6 +61,60 @@ def store_orders_from_ib_to_h5():
     else:
         log.info("No orders to append ...")
 
+def write_orders_to_sqllite(globalconf, log, dataframe):
+    """
+    Write to sqllite the orders snapshot passed as argument
+    """
+    log.info("Appending orders data to sqllite ... ")
+    db_file = globalconf.config['sqllite']['orders_db']
+    path = globalconf.config['paths']['data_folder']
+    store = globalconf.connect_sqllite(path + db_file)
+    # get a list of names
+    names = dataframe['account'].unique().tolist()
+    for name in names:
+        # now we can perform a lookup on a 'view' of the dataframe
+        log.info("Storing " + name + " in ABT ...")
+        joe = dataframe.loc[dataframe['account'] == name]
+        #joe.sort(columns=['current_datetime'], inplace=True)  DEPRECATED
+        joe = joe.sort_values(by=['current_datetime'])
+        joe.to_sql(name, store, if_exists='append')
+    store.close()
+
+
+def store_orders_from_ib_to_db():
+    """
+    Method to retrieve orders -everything from the last business day-, intended for batch usage     
+    """
+    log=logger("store_orders_from_ib_to_sqllite")
+    if dt.datetime.now().date() in utils.get_trading_close_holidays(dt.datetime.now().year):
+        log.info("This is a US Calendar holiday. Ending process ... ")
+        return
+
+    log.info("Getting orders data from IB ... ")
+    globalconf = config.GlobalConfig()
+    client = ib.IBClient(globalconf)
+    clientid1 = int(globalconf.config['ib_api']['clientid_data'])
+    client.connect(clientid1=clientid1)
+
+    ## Get the executions (gives you everything for last business day)
+    execlist = client.get_executions(10)
+    client.disconnect()
+    log.info("execlist length = [%d]" % ( len(execlist) ))
+    if execlist:
+        dataframe = pd.DataFrame.from_dict(execlist).transpose()
+        dataframe['current_date'] = dt.datetime.now().strftime('%Y%m%d')
+        dataframe['current_datetime'] = dt.datetime.now().strftime('%Y%m%d%H%M%S')
+        log.info("Appending orders to sqllite store ...")
+        # sort the dataframe
+        #dataframe.sort(columns=['account'], inplace=True) DEPRECATED
+        dataframe=dataframe.sort_values(by=['account'])
+        # set the index to be this and don't drop
+        dataframe.set_index(keys=['account'], drop=False, inplace=True)
+        write_orders_to_sqllite(globalconf, log, dataframe)
+    else:
+        log.info("No orders to append ...")
+
+
 
 def consolidate_anciliary_h5_orders():
     globalconf = config.GlobalConfig()
