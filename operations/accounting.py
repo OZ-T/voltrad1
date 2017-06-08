@@ -40,8 +40,9 @@ def read_historical_acc_summary_from_sqllite(globalconf, log, accountid):
     """
     Read from sqllite the complete history of the account summary and returns as dataframe
     """
-    db_file = config['sqllite']['account_db']
-    path = config['paths']['data_folder']
+    globalconf = config.GlobalConfig()
+    db_file = globalconf.config['sqllite']['account_db']
+    path = globalconf.config['paths']['data_folder']
     store = globalconf.connect_sqllite(path + db_file)
     df1 = pd.read_sql_query("SELECT * FROM " + accountid, store)
     store.close()
@@ -63,8 +64,9 @@ def read_historical_portfolio_from_sqllite(globalconf, log, accountid):
     """
     Read from sqllite the complete history of the portfolio and returns as dataframe
     """
-    db_file = config['sqllite']['portfolio_db']
-    path = config['paths']['data_folder']
+    globalconf = config.GlobalConfig()
+    db_file = globalconf.config['sqllite']['portfolio_db']
+    path = globalconf.config['paths']['data_folder']
     store = globalconf.connect_sqllite(path + db_file)
     df1 = pd.read_sql_query("SELECT * FROM " + accountid, store)
     df1['date1']=df1.index.map(lambda x: x.date())
@@ -98,8 +100,9 @@ def write_portfolio_to_sqllite(globalconf, log, dataframe):
     Write to sqllite the portfolio snapshot passed as argument
     """
     log.info("Appending portfolio data to sqllite ... ")
-    db_file = config['sqllite']['portfolio_db']
-    path = config['paths']['data_folder']
+    globalconf = config.GlobalConfig()
+    db_file = globalconf.config['sqllite']['portfolio_db']
+    path = globalconf.config['paths']['data_folder']
     store = globalconf.connect_sqllite(path + db_file)
 
     names=dataframe['accountName'].unique().tolist()
@@ -151,8 +154,9 @@ def write_acc_summary_to_sqllite(globalconf, log, dataframe):
     Write to sqllite the portfolio snapshot passed as argument
     """
     log.info("Appending account summary data to sqllite ... ")
-    db_file = config['sqllite']['account_db']
-    path = config['paths']['data_folder']
+    globalconf = config.GlobalConfig()
+    db_file = globalconf.config['sqllite']['account_db']
+    path = globalconf.config['paths']['data_folder']
     store = globalconf.connect_sqllite(path + db_file)
 
     # get a list of names
