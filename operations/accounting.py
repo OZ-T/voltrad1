@@ -36,6 +36,17 @@ def read_historical_acc_summary_from_h5(globalconf, log, accountid):
     store.close()
     return df1
 
+def read_historical_acc_summary_from_sqllite(globalconf, log, accountid):
+    """
+    Read from sqllite the complete history of the account summary and returns as dataframe
+    """
+    db_file = config['sqllite']['account_db']
+    path = config['paths']['data_folder']
+    store = globalconf.connect_sqllite(path + db_file)
+    df1 = pd.read_sql_query("SELECT * FROM " + accountid, store)
+    store.close()
+    return df1
+
 def read_historical_portfolio_from_h5(globalconf, log, accountid):
     """
     Read from h5 the complete history of the portfolio and returns as dataframe
@@ -43,6 +54,19 @@ def read_historical_portfolio_from_h5(globalconf, log, accountid):
     store = globalconf.portfolio_store()
     node = store.get_node("/" + accountid)
     df1 = store.select(node._v_pathname)
+    df1['date1']=df1.index.map(lambda x: x.date())
+    df1= df1.drop_duplicates(subset=['date1'],keep='last')
+    store.close()
+    return df1
+
+def read_historical_portfolio_from_sqllite(globalconf, log, accountid):
+    """
+    Read from sqllite the complete history of the portfolio and returns as dataframe
+    """
+    db_file = config['sqllite']['portfolio_db']
+    path = config['paths']['data_folder']
+    store = globalconf.connect_sqllite(path + db_file)
+    df1 = pd.read_sql_query("SELECT * FROM " + accountid, store)
     df1['date1']=df1.index.map(lambda x: x.date())
     df1= df1.drop_duplicates(subset=['date1'],keep='last')
     store.close()
@@ -66,6 +90,22 @@ def write_portfolio_to_h5(globalconf, log, dataframe, store):
             aux = globalconf.portfolio_store_error()
             aux.append("/" + name, joe, data_columns=True)
             aux.close()
+        store.close()
+
+
+def write_portfolio_to_sqllite(globalconf, log, dataframe):
+    """
+    Write to sqllite the portfolio snapshot passed as argument
+    """
+    log.info("Appending portfolio data to sqllite ... ")
+    db_file = config['sqllite']['portfolio_db']
+    path = config['paths']['data_folder']
+    store = globalconf.connect_sqllite(path + db_file)
+
+    names=dataframe['accountName'].unique().tolist()
+    for name in names:
+        joe = dataframe.loc[dataframe['accountName']==name]
+        joe.to_sql(name, store, if_exists='append')
         store.close()
 
 
@@ -105,6 +145,23 @@ def write_acc_summary_to_h5(globalconf, log, dataframe2,store_new):
             aux.append("/" + name, joe, data_columns=True)
             aux.close()
         store_new.close()
+
+def write_acc_summary_to_sqllite(globalconf, log, dataframe):
+    """
+    Write to sqllite the portfolio snapshot passed as argument
+    """
+    log.info("Appending account summary data to sqllite ... ")
+    db_file = config['sqllite']['account_db']
+    path = config['paths']['data_folder']
+    store = globalconf.connect_sqllite(path + db_file)
+
+    # get a list of names
+    names=dataframe['AccountCode_'].unique().tolist()
+    for name in names:
+        joe = dataframe.loc[dataframe['AccountCode_']==name]
+        joe.to_sql(name, store, if_exists='append')
+        store.close()
+
 
 
 def print_10_days_acc_summary_and_current_positions():
@@ -157,7 +214,7 @@ def print_10_days_acc_summary_and_current_positions():
     print("____________________________________________________________________________________________")
     print("Summary Account Last %d days valuation:" % (days))
     accountid = globalconf.get_accountid()
-    df1 = read_historical_acc_summary_from_h5(globalconf, log, accountid)
+    df1 = read_historical_acc_summary_from_sqllite(globalconf, log, accountid)
     df1 = df1[[u'FullInitMarginReq_USD',
                u'FullMaintMarginReq_USD', u'GrossPositionValue_USD',
                u'RegTMargin_USD',
@@ -165,7 +222,7 @@ def print_10_days_acc_summary_and_current_positions():
     df1 = df1.ix[-10:]
     print(df1)
 
-def store_acc_summary_and_portfolio_from_ib_to_h5():
+def store_acc_summary_and_portfolio_from_ib_to_db():
     """ Stores in HDF5 snapshot of portfolio data.
     Intended for batch run, Summary information about account and portfolio.
     """
@@ -184,16 +241,14 @@ def store_acc_summary_and_portfolio_from_ib_to_h5():
 
     if acclist:
         dataframe = pd.DataFrame.from_dict(acclist).transpose()
-        store = globalconf.portfolio_store()
         dataframe['current_date'] = dt.datetime.now().strftime('%Y%m%d')
         dataframe['current_datetime'] = dt.datetime.now().strftime('%Y%m%d%H%M%S')
         dataframe.drop('multiplier', axis=1, inplace=True)
-        write_portfolio_to_h5(globalconf, log, dataframe, store)
+        write_portfolio_to_sqllite(globalconf, log, dataframe)
     else:
         log.info("Nothing to append to HDF5 ... ")
 
     if summarylist:
-        store_new = globalconf.account_store_new()
         dataframe2 = pd.DataFrame.from_dict(summarylist).transpose()
         # print("dataframe = ",dataframe)
         dataframe2['current_date'] = dt.datetime.now().strftime('%Y%m%d')
@@ -202,7 +257,7 @@ def store_acc_summary_and_portfolio_from_ib_to_h5():
         dataframe2.index=pd.to_datetime(dataframe2['current_datetime'], format="%Y%m%d%H%M%S")
         dataframe2.drop('current_datetime',axis=1,inplace=True)
         dataframe2['current_datetime_txt'] = dataframe2.index.strftime("%Y-%m-%d %H:%M:%S")
-        write_acc_summary_to_h5(globalconf, log, dataframe2, store_new)
+        write_acc_summary_to_sqllite(globalconf, log, dataframe2)
     else:
         log.info("Nothing to append to HDF5 ... ")
 

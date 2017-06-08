@@ -21,9 +21,9 @@ path = globalconf.config['paths']['data_folder']
 
 def run():
     os.chdir(path)
-    optchain_orig = 'optchain_yahoo_hist_db.h5'
-    pattern_optchain = 'optchain_yahoo_hist_db.h5*'
-    optchain_out = 'optchain_yahoo_hist.db'
+    optchain_orig = 'optchain_yahoo_db_expiry_2018-03.h5'
+    pattern_optchain = 'optchain_yahoo_db_expiry_2018-03.h5*'
+    optchain_out = 'optchain_yahoo_db_expiry_2018-03.db'
     lst1 = glob.glob(pattern_optchain)
     lst1.remove(optchain_orig)
     print lst1
@@ -54,7 +54,7 @@ def run():
 
     store_out = globalconf.connect_sqllite(path + optchain_out)
 
-    dataframe = dataframe.reset_index().set_index("Quote_Time")
+    #dataframe = dataframe.reset_index().set_index("Quote_Time")
     #dataframe.sort_index(inplace=True,ascending=[True])
     names = dataframe['Underlying'].unique().tolist()
     for name in names:
