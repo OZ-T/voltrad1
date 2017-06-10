@@ -125,7 +125,7 @@ def migrate_h5_to_sqllite_optchain_yahoo():
     """
     migrate_h5_to_sqllite_optchain_yahoo
     """
-    hdf5_pattern = "optchain_yahoo_db_*.h5*"
+    hdf5_pattern = "optchain_yahoo_*.h5*"
     h5_db_alias = "optchain_yhoo"
     migrate_h5_to_sqllite_optchain(hdf5_pattern, h5_db_alias,True)
 
@@ -134,7 +134,7 @@ def migrate_h5_to_sqllite_optchain_ib():
     """
     migrate_h5_to_sqllite_optchain_ib
     """
-    hdf5_pattern = "optchain_ib_hist_db*.h5*"
+    hdf5_pattern = "optchain_ib_*.h5*"
     h5_db_alias = "optchain_ib"
     migrate_h5_to_sqllite_optchain(hdf5_pattern, h5_db_alias,False)
 
