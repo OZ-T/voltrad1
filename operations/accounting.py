@@ -12,6 +12,7 @@ import glob
 import os
 from datetime import datetime
 import sqlite3
+import time
 
 def read_acc_summary_and_portfolio_from_ib(client, globalconf, log):
     """
@@ -185,6 +186,84 @@ def store_acc_summary_and_portfolio_from_ib_to_db():
         log.info("Nothing to append to HDF5 ... ")
 
     client.disconnect()
+
+
+
+def migrate_h5_to_sqllite_portfolio():
+    """
+    migrate_h5_to_sqllite_portfolio
+    """
+    hdf5_pattern = "portfolio_db*.h5*"
+    globalconf = config.GlobalConfig()
+    log = logger("migrate_h5_to_sqllite_portfolio")
+    path = globalconf.config['paths']['data_folder']
+    lst1 = glob.glob(path + hdf5_pattern)
+    if not lst1:
+        log.info("No h5 files to append ... ")
+    else:
+        log.info(("List of h5 files that will be appended: ", lst1))
+        time.sleep(1)
+        try:
+            input("Press Enter to continue...")
+        except SyntaxError:
+            pass
+
+        for hdf5_path in lst1:
+            store_file = pd.HDFStore(hdf5_path)
+            root1 = store_file.root
+            # todos los nodos hijos de root que son los account ids
+            list = [x._v_pathname for x in root1]
+            log.info(("Root pathname of the input store: ", root1._v_pathname))
+
+            store_file.close()
+            log.info(("List of account ids: " + str(list)))
+            for accountid in list:
+                store_file = pd.HDFStore(hdf5_path)
+                node1 = store_file.get_node(accountid)
+                if node1:
+                    log.info(("accountid: " + accountid))
+                    df1 = store_file.select(node1._v_pathname)
+                    df1.set_index(keys=['conid'], drop=True, inplace=True)
+                    write_portfolio_to_sqllite(globalconf, log, df1)
+                store_file.close()
+
+
+def migrate_h5_to_sqllite_acc_summary():
+    """
+    migrate_h5_to_sqllite_acc_summary
+    """
+    hdf5_pattern = "account_db*.h5*"
+    globalconf = config.GlobalConfig()
+    log = logger("migrate_h5_to_sqllite_acc_summary")
+    path = globalconf.config['paths']['data_folder']
+    lst1 = glob.glob(path + hdf5_pattern)
+    if not lst1:
+        log.info("No h5 files to append ... ")
+    else:
+        log.info(("List of h5 files that will be appended: ", lst1))
+        time.sleep(1)
+        try:
+            input("Press Enter to continue...")
+        except SyntaxError:
+            pass
+
+        for hdf5_path in lst1:
+            store_file = pd.HDFStore(hdf5_path)
+            root1 = store_file.root
+            # todos los nodos hijos de root que son los account ids
+            list = [x._v_pathname for x in root1]
+            log.info(("Root pathname of the input store: ", root1._v_pathname))
+
+            store_file.close()
+            log.info(("List of account ids: " + str(list)))
+            for accountid in list:
+                store_file = pd.HDFStore(hdf5_path)
+                node1 = store_file.get_node(accountid)
+                if node1:
+                    log.info(("accountid: " + accountid))
+                    df1 = store_file.select(node1._v_pathname)
+                    write_acc_summary_to_sqllite(globalconf, log, df1)
+                store_file.close()
 
 
 if __name__=="__main__":

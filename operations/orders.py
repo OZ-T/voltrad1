@@ -10,6 +10,7 @@ import volsetup.config as config
 import pandas as pd
 import datetime as dt
 import sqlite3
+import time
 
 def write_orders_to_sqllite(globalconf, log, dataframe):
     """
@@ -55,15 +56,54 @@ def store_orders_from_ib_to_db():
         dataframe['current_date'] = dt.datetime.now().strftime('%Y%m%d')
         dataframe['current_datetime'] = dt.datetime.now().strftime('%Y%m%d%H%M%S')
         log.info("Appending orders to sqllite store ...")
-        # sort the dataframe
-        #dataframe.sort(columns=['account'], inplace=True) DEPRECATED
         dataframe=dataframe.sort_values(by=['account'])
-        # set the index to be this and don't drop
-        dataframe.set_index(keys=['account'], drop=False, inplace=True)
+        dataframe.set_index(keys=['execid'], drop=True, inplace=True)
         write_orders_to_sqllite(globalconf, log, dataframe)
     else:
         log.info("No orders to append ...")
 
+
+def migrate_h5_to_sqllite_orders():
+    """
+    migrate_h5_to_sqllite_orders
+    """
+    hdf5_pattern = "orders_db*.h5*"
+    globalconf = config.GlobalConfig()
+    log = logger("migrate_h5_to_sqllite_orders")
+    path = globalconf.config['paths']['data_folder']
+    lst1 = glob.glob(path + hdf5_pattern)
+    if not lst1:
+        log.info("No h5 files to append ... ")
+    else:
+        log.info(("List of h5 files that will be appended: ", lst1))
+        time.sleep(1)
+        try:
+            input("Press Enter to continue...")
+        except SyntaxError:
+            pass
+
+        for hdf5_path in lst1:
+            store_file = pd.HDFStore(hdf5_path)
+            root1 = store_file.root
+            # todos los nodos hijos de root que son los account ids
+            list = [x._v_pathname for x in root1]
+            log.info(("Root pathname of the input store: ", root1._v_pathname))
+
+            store_file.close()
+            log.info(("List of account ids: " + str(list)))
+            for accountid in list:
+                store_file = pd.HDFStore(hdf5_path)
+                node1 = store_file.get_node(accountid)
+                if node1:
+                    log.info(("accountid: " + accountid))
+                    df1 = store_file.select(node1._v_pathname)
+                    df1.set_index(keys=['execid'], drop=True, inplace=True)
+                    write_orders_to_sqllite(globalconf, log, df1)
+                store_file.close()
+
+
+if __name__=="__main__":
+    migrate_h5_to_sqllite_orders()
 
 
 def consolidate_anciliary_h5_orders():
@@ -162,8 +202,3 @@ def store_orders_from_ib_to_h5():
         f.close()
     else:
         log.info("No orders to append ...")
-
-
-if __name__=="__main__":
-    store_orders_from_ib_to_h5()
-

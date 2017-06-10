@@ -1,22 +1,26 @@
 # Operations
-ib_time:
-  pointer:  operations.broker.get_ib_time
 batch_acc_to_db:
   pointer:  operations.accounting.store_acc_summary_and_portfolio_from_ib_to_db
 print_acc_port:
   pointer:  operations.accounting.print_10_days_acc_summary_and_current_positions
-fix_acc_h5:
-  pointer:  operations.accounting.consolidate_anciliary_h5_account
-fix_port_h5:
-  pointer:  operations.accounting.consolidate_anciliary_h5_portfolio
 batch_orders_to_db:
   pointer:  operations.orders.store_orders_from_ib_to_db
-fix_orders_h5:
-  pointer:  operations.orders.consolidate_anciliary_h5_orders
-fix_optchain:
-  pointer: volsetup.fix_h5_optchain_ib.run
-fix_optchain_yhoo:
-  pointer: volsetup.fix_h5_yahoo_optchain.run
+migrate_h5_orders_sqlite:
+  pointer:  operations.orders.migrate_h5_to_sqllite_orders
+migrate_h5_port_sqlite:
+  pointer:  operations.accounting.migrate_h5_to_sqllite_portfolio
+migrate_h5_acc_sqlite:
+  pointer:  operations.accounting.migrate_h5_to_sqllite_acc_summary
+
+# Market data
+migrate_h5_optchain_ib_sqlite:
+  pointer:  operations.market_data.migrate_h5_to_sqllite_optchain_ib
+migrate_h5_optchain_yhoo_sqlite:
+  pointer:  operations.market_data.migrate_h5_to_sqllite_optchain_yahoo
+batch_optchain_yhoo_to_db:
+  pointer:  operations.market_data.store_optchain_yahoo_to_db
+
+
 
 
 # trend and risk indicators
@@ -100,4 +104,19 @@ batch_hist_underlying:
   pointer:  volquotes.historical_data_loader.run_reader
 batch_hist_options:
   pointer:  volquotes.historical_opt_chains_loader.run_reader
+
+
+
+# DONT USE
+fix_acc_h5:
+  pointer:  operations.accounting.consolidate_anciliary_h5_account
+fix_port_h5:
+  pointer:  operations.accounting.consolidate_anciliary_h5_portfolio
+fix_orders_h5:
+  pointer:  operations.orders.consolidate_anciliary_h5_orders
+fix_optchain:
+  pointer: volsetup.fix_h5_optchain_ib.run
+fix_optchain_yhoo:
+  pointer: volsetup.fix_h5_yahoo_optchain.run
+
 
