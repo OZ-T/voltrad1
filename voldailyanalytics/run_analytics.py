@@ -697,7 +697,7 @@ def pruebas_lectura_hdf5():
     #df = pd.concat([store.select(node._v_pathname) for node in store.get_node('')])
     store.close()
 
-    #store = pd.HDFStore('test.h5',mode='w')
+    #store = pd.HDFStore('test.h5')
     #store.append('df/foo1',pd.DataFrame(np.random.randn(10,2)))
     #store.append('df/foo2',pd.DataFrame(np.random.randn(10,2)))
     #pd.concat([ store.select(node._v_pathname) for node in store.get_node('df') ])

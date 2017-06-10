@@ -11,6 +11,7 @@ from tables.exceptions import NaturalNameWarning
 import glob
 import os
 from datetime import datetime
+import sqlite3
 
 def read_acc_summary_and_portfolio_from_ib(client, globalconf, log):
     """
@@ -24,18 +25,6 @@ def read_acc_summary_and_portfolio_from_ib(client, globalconf, log):
     return acclist, summarylist
 
 
-def read_historical_acc_summary_from_h5(globalconf, log, accountid):
-    """
-    Read from h5 the complete history of the account summary and returns as dataframe
-    """
-    store = globalconf.account_store_new()
-    node = store.get_node("/" + accountid)
-    df1 = store.select(node._v_pathname)
-    df1['date1']=df1.index.map(lambda x: x.date())
-    df1= df1.drop_duplicates(subset=['date1'],keep='last')
-    store.close()
-    return df1
-
 def read_historical_acc_summary_from_sqllite(globalconf, log, accountid):
     """
     Read from sqllite the complete history of the account summary and returns as dataframe
@@ -43,20 +32,8 @@ def read_historical_acc_summary_from_sqllite(globalconf, log, accountid):
     globalconf = config.GlobalConfig()
     db_file = globalconf.config['sqllite']['account_db']
     path = globalconf.config['paths']['data_folder']
-    store = globalconf.connect_sqllite(path + db_file)
+    store = sqlite3.connect(path + db_file)
     df1 = pd.read_sql_query("SELECT * FROM " + accountid, store)
-    store.close()
-    return df1
-
-def read_historical_portfolio_from_h5(globalconf, log, accountid):
-    """
-    Read from h5 the complete history of the portfolio and returns as dataframe
-    """
-    store = globalconf.portfolio_store()
-    node = store.get_node("/" + accountid)
-    df1 = store.select(node._v_pathname)
-    df1['date1']=df1.index.map(lambda x: x.date())
-    df1= df1.drop_duplicates(subset=['date1'],keep='last')
     store.close()
     return df1
 
@@ -67,32 +44,12 @@ def read_historical_portfolio_from_sqllite(globalconf, log, accountid):
     globalconf = config.GlobalConfig()
     db_file = globalconf.config['sqllite']['portfolio_db']
     path = globalconf.config['paths']['data_folder']
-    store = globalconf.connect_sqllite(path + db_file)
+    store = sqlite3.connect(path + db_file)
     df1 = pd.read_sql_query("SELECT * FROM " + accountid, store)
     df1['date1']=df1.index.map(lambda x: x.date())
     df1= df1.drop_duplicates(subset=['date1'],keep='last')
     store.close()
     return df1
-
-
-def write_portfolio_to_h5(globalconf, log, dataframe, store):
-    """
-    Write to h5 the portfolio snapshot passed as argument
-    """
-    log.info("Appending portfolio data to HDF5 ... ")
-    names=dataframe['accountName'].unique().tolist()
-    for name in names:
-        joe = dataframe.loc[dataframe['accountName']==name]
-        try:
-            store.append("/" + name, joe, data_columns=True)
-        except NaturalNameWarning as e:
-            log.warn("NaturalNameWarning raised [" + str(e))
-        except (ValueError) as e:
-            log.warn("ValueError raised [" + str(e) + "]  Creating ancilliary file ...")
-            aux = globalconf.portfolio_store_error()
-            aux.append("/" + name, joe, data_columns=True)
-            aux.close()
-        store.close()
 
 
 def write_portfolio_to_sqllite(globalconf, log, dataframe):
@@ -103,7 +60,7 @@ def write_portfolio_to_sqllite(globalconf, log, dataframe):
     globalconf = config.GlobalConfig()
     db_file = globalconf.config['sqllite']['portfolio_db']
     path = globalconf.config['paths']['data_folder']
-    store = globalconf.connect_sqllite(path + db_file)
+    store = sqlite3.connect(path + db_file)
 
     names=dataframe['accountName'].unique().tolist()
     for name in names:
@@ -111,43 +68,6 @@ def write_portfolio_to_sqllite(globalconf, log, dataframe):
         joe.to_sql(name, store, if_exists='append')
         store.close()
 
-
-def write_acc_summary_to_h5(globalconf, log, dataframe2,store_new):
-    """
-    Write to h5 the account summary passed as argument
-    """
-    # get a list of names
-    names=dataframe2['AccountCode_'].unique().tolist()
-    for name in names:
-        # now we can perform a lookup on a 'view' of the dataframe
-        joe = dataframe2.loc[dataframe2['AccountCode_']==name]
-        node=store_new.get_node("/" + name)
-        if node:
-            log.info("Getting columns names in account store HDF5 ... ")
-            dftot = store_new.select(node._v_pathname)
-            cols = list(dftot.columns.values)
-            cols.sort()
-            colsjoe=list(joe.columns.values)
-            colsfinal = list(set(cols).intersection(colsjoe))
-            joe = joe[colsfinal]
-
-        log.info("Appending account data to HDF5 ... ")
-        # Following 3 lines is to fix following error when storing in HDF5:
-        #       [unicode] is not implemented as a table column
-        types = joe.apply(lambda x: pd.lib.infer_dtype(x.values))
-        for col in types[types == 'unicode'].index:
-            joe[col] = joe[col].astype(str)
-        #print joe.dtypes
-        try:
-            store_new.append("/" + name, joe, data_columns=True)
-        except NaturalNameWarning as e:
-            log.warn("NaturalNameWarning raised [" + str(e))
-        except (ValueError) as e:
-            log.warn("ValueError raised [" + str(e) + "]  Creating ancilliary file ...")
-            aux = globalconf.account_store_new_error()
-            aux.append("/" + name, joe, data_columns=True)
-            aux.close()
-        store_new.close()
 
 def write_acc_summary_to_sqllite(globalconf, log, dataframe):
     """
@@ -157,7 +77,7 @@ def write_acc_summary_to_sqllite(globalconf, log, dataframe):
     globalconf = config.GlobalConfig()
     db_file = globalconf.config['sqllite']['account_db']
     path = globalconf.config['paths']['data_folder']
-    store = globalconf.connect_sqllite(path + db_file)
+    store = sqlite3.connect(path + db_file)
 
     # get a list of names
     names=dataframe['AccountCode_'].unique().tolist()
@@ -165,7 +85,6 @@ def write_acc_summary_to_sqllite(globalconf, log, dataframe):
         joe = dataframe.loc[dataframe['AccountCode_']==name]
         joe.to_sql(name, store, if_exists='append')
         store.close()
-
 
 
 def print_10_days_acc_summary_and_current_positions():
@@ -267,6 +186,133 @@ def store_acc_summary_and_portfolio_from_ib_to_db():
 
     client.disconnect()
 
+
+if __name__=="__main__":
+    pass
+    #consolidate_anciliary_h5_portfolio()
+    #run_get_portfolio_data()
+    #print_portfolio_from_ib()
+    #print_10_days_acc_summary_and_current_positions()
+
+"""
+AccountCode_	AccountOrGroup_BASE	AccountOrGroup_EUR	AccountOrGroup_USD	AccountReady_	AccountType_
+AccruedCash_BASE	AccruedCash_C_USD	AccruedCash_EUR	AccruedCash_S_USD	AccruedCash_USD	AccruedDividend_C_USD
+AccruedDividend_S_USD	AccruedDividend_USD	AvailableFunds,_C_USD	AvailableFunds_S_USD	AvailableFunds_USD	Billable_C_USD
+Billable_S_USD	Billable_USD	BuyingPower_USD	CashBalance_BASE	CashBalance_EUR	CashBalance_USD	CorporateBondValue_BASE
+CorporateBondValue_EUR	CorporateBondValue_USD	Currency_BASE	Currency_EUR	Currency_USD	Cushion_
+DayTradesRemainingTplus1_	DayTradesRemainingTplus2_	DayTradesRemainingTplus3_	DayTradesRemainingTplus4_
+DayTradesRemaining_	EquityWithLoanValue_C_USD	EquityWithLoanValue_S_USD	EquityWithLoanValue_USD	ExcessLiquidity_C_USD
+ExcessLiquidity_S_USD	ExcessLiquidity_USD	ExchangeRate_BASE	ExchangeRate_EUR	ExchangeRate_USD	FullAvailableFunds_C_USD
+FullAvailableFunds_S_USD	FullAvailableFunds_USD	FullExcessLiquidity_C_USD	FullExcessLiquidity_S_USD
+FullExcessLiquidity_USD	FullInitMarginReq_C_USD	FullInitMarginReq_S_USD	FullInitMarginReq_USD	FullMaintMarginReq_C_USD
+FullMaintMarginReq_S_USD	FullMaintMarginReq_USD	FundValue_BASE	FundValue_EUR	FundValue_USD	FutureOptionValue_BASE
+FutureOptionValue_EUR	FutureOptionValue_USD	FuturesPNL_BASE	FuturesPNL_EUR	FuturesPNL_USD	FxCashBalance_BASE
+FxCashBalance_EUR	FxCashBalance_USD	GrossPositionValue_S_USD	GrossPositionValue_USD	IndianStockHaircut_C_USD
+IndianStockHaircut_S_USD	IndianStockHaircut_USD	InitMarginReq_C_USD	InitMarginReq_S_USD	InitMarginReq_USD
+IssuerOptionValue_BASE	IssuerOptionValue_EUR	IssuerOptionValue_USD	Leverage_S_	LookAheadAvailableFunds_C_USD
+LookAheadAvailableFunds_S_USD	LookAheadAvailableFunds_USD	LookAheadExcessLiquidity_C_USD	LookAheadExcessLiquidity_S_USD
+LookAheadExcessLiquidity_USD	LookAheadInitMarginReq_C_USD	LookAheadInitMarginReq_S_USD	LookAheadInitMarginReq_USD
+LookAheadMaintMarginReq_C_USD	LookAheadMaintMarginReq_S_USD	LookAheadMaintMarginReq_USD	LookAheadNextChange_
+MaintMarginReq_C_USD	MaintMarginReq_S_USD	MaintMarginReq_USD	MoneyMarketFundValue_BASE	MoneyMarketFundValue_EUR
+MoneyMarketFundValue_USD	MutualFundValue_BASE	MutualFundValue_EUR	MutualFundValue_USD	NetDividend_BASE
+NetDividend_EUR	NetDividend_USD	NetLiquidationByCurrency_BASE	NetLiquidationByCurrency_EUR	NetLiquidationByCurrency_USD
+NetLiquidationUncertainty_USD	NetLiquidation_C_USD	NetLiquidation_S_USD	NetLiquidation_USD	OptionMarketValue_BASE
+OptionMarketValue_EUR	OptionMarketValue_USD	PASharesValue_C_USD	PASharesValue_S_USD	PASharesValue_USD
+PostExpirationExcess_C_USD	PostExpirationExcess_S_USD	PostExpirationExcess_USD	PostExpirationMargin_C_USD
+PostExpirationMargin_S_USD	PostExpirationMargin_USD	PreviousDayEquityWithLoanValue_S_USD
+PreviousDayEquityWithLoanValue_USD	RealCurrency_BASE	RealCurrency_EUR	RealCurrency_USD	RealizedPnL_BASE
+RealizedPnL_EUR	RealizedPnL_USD	RegTEquity_S_USD	RegTEquity_USD	RegTMargin_S_USD	RegTMargin_USD	SMA_S_USD
+SMA_USD	SegmentTitle_C_	SegmentTitle_S_	StockMarketValue_BASE	StockMarketValue_EUR	StockMarketValue_USD
+TBillValue_BASE	TBillValue_EUR	TBillValue_USD	TBondValue_BASE	TBondValue_EUR	TBondValue_USD	TotalCashBalance_BASE
+TotalCashBalance_EUR	TotalCashBalance_USD	TotalCashValue_C_USD	TotalCashValue_S_USD	TotalCashValue_USD
+TradingType_S_	UnrealizedPnL_BASE	UnrealizedPnL_EUR	UnrealizedPnL_USD	WarrantValue_BASE	WarrantValue_EUR
+WarrantValue_USD	WhatIfPMEnabled_	current_date	current_datetime
+"""
+
+def write_portfolio_to_h5(globalconf, log, dataframe, store):
+    """
+    Write to h5 the portfolio snapshot passed as argument
+    """
+    log.info("Appending portfolio data to HDF5 ... ")
+    names=dataframe['accountName'].unique().tolist()
+    for name in names:
+        joe = dataframe.loc[dataframe['accountName']==name]
+        try:
+            store.append("/" + name, joe, data_columns=True)
+        except NaturalNameWarning as e:
+            log.warn("NaturalNameWarning raised [" + str(e))
+        except (ValueError) as e:
+            log.warn("ValueError raised [" + str(e) + "]  Creating ancilliary file ...")
+            aux = globalconf.portfolio_store_error()
+            aux.append("/" + name, joe, data_columns=True)
+            aux.close()
+        store.close()
+
+
+def read_historical_portfolio_from_h5(globalconf, log, accountid):
+    """
+    Read from h5 the complete history of the portfolio and returns as dataframe
+    """
+    store = globalconf.portfolio_store()
+    node = store.get_node("/" + accountid)
+    df1 = store.select(node._v_pathname)
+    df1['date1']=df1.index.map(lambda x: x.date())
+    df1= df1.drop_duplicates(subset=['date1'],keep='last')
+    store.close()
+    return df1
+
+
+def read_historical_acc_summary_from_h5(globalconf, log, accountid):
+    """
+    Read from h5 the complete history of the account summary and returns as dataframe
+    """
+    store = globalconf.account_store_new()
+    node = store.get_node("/" + accountid)
+    df1 = store.select(node._v_pathname)
+    df1['date1']=df1.index.map(lambda x: x.date())
+    df1= df1.drop_duplicates(subset=['date1'],keep='last')
+    store.close()
+    return df1
+
+
+def write_acc_summary_to_h5(globalconf, log, dataframe2,store_new):
+    """
+    Write to h5 the account summary passed as argument
+    """
+    # get a list of names
+    names=dataframe2['AccountCode_'].unique().tolist()
+    for name in names:
+        # now we can perform a lookup on a 'view' of the dataframe
+        joe = dataframe2.loc[dataframe2['AccountCode_']==name]
+        node=store_new.get_node("/" + name)
+        if node:
+            log.info("Getting columns names in account store HDF5 ... ")
+            dftot = store_new.select(node._v_pathname)
+            cols = list(dftot.columns.values)
+            cols.sort()
+            colsjoe=list(joe.columns.values)
+            colsfinal = list(set(cols).intersection(colsjoe))
+            joe = joe[colsfinal]
+
+        log.info("Appending account data to HDF5 ... ")
+        # Following 3 lines is to fix following error when storing in HDF5:
+        #       [unicode] is not implemented as a table column
+        types = joe.apply(lambda x: pd.lib.infer_dtype(x.values))
+        for col in types[types == 'unicode'].index:
+            joe[col] = joe[col].astype(str)
+        #print joe.dtypes
+        try:
+            store_new.append("/" + name, joe, data_columns=True)
+        except NaturalNameWarning as e:
+            log.warn("NaturalNameWarning raised [" + str(e))
+        except (ValueError) as e:
+            log.warn("ValueError raised [" + str(e) + "]  Creating ancilliary file ...")
+            aux = globalconf.account_store_new_error()
+            aux.append("/" + name, joe, data_columns=True)
+            aux.close()
+        store_new.close()
+
+
 def consolidate_anciliary_h5_portfolio():
     """
     Used as command to consolidate in the main h5 anciliary h5 generated due to column length exceptions
@@ -291,7 +337,7 @@ def consolidate_anciliary_h5_portfolio():
     else:
         log.info(("List of ancilliary files that will be appended: ", lst1))
         for x in lst1:
-            store_in1 = pd.HDFStore(path + x,mode='w')
+            store_in1 = pd.HDFStore(path + x)
             root1 = store_in1.root
             log.info(("Root pathname of the input store: ", root1._v_pathname))
             for lvl1 in root1:
@@ -319,8 +365,8 @@ def consolidate_anciliary_h5_portfolio():
             store_in1.close()
             os.rename(path + x, path + "/portfolio_backups/" + x)
 
-    store_in1 = pd.HDFStore(path + port_orig,mode='w')
-    store_out = pd.HDFStore(path + port_out,mode='w')
+    store_in1 = pd.HDFStore(path + port_orig)
+    store_out = pd.HDFStore(path + port_out)
     root1 = store_in1.root
     root2 = store_out.root
     old_format = False
@@ -382,7 +428,7 @@ def consolidate_anciliary_h5_account():
     log.info(("List of ancilliary files that will be appended: ", lst1))
     dataframe = pd.DataFrame()
     for x in lst1:
-        store_in1 = pd.HDFStore(path + x,mode='w')
+        store_in1 = pd.HDFStore(path + x)
         root1 = store_in1.root
         log.info(("Root pathname of the input store: ", root1._v_pathname))
         for lvl1 in root1:
@@ -394,8 +440,8 @@ def consolidate_anciliary_h5_account():
         store_in1.close()
         os.rename(path + x, path + "/account_backups/" + x)
 
-    store_in1 = pd.HDFStore(path + acc_orig,mode='w')
-    store_out = pd.HDFStore(path + acc_out,mode='w')
+    store_in1 = pd.HDFStore(path + acc_orig)
+    store_out = pd.HDFStore(path + acc_out)
     root1 = store_in1.root
     log.info(("Root pathname of the input store: ", root1._v_pathname))
     root2 = store_out.root
@@ -414,44 +460,3 @@ def consolidate_anciliary_h5_account():
     store_out.close()
     os.rename(path + acc_out, path + acc_orig)
 
-
-if __name__=="__main__":
-    consolidate_anciliary_h5_portfolio()
-    #run_get_portfolio_data()
-    #print_portfolio_from_ib()
-    #print_10_days_acc_summary_and_current_positions()
-
-"""
-AccountCode_	AccountOrGroup_BASE	AccountOrGroup_EUR	AccountOrGroup_USD	AccountReady_	AccountType_
-AccruedCash_BASE	AccruedCash_C_USD	AccruedCash_EUR	AccruedCash_S_USD	AccruedCash_USD	AccruedDividend_C_USD
-AccruedDividend_S_USD	AccruedDividend_USD	AvailableFunds,_C_USD	AvailableFunds_S_USD	AvailableFunds_USD	Billable_C_USD
-Billable_S_USD	Billable_USD	BuyingPower_USD	CashBalance_BASE	CashBalance_EUR	CashBalance_USD	CorporateBondValue_BASE
-CorporateBondValue_EUR	CorporateBondValue_USD	Currency_BASE	Currency_EUR	Currency_USD	Cushion_
-DayTradesRemainingTplus1_	DayTradesRemainingTplus2_	DayTradesRemainingTplus3_	DayTradesRemainingTplus4_
-DayTradesRemaining_	EquityWithLoanValue_C_USD	EquityWithLoanValue_S_USD	EquityWithLoanValue_USD	ExcessLiquidity_C_USD
-ExcessLiquidity_S_USD	ExcessLiquidity_USD	ExchangeRate_BASE	ExchangeRate_EUR	ExchangeRate_USD	FullAvailableFunds_C_USD
-FullAvailableFunds_S_USD	FullAvailableFunds_USD	FullExcessLiquidity_C_USD	FullExcessLiquidity_S_USD
-FullExcessLiquidity_USD	FullInitMarginReq_C_USD	FullInitMarginReq_S_USD	FullInitMarginReq_USD	FullMaintMarginReq_C_USD
-FullMaintMarginReq_S_USD	FullMaintMarginReq_USD	FundValue_BASE	FundValue_EUR	FundValue_USD	FutureOptionValue_BASE
-FutureOptionValue_EUR	FutureOptionValue_USD	FuturesPNL_BASE	FuturesPNL_EUR	FuturesPNL_USD	FxCashBalance_BASE
-FxCashBalance_EUR	FxCashBalance_USD	GrossPositionValue_S_USD	GrossPositionValue_USD	IndianStockHaircut_C_USD
-IndianStockHaircut_S_USD	IndianStockHaircut_USD	InitMarginReq_C_USD	InitMarginReq_S_USD	InitMarginReq_USD
-IssuerOptionValue_BASE	IssuerOptionValue_EUR	IssuerOptionValue_USD	Leverage_S_	LookAheadAvailableFunds_C_USD
-LookAheadAvailableFunds_S_USD	LookAheadAvailableFunds_USD	LookAheadExcessLiquidity_C_USD	LookAheadExcessLiquidity_S_USD
-LookAheadExcessLiquidity_USD	LookAheadInitMarginReq_C_USD	LookAheadInitMarginReq_S_USD	LookAheadInitMarginReq_USD
-LookAheadMaintMarginReq_C_USD	LookAheadMaintMarginReq_S_USD	LookAheadMaintMarginReq_USD	LookAheadNextChange_
-MaintMarginReq_C_USD	MaintMarginReq_S_USD	MaintMarginReq_USD	MoneyMarketFundValue_BASE	MoneyMarketFundValue_EUR
-MoneyMarketFundValue_USD	MutualFundValue_BASE	MutualFundValue_EUR	MutualFundValue_USD	NetDividend_BASE
-NetDividend_EUR	NetDividend_USD	NetLiquidationByCurrency_BASE	NetLiquidationByCurrency_EUR	NetLiquidationByCurrency_USD
-NetLiquidationUncertainty_USD	NetLiquidation_C_USD	NetLiquidation_S_USD	NetLiquidation_USD	OptionMarketValue_BASE
-OptionMarketValue_EUR	OptionMarketValue_USD	PASharesValue_C_USD	PASharesValue_S_USD	PASharesValue_USD
-PostExpirationExcess_C_USD	PostExpirationExcess_S_USD	PostExpirationExcess_USD	PostExpirationMargin_C_USD
-PostExpirationMargin_S_USD	PostExpirationMargin_USD	PreviousDayEquityWithLoanValue_S_USD
-PreviousDayEquityWithLoanValue_USD	RealCurrency_BASE	RealCurrency_EUR	RealCurrency_USD	RealizedPnL_BASE
-RealizedPnL_EUR	RealizedPnL_USD	RegTEquity_S_USD	RegTEquity_USD	RegTMargin_S_USD	RegTMargin_USD	SMA_S_USD
-SMA_USD	SegmentTitle_C_	SegmentTitle_S_	StockMarketValue_BASE	StockMarketValue_EUR	StockMarketValue_USD
-TBillValue_BASE	TBillValue_EUR	TBillValue_USD	TBondValue_BASE	TBondValue_EUR	TBondValue_USD	TotalCashBalance_BASE
-TotalCashBalance_EUR	TotalCashBalance_USD	TotalCashValue_C_USD	TotalCashValue_S_USD	TotalCashValue_USD
-TradingType_S_	UnrealizedPnL_BASE	UnrealizedPnL_EUR	UnrealizedPnL_USD	WarrantValue_BASE	WarrantValue_EUR
-WarrantValue_USD	WhatIfPMEnabled_	current_date	current_datetime
-"""

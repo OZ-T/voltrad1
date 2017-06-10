@@ -9,57 +9,7 @@ import os
 import volsetup.config as config
 import pandas as pd
 import datetime as dt
-
-
-def store_orders_from_ib_to_h5():
-    """
-    Method to retrieve orders -everything from the last business day-, intended for batch usage     
-    """
-    log=logger("store_orders_from_ib_to_h5")
-    if dt.datetime.now().date() in utils.get_trading_close_holidays(dt.datetime.now().year):
-        log.info("This is a US Calendar holiday. Ending process ... ")
-        return
-
-    log.info("Getting orders data from IB ... ")
-    globalconf = config.GlobalConfig()
-    client = ib.IBClient(globalconf)
-    clientid1 = int(globalconf.config['ib_api']['clientid_data'])
-    client.connect(clientid1=clientid1)
-
-    ## Get the executions (gives you everything for last business day)
-    execlist = client.get_executions(10)
-    client.disconnect()
-    log.info("execlist length = [%d]" % ( len(execlist) ))
-    if execlist:
-        dataframe = pd.DataFrame.from_dict(execlist).transpose()
-        f = globalconf.open_orders_store()
-        dataframe['current_date'] = dt.datetime.now().strftime('%Y%m%d')
-        dataframe['current_datetime'] = dt.datetime.now().strftime('%Y%m%d%H%M%S')
-        log.info("Appending orders to HDF5 store ...")
-        # sort the dataframe
-        #dataframe.sort(columns=['account'], inplace=True) DEPRECATED
-        dataframe=dataframe.sort_values(by=['account'])
-        # set the index to be this and don't drop
-        dataframe.set_index(keys=['account'], drop=False, inplace=True)
-        # get a list of names
-        names = dataframe['account'].unique().tolist()
-
-        for name in names:
-            # now we can perform a lookup on a 'view' of the dataframe
-            log.info("Storing " + name + " in ABT ...")
-            joe = dataframe.loc[dataframe['account'] == name]
-            #joe.sort(columns=['current_datetime'], inplace=True)  DEPRECATED
-            joe = joe.sort_values(by=['current_datetime'])
-            try:
-                f.append("/" + name, joe, data_columns=joe.columns)
-            except ValueError as e:
-                log.warn("ValueError raised [" + str(e) + "]  Creating ancilliary file ...")
-                aux = globalconf.open_orders_store_value_error()
-                aux.append("/" + name, joe, data_columns=True)
-                aux.close()
-        f.close()
-    else:
-        log.info("No orders to append ...")
+import sqlite3
 
 def write_orders_to_sqllite(globalconf, log, dataframe):
     """
@@ -68,7 +18,7 @@ def write_orders_to_sqllite(globalconf, log, dataframe):
     log.info("Appending orders data to sqllite ... ")
     db_file = globalconf.config['sqllite']['orders_db']
     path = globalconf.config['paths']['data_folder']
-    store = globalconf.connect_sqllite(path + db_file)
+    store = sqlite3.connect(path + db_file)
     # get a list of names
     names = dataframe['account'].unique().tolist()
     for name in names:
@@ -130,7 +80,7 @@ def consolidate_anciliary_h5_orders():
     print (lst1)
     dataframe = pd.DataFrame()
     for x in lst1:
-        store_in1 = pd.HDFStore(path + x,mode='w')
+        store_in1 = pd.HDFStore(path + x)
         root1 = store_in1.root
         print (root1._v_pathname)
         for lvl1 in root1:
@@ -141,8 +91,8 @@ def consolidate_anciliary_h5_orders():
                 print ("store_in1", len(df1), x)
         store_in1.close()
 
-    store_in1 = pd.HDFStore(path + orders_orig,mode='w')
-    store_out = pd.HDFStore(path + orders_out,mode='w')
+    store_in1 = pd.HDFStore(path + orders_orig)
+    store_out = pd.HDFStore(path + orders_out)
     root1 = store_in1.root
     print (root1._v_pathname)
     for lvl1 in root1:
@@ -161,6 +111,58 @@ def consolidate_anciliary_h5_orders():
         joe=joe.sort_values(by=['current_datetime'])
         store_out.append("/" + name, joe, data_columns=True)
     store_out.close()
+
+
+def store_orders_from_ib_to_h5():
+    """
+    Method to retrieve orders -everything from the last business day-, intended for batch usage     
+    """
+    log=logger("store_orders_from_ib_to_h5")
+    if dt.datetime.now().date() in utils.get_trading_close_holidays(dt.datetime.now().year):
+        log.info("This is a US Calendar holiday. Ending process ... ")
+        return
+
+    log.info("Getting orders data from IB ... ")
+    globalconf = config.GlobalConfig()
+    client = ib.IBClient(globalconf)
+    clientid1 = int(globalconf.config['ib_api']['clientid_data'])
+    client.connect(clientid1=clientid1)
+
+    ## Get the executions (gives you everything for last business day)
+    execlist = client.get_executions(10)
+    client.disconnect()
+    log.info("execlist length = [%d]" % ( len(execlist) ))
+    if execlist:
+        dataframe = pd.DataFrame.from_dict(execlist).transpose()
+        f = globalconf.open_orders_store()
+        dataframe['current_date'] = dt.datetime.now().strftime('%Y%m%d')
+        dataframe['current_datetime'] = dt.datetime.now().strftime('%Y%m%d%H%M%S')
+        log.info("Appending orders to HDF5 store ...")
+        # sort the dataframe
+        #dataframe.sort(columns=['account'], inplace=True) DEPRECATED
+        dataframe=dataframe.sort_values(by=['account'])
+        # set the index to be this and don't drop
+        dataframe.set_index(keys=['account'], drop=False, inplace=True)
+        # get a list of names
+        names = dataframe['account'].unique().tolist()
+
+        for name in names:
+            # now we can perform a lookup on a 'view' of the dataframe
+            log.info("Storing " + name + " in ABT ...")
+            joe = dataframe.loc[dataframe['account'] == name]
+            #joe.sort(columns=['current_datetime'], inplace=True)  DEPRECATED
+            joe = joe.sort_values(by=['current_datetime'])
+            try:
+                f.append("/" + name, joe, data_columns=joe.columns)
+            except ValueError as e:
+                log.warn("ValueError raised [" + str(e) + "]  Creating ancilliary file ...")
+                aux = globalconf.open_orders_store_value_error()
+                aux.append("/" + name, joe, data_columns=True)
+                aux.close()
+        f.close()
+    else:
+        log.info("No orders to append ...")
+
 
 if __name__=="__main__":
     store_orders_from_ib_to_h5()
