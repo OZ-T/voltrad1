@@ -223,7 +223,7 @@ def migrate_h5_to_sqllite_portfolio():
                 if node1:
                     log.info(("accountid: " + accountid))
                     df1 = store_file.select(node1._v_pathname)
-                    df1.set_index(keys=['conid'], drop=True, inplace=True)
+                    df1.set_index(keys=['conId'], drop=True, inplace=True)
                     write_portfolio_to_sqllite(globalconf, log, df1)
                 store_file.close()
 
