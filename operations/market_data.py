@@ -60,6 +60,8 @@ def write_market_data_to_sqllite(globalconf, log, dataframe, db_type):
     expiries = dataframe[criteria[0]].unique().tolist()
     log.info(("These are the expiries included in the data to be loaded: ", expiries))
     # expiries_file = map(lambda i: formated_string_for_file(i,criteria[1]) , expiries)
+    # remove empty string expiries (bug in H5 legacy files)
+    expiries = [x for x in expiries if x]
 
     for expiry in expiries:
         expiry_file = formated_string_for_file(expiry, criteria[1])
