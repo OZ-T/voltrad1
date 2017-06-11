@@ -9,6 +9,7 @@ from volibutils.RequestOptionData import RequestOptionData
 from volibutils.RequestUnderlyingData import RequestUnderlyingData
 from volsetup.logger import logger
 from volutils import utils as utils
+from operations.market_data import write_market_data_to_sqllite
 
 def run_reader():
     globalconf = config.GlobalConfig()
@@ -21,19 +22,6 @@ def run_reader():
         return
 
     log.info("Getting realtime option chains data from IB ... ")
-
-    num_ticks = len(optchain_def.index)  # used to print status
-
-    months = globalconf.months
-
-    now = dt.datetime.now()  # Get current time
-    c_month = months[now.month]  # Get current month
-    c_day = str(now.day)  # Get current day
-    c_year = str(now.year)  # Get current year
-    c_hour = str(now.hour)
-    c_minute = str(now.minute)
-
-    f = globalconf.open_ib_h5_store()  # open database file
 
     underl = {}
     for index , row in optchain_def.iterrows():
@@ -140,17 +128,9 @@ def run_reader():
         joe = dataframe[dataframe.symbol == name]
         joe=joe.sort_values(by=['symbol', 'current_datetime', 'expiry', 'strike', 'right'])
         # joe.to_excel(name+".xlsx")
-        try:
-            f.append("/" + name, joe, data_columns=True)
-        except ValueError as e:
-            log.warn("ValueError raised [" + str(e) + "]  Creating ancilliary file ...")
-            # if some value error store data in an anciliary h5 file to be merged manually afterwards
-            # handle this kind of errors:
-            #  ValueError: cannot match existing table structure for [Halted] on appending data
-            aux = globalconf.open_ib_h5_store_value_error()
-            aux.append("/" + name, joe, data_columns=True)
-            aux.close()
-    f.close()
+        write_market_data_to_sqllite(globalconf, log, joe, "optchain_ib")
+
+
 
 if __name__=="__main__":
     run_reader()
