@@ -143,7 +143,7 @@ def migrate_h5_to_sqllite_optchain_ib():
     """
     hdf5_pattern = "optchain_ib_*.h5*"
     h5_db_alias = "optchain_ib"
-    migrate_h5_to_sqllite_optchain(hdf5_pattern, h5_db_alias,False,"")
+    migrate_h5_to_sqllite_optchain(hdf5_pattern, h5_db_alias,False,"ALL")
 
 
 def migrate_h5_to_sqllite_optchain(hdf5_pattern, h5_db_alias,drop_expiry,filter_symbol):
@@ -171,7 +171,7 @@ def migrate_h5_to_sqllite_optchain(hdf5_pattern, h5_db_alias,drop_expiry,filter_
             list = [x._v_pathname for x in root1]
             log.info(("Processing file: ", hdf5_path))
             # only migrate the symbol indicated if available
-            if filter_symbol:
+            if filter_symbol != "ALL":
                 list = [filter_symbol]
             store_file.close()
             log.info(("List of symbols: " + str(list)))
