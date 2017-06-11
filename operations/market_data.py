@@ -73,6 +73,9 @@ def write_market_data_to_sqllite(globalconf, log, dataframe, db_type):
             name = name.replace("^", "")
             joe = dataframe.loc[ (dataframe[criteria[2]] == name) & (dataframe[criteria[0]] == expiry) ]
             #joe.sort(columns=['current_datetime'], inplace=True)  DEPRECATED
+            # remove this field which is not to be used
+            if 'Halted' in joe.columns:
+                joe = joe.drop(['Halted'], axis=1)
             joe = joe.sort_values(by=[criteria[3]])
             joe.to_sql(name, store, if_exists='append')
         store.close()
