@@ -40,7 +40,7 @@ def get_partition_names(db_type):
     elif db_type == "optchain_ib_hist":
         return1 = []
     elif db_type == "underl_ib_hist":
-        return1 = []
+        return1 = ["expiry","NO_EXPIRY","symbol","load_dttm"]
 
     return return1
 
@@ -64,7 +64,10 @@ def write_market_data_to_sqllite(globalconf, log, dataframe, db_type):
     expiries = [x for x in expiries if x]
 
     for expiry in expiries:
-        expiry_file = formated_string_for_file(expiry, criteria[1])
+        if criteria[1] == "NO_EXPIRY":
+            expiry_file = ""
+        else:
+            expiry_file = formated_string_for_file(expiry, criteria[1])
         db_file = get_market_db_file(globalconf,db_type,expiry_file)
         store = sqlite3.connect(path + db_file)
         symbols = dataframe[criteria[2]].unique().tolist()
@@ -137,6 +140,15 @@ def migrate_h5_to_sqllite_optchain_yahoo(filter_symbol):
     migrate_h5_to_sqllite_optchain(hdf5_pattern, h5_db_alias,True,filter_symbol)
 
 
+def migrate_h5_to_sqllite_underly_hist():
+    """
+    migrate_h5_to_sqllite_optchain_yahoo
+    """
+    hdf5_pattern = "underly_ib_hist_*.h5*"
+    h5_db_alias = "underl_ib_hist"
+    migrate_h5_to_sqllite_optchain(hdf5_pattern, h5_db_alias,False,"ALL")
+
+
 def migrate_h5_to_sqllite_optchain_ib():
     """
     migrate_h5_to_sqllite_optchain_ib
@@ -180,13 +192,24 @@ def migrate_h5_to_sqllite_optchain(hdf5_pattern, h5_db_alias,drop_expiry,filter_
                 node1 = store_file.get_node(symbol)
                 if node1:
                     log.info(("Symbol: " + symbol))
-                    df1 = store_file.select(node1._v_pathname)
                     # Unfortunately th JSON field doesnt contain more info that the already present fields
                     # df1['json_dict'] = df1['JSON'].apply(CustomParser)
                     # following line converts dict column into n columns for the dataframe:
                     # https://stackoverflow.com/questions/20680272/reading-a-csv-into-pandas-where-one-column-is-a-json-string
                     # df1 = pd.concat([df1.drop(['json_dict','JSON'], axis=1), df1['json_dict'].apply(pd.Series)], axis=1)
                     # df1 = df1.drop(['JSON'], axis=1)
+
+
+                    # this is a specifc case for underlying hisotry
+                    if symbol == "/ES" and h5_db_alias == "underl_ib_hist":
+                        for lvl1 in node1:
+                            log.info(("Level 1 pathname in the root if the H5: ", lvl1._v_pathname))
+                            if lvl1:
+                                df1 = store_file.select(lvl1._v_pathname)
+                                df1['expiry'] = lvl1._v_pathname
+                                write_market_data_to_sqllite(globalconf, log, df1, h5_db_alias)
+                    else:
+                        df1 = store_file.select(node1._v_pathname)
                     # Expiry is already in the index
                     if drop_expiry == True:
                         df1 = df1.drop(['Expiry'], axis=1)
@@ -196,4 +219,4 @@ def migrate_h5_to_sqllite_optchain(hdf5_pattern, h5_db_alias,drop_expiry,filter_
 
 if __name__ == "__main__":
     #migrate_h5_to_sqllite_optchain_yahoo()
-    migrate_h5_to_sqllite_optchain_ib()
+    migrate_h5_to_sqllite_underly_hist()
