@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-cd /tmp
-DATE=`date +%y%m%d` 
-nohup tar cf /home/david/backup_voltrad1/${DATE}.tar.gz --use-compress-prog=pbzip2 /data/voltrad1/ >> /var/log/voltrad1/backup_${DATE}.log 2>&1 &
+BK_DATE=`date +%Y_%m_%d__%H_%M_%S`
+cd /mnt/volume-fra1-01/voltrad1
+nohup tar cf /mnt/volume-fra1-01/backup/${BK_DATE}.tar.gz --use-compress-prog=pbzip2 *.db >> /var/log/voltrad1/backup_${BK_DATE}.log 2>&1 &
+
 
 
 
