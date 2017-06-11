@@ -67,6 +67,8 @@ def write_market_data_to_sqllite(globalconf, log, dataframe, db_type):
         store = sqlite3.connect(path + db_file)
         symbols = dataframe[criteria[2]].unique().tolist()
         log.info(("For expiry: ",expiry," these are the symbols included in the data to be loaded:  ", symbols))
+        # remove empty string symbols (bug in H5 legacy files)
+        symbols = [x for x in symbols if x]
         for name in symbols:
             name = name.replace("^", "")
             joe = dataframe.loc[ (dataframe[criteria[2]] == name) & (dataframe[criteria[0]] == expiry) ]
@@ -162,7 +164,7 @@ def migrate_h5_to_sqllite_optchain(hdf5_pattern, h5_db_alias,drop_expiry):
             root1 = store_file.root
             # todos los nodos hijos de root que son los underlying symbols
             list = [x._v_pathname for x in root1]
-            log.info(("Root pathname of the input store: ", root1._v_pathname))
+            log.info(("Processing file: ", hdf5_path))
 
             store_file.close()
             log.info(("List of symbols: " + str(list)))
