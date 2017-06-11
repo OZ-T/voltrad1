@@ -66,6 +66,9 @@ def write_portfolio_to_sqllite(globalconf, log, dataframe):
     names=dataframe['accountName'].unique().tolist()
     for name in names:
         joe = dataframe.loc[dataframe['accountName']==name]
+        # include this field which is sometimes used (options) to be used
+        if 'multiplier' not in joe.columns:
+            joe['multiplier'] = ""
         joe.to_sql(name, store, if_exists='append')
         store.close()
 
