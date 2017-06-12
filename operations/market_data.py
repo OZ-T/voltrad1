@@ -116,6 +116,8 @@ def store_optchain_yahoo_to_db():
                     joe['Last_Trade_Date_txt'] = joe['Last_Trade_Date'].dt.strftime("%Y-%m-%d %H:%M:%S")
                     joe = joe.reset_index().set_index("Quote_Time")
                     joe['Expiry_txt'] = joe['Expiry'].dt.strftime("%Y-%m-%d %H:%M:%S")
+                    if 'JSON' in joe.columns:
+                        joe['JSON'] = ""
 
                     write_market_data_to_sqllite(globalconf, log, joe, "optchain_yhoo")
 
