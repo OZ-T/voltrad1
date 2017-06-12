@@ -82,7 +82,8 @@ def write_market_data_to_sqllite(globalconf, log, dataframe, db_type):
             if 'Halted' in joe.columns:
                 joe = joe.drop(['Halted'], axis=1)
             joe = joe.sort_values(by=[criteria[3]])
-            joe = joe.drop(['Expiry'], axis=1)
+            if 'Expiry' in joe.columns:
+                joe = joe.drop(['Expiry'], axis=1)
             joe.to_sql(name, store, if_exists='append')
         store.close()
 
