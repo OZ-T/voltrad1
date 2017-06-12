@@ -60,7 +60,7 @@ def run_reader():
     underl_prc = client.getMktData(underl_under)
     row1 = 0
     opt_chain_ranges = {}
-    for reqId, request in underl_prc.iteritems():
+    for reqId, request in underl_prc.items():
         if reqId in request.get_out_data().keys():
             row1 += 1
             if "closePrice" in request.get_out_data()[reqId]:
@@ -76,7 +76,7 @@ def run_reader():
     pct_range_opt_chain = float(globalconf.config['ib_api']['pct_range_opt_chain'])
 
     log.info("Number of requests [%d]" % (len(list_results)) )
-    for reqId, request in list_results.iteritems():
+    for reqId, request in list_results.items():
         log.info("Requestid [%d]: Option[%s] Len Results [%d]" % ( reqId , str(request.get_in_data()), len(request.optionsChain) ))
 
     contr = {}
@@ -89,7 +89,7 @@ def run_reader():
     formatDate = 1
     wait_secs = 6
     df1 = pd.DataFrame()
-    for reqId, request in list_results.iteritems():
+    for reqId, request in list_results.items():
         log.info("Requestid [%d]: Chain size [%d]" % ( reqId , len( request.optionsChain ) ))
         for opt1 in request.optionsChain:
             if opt1["symbol"] in opt_chain_ranges:
@@ -144,7 +144,7 @@ def run_reader():
                         #for reqIdBID, requestBID in historicallistBID.iteritems():
                         for reqIdBID in keysBID:
                             temp_requestBID = deepcopy(historicallistBID[reqIdBID])
-                            for dateBID, rowBID in temp_requestBID.iteritems():
+                            for dateBID, rowBID in temp_requestBID.items():
                                 # print ("date2 [%s]: row2[%s]" % (date2, str(row2)))
                                 tempBID = pd.DataFrame(rowBID, index=[0])
                                 tempBID = tempBID.add_suffix('_bid')
@@ -179,7 +179,7 @@ def run_reader():
                         #for reqIdASK, requestASK in historicallistASK.iteritems():
                         for reqIdASK in keysASK:
                             temp_requestASK = deepcopy(historicallistASK[reqIdASK])
-                            for dateASK, rowASK in temp_requestASK.iteritems():
+                            for dateASK, rowASK in temp_requestASK.items():
                                 # print ("date2 [%s]: row2[%s]" % (date2, str(row2)))
                                 tempASK = pd.DataFrame(rowASK, index=[0])
                                 tempASK = tempASK.add_suffix('_ask')
@@ -215,7 +215,7 @@ def run_reader():
                         #for reqId2, request2 in historicallistTRADES.iteritems():
                         for reqIdTRADES in keysTRADES:
                             temp_request2=deepcopy(historicallistTRADES[reqIdTRADES])
-                            for date2, row2 in temp_request2.iteritems():
+                            for date2, row2 in temp_request2.items():
                                 #print ("date2 [%s]: row2[%s]" % (date2, str(row2)))
                                 temp1 = pd.DataFrame(row2, index=[0])
                                 temp1 = temp1.add_suffix('_trades')

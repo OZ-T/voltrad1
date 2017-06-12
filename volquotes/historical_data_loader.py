@@ -91,8 +91,8 @@ def run_reader():
         #print historicallist
         dataframe = pd.DataFrame()
         if historicallist:
-            for reqId, request in historicallist.iteritems():
-                for date, row in request.iteritems():
+            for reqId, request in historicallist.items():
+                for date, row in request.items():
                     # print ("date [%s]: row[%s]" % (date, str(row)))
                     temp1 = pd.DataFrame(row, index=[0])
                     temp1['symbol'] = str(row_req['symbol'])

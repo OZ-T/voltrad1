@@ -441,7 +441,7 @@ class syncEWrapper(EWrapper):
         #print ("contractDetails reqId=[%d] contractdetails=[%s]" % ( reqId , str(temp1)) )
         if reqId in self.req_chains:
             self.req_chains[reqId].optionsChain.append(temp1)
-        #for kk, pedo in self.req_chains.iteritems():
+        #for kk, pedo in self.req_chains.items():
         #    print(">>contractDetails reqId=[%d] contractdetails=[%s]" % (kk, str(pedo.optionsChain)))
 
     def bondContractDetails(self, reqId, contractDetails):
@@ -680,7 +680,7 @@ class IBClient():
         inc_secs = .2 # .2 a fifth of a second
         while not self.myEWrapper.isDone:
             li = []
-            for reqId, request in self.myEWrapper.requests.iteritems():
+            for reqId, request in self.myEWrapper.requests.items():
                 li.append( self.myEWrapper.requests[reqId].isDone )
                 if ( self.myEWrapper.requests[reqId].isDone and not self.myEWrapper.requests[reqId].isCancelled ):
                     self.log.info("Cancelling MktData [%s] for reqId=[%d] [%d]"
@@ -706,7 +706,7 @@ class IBClient():
         inc_secs = .2 # .2 a fifth of a second
         while not self.myEWrapper.isDone:
             li = []
-            for reqId, request in self.myEWrapper.req_chains.iteritems():
+            for reqId, request in self.myEWrapper.req_chains.items():
                 li.append( self.myEWrapper.req_chains[reqId].isDone )
                 #print("Status of query after %d secs: isDone=%s reqId=%d maxWait=%d"
                 #      % (float(time.time() - self.start_time)
@@ -751,7 +751,7 @@ class IBClient():
         self.myEWrapper.isDone = False
         self.myEWrapper.isSnapshot = True
         self.myEWrapper.requests = requests
-        for reqId, request in requests.iteritems():
+        for reqId, request in requests.items():
             self.myEClientSocket.reqMktData(id=request.getRequestId(),
                                             contract=request.getInstance(),
                                             genericTicks="",
@@ -772,7 +772,7 @@ class IBClient():
         num1 = 0
         num2 = 0
         total = len(requests.keys())
-        for reqId, request in requests.iteritems():
+        for reqId, request in requests.items():
             num1 += 1
             num2 += 1
             # self.log.info("Requesting MktData [%s] for reqId=[%d] [%d]"
@@ -786,7 +786,7 @@ class IBClient():
                 sleep(10)
                 num1=0
             # iterate all requests to cancel those already fulfilled
-            for reqId2, request2 in self.myEWrapper.requests.iteritems():
+            for reqId2, request2 in self.myEWrapper.requests.items():
                 if (self.myEWrapper.requests[reqId2].isDone and not self.myEWrapper.requests[reqId2].isCancelled):
                     self.log.info("Cancelling MktData [%s] for reqId2=[%d] [%d]"
                           % (datetime.now().strftime('%Y-%m-%d %H:%M:%S'),reqId2, request2.getRequestId()))
@@ -803,7 +803,7 @@ class IBClient():
         self.start_time=time.time()
         self.log.info("getOptionsChain [%s]" % ( datetime.now().strftime('%Y-%m-%d %H:%M:%S') ) )
         return1 = {}
-        for reqId, request in requests.iteritems():
+        for reqId, request in requests.items():
             self.myEWrapper.isDone = False
             self.myEWrapper.req_chains = {reqId:request}
             self.myEClientSocket.reqContractDetails(reqId=request.getRequestId(),
@@ -815,7 +815,7 @@ class IBClient():
             #  % (request.getRequestId(), request.getInstance().symbol, str(return1[reqId].optionsChain)
             #     , datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
-        #for reqId1, request1 in return1.iteritems():
+        #for reqId1, request1 in return1.items():
             #print("getOptionsChain 1 reqId1=[%d] len opt chain=[%d] self.myEWrapper.isDone=[%s]"
             #      % ( reqId1, len(request1.optionsChain) , str(self.myEWrapper.isDone) ) )
             #if reqId1 in self.myEWrapper.req_chains.keys():
@@ -1124,7 +1124,7 @@ def run_test_opt_chain():
     underl_prc = client.getMktData(underl_under)
     row1 = 0
     opt_chain_ranges = {}
-    for reqId, request in underl_prc.iteritems():
+    for reqId, request in underl_prc.items():
         row1 += 1
         if "closePrice" in request.get_out_data()[reqId]:
             print ("Requestid [%d]: Option[%s] Results [%s]" % ( reqId , str(request.get_in_data()), str(request.get_out_data()) ))
@@ -1136,13 +1136,13 @@ def run_test_opt_chain():
     list_results = client.getOptionsChain(underl)
 
     print("Number of requests [%d]" % (len(list_results)) )
-    for reqId, request in list_results.iteritems():
+    for reqId, request in list_results.items():
         print ("Requestid [%d]: Option[%s] Len Results [%d]" % ( reqId , str(request.get_in_data()), len(request.optionsChain) ))
 
     contr = {}
     num = 100
     pct_range_opt_chain = float(globalconf.config['ib_api']['pct_range_opt_chain'])
-    for reqId, request in list_results.iteritems():
+    for reqId, request in list_results.items():
         #print ("Requestid [%d]: Chain size [%d] detail [%s]"
         #       % ( reqId , len( request.optionsChain ) , str(request.optionsChain)  ))
         for opt1 in request.optionsChain:
@@ -1160,7 +1160,7 @@ def run_test_opt_chain():
     dataframe = pd.DataFrame()
     row1 = 0
 
-    for reqId, request in list_results2.iteritems():
+    for reqId, request in list_results2.items():
         row1 += 1
         print ("Requestid [%d]: Option[%s] Results [%s]" % ( reqId , str(request.get_in_data()), str(request.get_out_data()) ))
         #print ("Requestid [%d]: modelVega=%0.5f" % ( reqId, request.get_out_data()[reqId]['modelVega'] ) )
@@ -1249,8 +1249,8 @@ def run_test_get_historical():
     client.disconnect()
     dataframe = pd.DataFrame()
     if historicallist:
-        for reqId, request in historicallist.iteritems():
-            for date, row in request.iteritems():
+        for reqId, request in historicallist.items():
+            for date, row in request.items():
                 #print ("date [%s]: row[%s]" % (date, str(row)))
                 temp1=pd.DataFrame(row,index=[0])
                 dataframe=dataframe.append(temp1.reset_index().drop('index',1))

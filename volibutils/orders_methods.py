@@ -84,7 +84,7 @@ def place_plain_order(expiry,symbol,right,strike,orderType,quantity,lmtPrice,ord
 
     order_structure = client.place_new_IB_order(ibcontract, iborder, orderid=orderId)
     df1 = pd.DataFrame()
-    for idx, x in order_structure.iteritems():
+    for idx, x in order_structure.items():
         temp=pd.DataFrame.from_dict(x, orient='index').transpose()
         df1=df1.append(temp)
     if not df1.empty:
@@ -138,7 +138,7 @@ def place_or_modif_spread_order(expiry,symbol,right,strike_l,strike_s,orderType,
     list_results = client.getOptionsChain(underl)
     legs = []
     log_order.info("Number of requests [%d]" % (len(list_results)) )
-    for reqId, request in list_results.iteritems():
+    for reqId, request in list_results.items():
         log_order.info ("Requestid [%d]: Option[%s] Results [%d]" % ( reqId , str(request.get_in_data()), len(request.optionsChain) ))
         for opt1 in request.optionsChain:
             leg1 = sy.ComboLeg()
@@ -163,7 +163,7 @@ def place_or_modif_spread_order(expiry,symbol,right,strike_l,strike_s,orderType,
     iborder.transmit = get_order_defaults()["transmit"]
     order_structure = client.place_new_IB_order(ibcontract, iborder, orderid=orderId)
     df1 = pd.DataFrame()
-    for idx, x in order_structure.iteritems():
+    for idx, x in order_structure.items():
         temp=pd.DataFrame.from_dict(x, orient='index').transpose()
         df1=df1.append(temp)
     if not df1.empty:
@@ -181,7 +181,7 @@ def list_open_orders():
 
     order_structure = client.get_open_orders()
     df1 = pd.DataFrame()
-    for idx, x in order_structure.iteritems():
+    for idx, x in order_structure.items():
         temp=pd.DataFrame.from_dict(x, orient='index').transpose()
         df1=df1.append(temp)
     if not df1.empty:
@@ -239,7 +239,7 @@ def list_prices_before_trade(symbol,expiry,query):
     #    temp=pd.DataFrame.from_dict(dict1, orient='index').transpose()
     #    df1=df1.append(temp)
     row1 = 0
-    for reqId, request in ctrt_prc.iteritems():
+    for reqId, request in ctrt_prc.items():
         row1 += 1
         dict1 = request.get_in_data().copy()
         if reqId in request.get_out_data():
@@ -282,7 +282,7 @@ def list_option_chain(symbol,expiry,expiry_underlying):
     #    df1 = df1.append(temp)
 
     row1 = 0
-    for reqId, request in underl_prc.iteritems():
+    for reqId, request in underl_prc.items():
         row1 += 1
         dict1 = request.get_in_data().copy()
         if reqId in request.get_out_data():
@@ -317,7 +317,7 @@ def list_spread_prices_before_trade(symbol,expiry,query):
     list_results = client.getOptionsChain(underl)
     legs = []
     log_order.info("Number of requests [%d]" % (len(list_results)) )
-    for reqId, request in list_results.iteritems():
+    for reqId, request in list_results.items():
         log_order.info ("Requestid [%d]: Option[%s] Results [%d]" % ( reqId , str(request.get_in_data()), len(request.optionsChain) ))
         for opt1 in request.optionsChain:
             leg1 = sy.ComboLeg()
@@ -358,7 +358,7 @@ def list_spread_prices_before_trade(symbol,expiry,query):
     #    df1=df1.append(temp)
 
     row1 = 0
-    for reqId, request in ctrt_prc.iteritems():
+    for reqId, request in ctrt_prc.items():
         row1 += 1
         dict1 = request.get_in_data().copy()
         if reqId in request.get_out_data():

@@ -47,7 +47,7 @@ def run_reader():
     underl_prc = client.getMktData(underl_under)
     row1 = 0
     opt_chain_ranges = {}
-    for reqId, request in underl_prc.iteritems():
+    for reqId, request in underl_prc.items():
         if reqId in request.get_out_data().keys():
             row1 += 1
             if "closePrice" in request.get_out_data()[reqId]:
@@ -62,13 +62,13 @@ def run_reader():
     list_results = client.getOptionsChain(underl)
 
     log.info("Number of requests [%d]" % (len(list_results)) )
-    for reqId, request in list_results.iteritems():
+    for reqId, request in list_results.items():
         log.info ("Requestid [%d]: Option[%s] Len Results [%d]" % ( reqId , str(request.get_in_data()), len(request.optionsChain) ))
 
     contr = {}
     num = 100
     pct_range_opt_chain = float(globalconf.config['ib_api']['pct_range_opt_chain'])
-    for reqId, request in list_results.iteritems():
+    for reqId, request in list_results.items():
         #print ("Requestid [%d]: Chain size [%d] detail [%s]"
         #       % ( reqId , len( request.optionsChain ) , str(request.optionsChain)  ))
         for opt1 in request.optionsChain:
@@ -86,7 +86,7 @@ def run_reader():
     dataframe = pd.DataFrame()
     row1 = 0
 
-    for reqId, request in list_results2.iteritems():
+    for reqId, request in list_results2.items():
         row1 += 1
         #print ("Requestid [%d]: Option[%s] Results [%s]" % ( reqId , str(request.get_in_data()), str(request.get_out_data()) ))
         #print ("Requestid [%d]: modelVega=%0.5f" % ( reqId, request.get_out_data()[reqId]['modelVega'] ) )
