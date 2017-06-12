@@ -170,6 +170,9 @@ def store_acc_summary_and_portfolio_from_ib_to_db():
         dataframe = pd.DataFrame.from_dict(acclist).transpose()
         dataframe['current_date'] = dt.datetime.now().strftime('%Y%m%d')
         dataframe['current_datetime'] = dt.datetime.now().strftime('%Y%m%d%H%M%S')
+        dataframe.sort_values(by=['current_datetime'], inplace=True)
+        dataframe.index=dataframe['current_datetime']
+        dataframe.drop('current_datetime',axis=1,inplace=True)
         dataframe.drop('multiplier', axis=1, inplace=True)
         write_portfolio_to_sqllite(globalconf, log, dataframe)
     else:
