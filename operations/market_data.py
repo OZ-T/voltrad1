@@ -124,8 +124,8 @@ def store_optchain_yahoo_to_db():
                 except KeyError as e:
                     log.warn("KeyError raised [" + str(e) + "]...")
 
-        except RemoteDataError as err:
-            log.info("No information for ticker [%s] RemoteDataError=[%s] sys_info=[%s]" % (str(symbol) , str(err) , sys.exc_info()[0] ))
+        except (RemoteDataError,TypeError) as err:
+            log.info("No information for ticker [%s] Error=[%s] sys_info=[%s]" % (str(symbol) , str(err) , sys.exc_info()[0] ))
             continue
 
 
