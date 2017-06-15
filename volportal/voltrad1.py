@@ -14,7 +14,7 @@ globalconf = config.GlobalConfig()
 app = Flask(__name__)
 api = Api(app)
 
-DATA_DIR = globalconf.config['paths']['data_folder'] # "/home/david/Dropbox/proyectos/data"
+DATA_DIR = globalconf.config['paths']['data_folder'] # "/home/david//data/voltrad1"
 exts= (".hdf",".hdf5",".h5",".he5")
 
 parser = reqparse.RequestParser()
