@@ -5,8 +5,10 @@ from volsetup import config
 import os
 from matplotlib.pyplot import *
 import datetime as dt
+import matplotlib as plt
 
 def run_dq_report_market(hoy):
+    plt.rcParams.update({'figure.max_open_warning': 0})
     ayer = (dt.datetime.strptime(hoy, '%Y%m%d') - dt.timedelta(1)).strftime('%Y%m%d')
     fecha = (hoy, ayer)
 
@@ -83,7 +85,6 @@ def run_dq_report_market(hoy):
                         lgd = ax.legend(handles, labels, loc='center left', bbox_to_anchor=(0.5, -0.1))
                         ax.grid('on')
                         fig = t_plot.get_figure()
-                        t_plot.close()
                         fig.savefig( web_server + hoy + symbol + right
                                      + repo.replace(".db","") + variable + ".png",
                                      bbox_extra_artists=(lgd,), bbox_inches='tight')
