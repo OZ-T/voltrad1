@@ -65,7 +65,7 @@ def run_dq_report_market(hoy):
                         ax.set_xticklabels([x.strftime('%Y-%m-%d %H') for x in xticks])
                         ax.set_xticks(np.arange(len(df3)), minor=False)
                         t_plot = df3.plot(x=df3.index.to_series().dt.strftime('%Y-%m-%d %H'),
-                                             figsize=(12,12),
+                                             figsize=(16,12),
                                              ax=ax,
                                              grid=True,
                                              # https://matplotlib.org/examples/color/colormaps_reference.html
@@ -79,7 +79,15 @@ def run_dq_report_market(hoy):
                                                         repo))).legend(ncol=4,loc='center left',
                                                                                              bbox_to_anchor=(1, 0.5))
 
+                        handles, labels = ax.get_legend_handles_labels()
+                        lgd = ax.legend(handles, labels, loc='center left', bbox_to_anchor=(0.5, -0.1))
+                        ax.grid('on')
                         fig = t_plot.get_figure()
-                        fig.savefig( web_server + hoy + symbol + right + repo.replace(".db","") + variable + ".png")
+                        t_plot.close()
+                        fig.savefig( web_server + hoy + symbol + right
+                                     + repo.replace(".db","") + variable + ".png",
+                                     bbox_extra_artists=(lgd,), bbox_inches='tight')
+
+
 
 
