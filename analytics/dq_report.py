@@ -44,7 +44,7 @@ def run_dq_report_market(hoy):
         log.info("repo = " + repo)
         store = sqlite3.connect(path + repo)
         for symbol in symbols:
-            #print("symbol = " + symbol)
+            log.info("symbol = " + symbol)
             df1 = pd.read_sql_query("SELECT * FROM " + symbol
                                     + " where substr(current_datetime,1,8) in " + str(fecha), store)
             df1.sort_values(by=['current_datetime'], inplace=True)
@@ -82,7 +82,7 @@ def run_dq_report_market(hoy):
                                                                                              bbox_to_anchor=(1, 0.5))
 
                         handles, labels = ax.get_legend_handles_labels()
-                        lgd = ax.legend(handles, labels, loc='center left', bbox_to_anchor=(0.5, -0.1))
+                        lgd = ax.legend(handles, labels, loc='center left',ncol=4, bbox_to_anchor=(1, 0.5))
                         ax.grid('on')
                         fig = t_plot.get_figure()
                         fig.savefig( web_server + hoy + symbol + right
