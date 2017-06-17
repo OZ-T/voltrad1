@@ -19,7 +19,7 @@ if __name__=="__main__":
     clientid1 = int(globalconf.config['ib_api']['clientid_data'])
     client.connect(clientid1=clientid1)
     dataframe = pd.DataFrame({'ibtime': client.getTime()}, index=[0])
-    print dataframe
+    print (dataframe)
     client.disconnect()
 
 
