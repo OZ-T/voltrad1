@@ -85,8 +85,8 @@ def run_dq_report_market(hoy):
                         lgd = ax.legend(handles, labels, loc='center left',ncol=4, bbox_to_anchor=(1, 0.5))
                         ax.grid('on')
                         fig = t_plot.get_figure()
-                        fig.savefig( web_server + hoy + symbol + right
-                                     + repo.replace(".db","") + variable + ".png",
+                        fig.savefig( web_server + variable + symbol + right
+                                     + repo.replace(".db","").replace("optchain_ib_expiry","") + ".png",
                                      bbox_extra_artists=(lgd,), bbox_inches='tight')
 
 
