@@ -22,45 +22,33 @@
 # m h  dom mon dow   command
 MAILTO=""
 DATE=date +%d-%m-%y
-# cron daily yahoo option chains save to hdf5
-# OLD 30 23 * * 1,2,3,4,5 /home/david/anaconda2/bin/python /home/david/python/vol_tradblotter/vol_grab_optchain_pandas_yhoo1.py >> /tmp/yhoo_opt.log 2>&1
-# migrated OLD H5 10 16-22 * * 1-5 /home/david/shell/run_yhoo_opt.sh 
-10 16-22 * * 1-5 /home/david/shell/p batch_optchain_yhoo_to_db >> /var/log/voltrad1/yahoo_opt_$($DATE).log 2>&1 &
-# FIXME 55 22 * * 1-5 /home/david/shell/run_ivol_opt.sh 
+# IBG Connection
+1 3 * * 1-5 /home/david/shell/run_healthcheck_ibg.sh >> /var/log/voltrad1/ib_healthcheck_ibg_$($DATE).log 2>&1 &
+# download historical data for option chains
+22 3 * * 1-5 /home/david/shell/run_ib_historical_opt.sh 
+
+# download historical data for underlying contracts
+10 14 * * 1-5 /home/david/shell/run_healthcheck_ibg.sh >> /var/log/voltrad1/ib_healthcheck_ibg_$($DATE).log 2>&1 &
+15 14 * * 1-5 /home/david/shell/run_ib_historical.sh 
 
 # cron job every weekday during RTH (regular trading hours US)
-22 15-21 * * 1-5 /home/david/shell/gw.sh stop sim 
-23 15-21 * * 1-5 /home/david/shell/gw.sh start sim 
-#40 15-21 * * 1-5 /home/david/shell/swigib_ex1.sh
+1 15-23 * * 1-5 /home/david/shell/run_healthcheck_ibg.sh >> /var/log/voltrad1/ib_healthcheck_ibg_$($DATE).log 2>&1 &
 42 15-21 * * 1-5 /home/david/shell/run_ib_opt.sh
 57 15-21 * * 1-5 nohup /home/david/shell/p batch_orders_to_db  >> /var/log/voltrad1/ib_orders_$($DATE).log 2>&1 &
 59 15-21 * * 1-5 nohup /home/david/shell/p batch_acc_to_db  >> /var/log/voltrad1/ib_accounting_$($DATE).log 2>&1 &
+
+# cron daily yahoo option chains save to hdf5
+10 16-22 * * 1-5 /home/david/shell/p batch_optchain_yhoo_to_db >> /var/log/voltrad1/yahoo_opt_$($DATE).log 2>&1 &
 #02 16-22 * * 1-5 /home/david/shell/run_shark_tic.sh 
 
 # store orders executed during the day and portfolio snapshot
-30 23 * * 1-5 /home/david/shell/gw.sh stop sim 
-31 23 * * 1-5 /home/david/shell/gw.sh start sim 
-46 23 * * 1-5 nohup /home/david/shell/p batch_orders_to_db  >> /var/log/voltrad1/ib_orders_$($DATE).log 2>&1 &
-48 23 * * 1-5 nohup /home/david/shell/p batch_acc_to_db  >> /var/log/voltrad1/ib_accounting_$($DATE).log 2>&1 &
-52 23 * * 1-5 /home/david/shell/gw.sh stop sim 
+36 23 * * 1-5 nohup /home/david/shell/p batch_orders_to_db  >> /var/log/voltrad1/ib_orders_$($DATE).log 2>&1 &
+38 23 * * 1-5 nohup /home/david/shell/p batch_acc_to_db  >> /var/log/voltrad1/ib_accounting_$($DATE).log 2>&1 &
 
 59 0 * * 6 /home/david/shell/run_backup.sh
 
-# download historical data for option chains
-0 2 * * 1-5 /home/david/shell/gw.sh stop sim 
-1 2 * * 1-5 /home/david/shell/gw.sh start sim 
-# download historical data for underlying contracts
-5 3 * * 1-5 /home/david/shell/run_ib_historical.sh 
-22 3 * * 1-5 /home/david/shell/run_ib_historical_opt.sh 
-#33 15 * * 1-5 /home/david/shell/gw.sh stop sim 
-
+# FIXME 55 22 * * 1-5 /home/david/shell/run_ivol_opt.sh 
 # economic calendar from biz yahoo. start of week and end of week to get the resulting number of the economic events
 # this creates duplicates in the hdf5 which need to be handled in the subsequent analysis
 # FIXME 55 5 * * 1 /home/david/shell/run_yhoo_eco_calendar.sh 
 # FIXME 55 5 * * 6 /home/david/shell/run_yhoo_eco_calendar.sh 
-
-#3,33 8-21 * * 7 /home/david/shell/gw.sh stop sim 
-#5,35 8-21 * * 7 /home/david/shell/gw.sh start sim 
-#7,37 8-21 * * 7 /home/david/shell/swigib_ex1.sh
-#10,40 8-21 * * 7 /home/david/shell/run_ib_opt.sh
-#24,54 8-21 * * 7 /home/david/shell/gw.sh stop sim 
