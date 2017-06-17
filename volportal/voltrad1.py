@@ -1,5 +1,5 @@
 from flask import Flask, request, render_template
-from voldailyanalytics import run_analytics as ra
+from analytics import run_analytics as ra
 from flask_restful import reqparse, abort, Api, Resource
 import os,sys
 import pandas as pd

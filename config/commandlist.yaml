@@ -20,38 +20,39 @@ migrate_h5_optchain_yhoo_sqlite:
 batch_optchain_yhoo_to_db:
   pointer:  operations.market_data.store_optchain_yahoo_to_db
 
-
-
+# Web reporting generation
+run_dq_report_market:
+  pointer: analytics.dq_report.run_dq_report_market
 
 # trend and risk indicators
 coppock:
-   pointer: voldailyanalytics.analytics_methods.print_coppock_diario
+   pointer: analytics.analytics_methods.print_coppock_diario
 emas:
-   pointer: voldailyanalytics.analytics_methods.print_emas
+   pointer: analytics.analytics_methods.print_emas
 summary:
-  pointer: voldailyanalytics.analytics_methods.print_summary_underl
+  pointer: analytics.analytics_methods.print_summary_underl
 vol:
-  pointer: voldailyanalytics.analytics_methods.print_volatity
+  pointer: analytics.analytics_methods.print_volatity
 fastmove:
-  pointer: voldailyanalytics.analytics_methods.print_fast_move
+  pointer: analytics.analytics_methods.print_fast_move
 cone:
-  pointer: voldailyanalytics.analytics_methods.print_volatility_cone
+  pointer: analytics.analytics_methods.print_volatility_cone
 
 # pretrade analysis commands
 lstprc:
    pointer: volibutils.orders_methods.list_prices_before_trade
 lstchain:
-  pointer: voldailyanalytics.analytics_methods.print_quasi_realtime_chain
+  pointer: analytics.analytics_methods.print_quasi_realtime_chain
 lstspreadprc:
    pointer: volibutils.orders_methods.list_spread_prices_before_trade
 chainprc:
    pointer: volibutils.orders_methods.list_option_chain
 hist_opt:
-   pointer: voldailyanalytics.analytics_methods.print_historical_option
+   pointer: analytics.analytics_methods.print_historical_option
 ecocal:
-   pointer: voldailyanalytics.analytics_methods.print_ecalendar
+   pointer: analytics.analytics_methods.print_ecalendar
 simul_tic:
-   pointer: voldailyanalytics.analytics_methods.print_TBD
+   pointer: analytics.analytics_methods.print_TBD
 
 # Order commands
 fill1opt:
@@ -80,21 +81,21 @@ cancelall:
 
 # TIC portfolio management
 ticrpt:
-   pointer: voldailyanalytics.analytics_methods.print_tic_report
+   pointer: analytics.analytics_methods.print_tic_report
 portfolio:
    pointer: operations.vol_grab_accounting.print_portfolio_from_ib
 accdelta:
-  pointer: voldailyanalytics.analytics_methods.print_account_delta
+  pointer: analytics.analytics_methods.print_account_delta
 accsnap:
-  pointer: voldailyanalytics.analytics_methods.print_account_snapshot
+  pointer: analytics.analytics_methods.print_account_snapshot
 
 # general market analysis
 hist_under:
-   pointer: voldailyanalytics.analytics_methods.print_historical_underl
+   pointer: analytics.analytics_methods.print_historical_underl
 
 # Batch commands & anciliary commands
 batch_tic_rpt:
-   pointer: voldailyanalytics.shark_tic_report.run_report
+   pointer: analytics.shark_tic_report.run_report
 fix_ecalendar:
   pointer: volsetup.fix_h5_economic_calendar.run
 fix_histo_optchain:

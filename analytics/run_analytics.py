@@ -9,7 +9,7 @@ import time
 import pandas as pd
 import numpy as np
 # import pandas_datareader.data as web
-from voldailyanalytics.opt_pricing_methods import bsm_mcs_euro
+from analytics.opt_pricing_methods import bsm_mcs_euro
 from volsetup.logger import logger
 
 globalconf = config.GlobalConfig()

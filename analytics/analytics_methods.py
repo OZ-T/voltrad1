@@ -15,7 +15,7 @@ from volsetup.logger import logger
 from swigibpy import Contract as IBcontract
 from swigibpy import Order as IBOrder
 import time
-from voldailyanalytics import run_analytics as ra
+from analytics import run_analytics as ra
 import json
 from numpy.lib.stride_tricks import as_strided
 from numpy import log, sqrt
