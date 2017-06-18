@@ -51,6 +51,8 @@ report_dict_yhoo = {
 }
 
 
+
+
 def run_dq_report_market(hoy):
     globalconf = config.GlobalConfig()
     dict1 = read_opt_chain_data(globalconf,hoy,report_dict_ib)
@@ -59,7 +61,7 @@ def run_dq_report_market(hoy):
 def read_opt_chain_data(globalconf,hoy,r_dict):
     ayer = (dt.datetime.strptime(hoy, '%Y%m%d') - dt.timedelta(1)).strftime(r_dict['formato_hoy'])
     fecha = (hoy, ayer)
-    # log = logger("dq_report")
+    log = logger("dq_report")
     symbols = r_dict['symbols'] # ['ES','SPY']
     expiries = r_dict['expiries'] # ['2017-06','2017-07','2017-08','2017-09','2017-10','2017-11','2017-12','2018-01']
     db_type = r_dict['db_type'] # "optchain_ib"
@@ -83,17 +85,17 @@ def read_opt_chain_data(globalconf,hoy,r_dict):
         for expiry in expiries:
             if expiry in file:
                 final_list.append(file)
-    # log.info(("final_list = ", final_list))
+    log.info(("final_list = ", final_list))
     return_df_dict = {}
     for repo in final_list:
-        # log.info("repo = " + repo)
+        log.info("repo = " + repo)
         store = sqlite3.connect(path + repo)
         for symbol in symbols:
-            # log.info("symbol = " + symbol)
+            log.info("symbol = " + symbol)
             df1 = pd.read_sql_query("SELECT * FROM " + symbol
                                     + " where " + r_dict['filtro_sqlite'] + " in " + str(fecha), store)
             df1.sort_values(by=[ r_dict['current_datetime'] ], inplace=True)
-            # log.info("len(df1) = %d " % (len(df1)) )
+            log.info("len(df1) = %d " % (len(df1)) )
             df1['optsymbol'] = df1[r_dict['right']].astype(str).str.cat(df1[r_dict['strike']].astype(str))
             for right in r_dict['valid_rights']:
                 df2 = df1[ (df1[r_dict['right']] == right) ]
@@ -143,3 +145,23 @@ def save_image_plot_lines_multi_strike(globalconf,dict_df):
             pyplt.close(fig)
 
 
+if __name__ == "__main__":
+    report_dict_yhoo2 = {
+        "symbols": ['USO'],
+        "expiries": ['2017-07'],
+        "db_type": "optchain_yhoo",
+        "variables": [
+            'IV', 'Last', 'Vol', 'Open_Int', 'Bid', 'Ask'],
+        'current_datetime': 'Quote_Time',
+        'symbol': 'Symbol',
+        'right': 'Type',
+        'strike': 'Strike',
+        'expiry': 'Expiry_txt',
+        'format_index': "%Y-%m-%d %H:%M:%S",
+        'valid_rights': ['put', 'call'],
+        'filtro_sqlite': "substr(Quote_time,1,10)",
+        'formato_hoy': '%Y-%m-%d'
+
+    }
+    globalconf = config.GlobalConfig()
+    dict1 = read_opt_chain_data(globalconf, "20170217", report_dict_yhoo2)
