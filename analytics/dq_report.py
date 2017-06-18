@@ -105,7 +105,7 @@ def prepare_dq_report_market(hoy,r_dict):
                 df2 = df1[ (df1[r_dict['right']] == right) ]
                 for variable in variables:
                     df2 = df2.drop_duplicates(subset=[r_dict['current_datetime'], r_dict['symbol'],
-                                                      r_dict['right'], r_dict['stirke'],r_dict['expiry']], keep='last')
+                                                      r_dict['right'], r_dict['strike'],r_dict['expiry']], keep='last')
                     # transponer y poner en cada columna un precio
                     #                   C       ....
                     #                   2000.0  ...
