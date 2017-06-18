@@ -27,6 +27,7 @@ report_dict_ib = {
     'right':'right',
     'strike':'strike',
     'expiry':'expiry',
+    'format_expiry': "%Y%m%d%H%M%S",
     'format_index':"%Y%m%d%H%M%S",
     'valid_rights': ['P', 'C'],
     'filtro_sqlite': "substr(current_datetime,1,8)",
@@ -44,13 +45,12 @@ report_dict_yhoo = {
     'right':'Type',
     'strike':'Strike',
     'expiry':'Expiry_txt',
+    'format_expiry':"%Y-%m-%d %H:%M:%S",
     'format_index':"%Y-%m-%d %H:%M:%S",
     'valid_rights':['put','call'],
     'filtro_sqlite': "substr(Quote_time,1,10)",
     'formato_hoy':'%Y-%m-%d'
 }
-
-
 
 
 def run_dq_report_market(hoy):
@@ -113,6 +113,9 @@ def read_opt_chain_data(globalconf,hoy,r_dict):
                     return_df_dict[title] = df3
     return return_df_dict
 
+# TODO Filter the non standar expiries in the yahoo dataset
+#  df2.loc[pd.to_datetime(df2[r_dict['expiry']],format=r_dict['format_expiry']) == pd.date_range('2017-7-1', '2017-7-31', freq='WOM-3FRI').to_pydatetime()[0]]
+#  df2.loc[pd.to_datetime(df2[r_dict['expiry']],format="%Y-%m-%d %H:%M:%S") == pd.date_range('2017-7-1', '2017-7-31', freq='WOM-3FRI').to_pydatetime()[0]]
 
 def save_image_plot_lines_multi_strike(globalconf,dict_df):
     plt.rcParams.update({'figure.max_open_warning': 0})
@@ -147,7 +150,7 @@ def save_image_plot_lines_multi_strike(globalconf,dict_df):
 
 if __name__ == "__main__":
     report_dict_yhoo2 = {
-        "symbols": ['USO'],
+        "symbols": ['SPY'],
         "expiries": ['2017-07'],
         "db_type": "optchain_yhoo",
         "variables": [
@@ -164,4 +167,4 @@ if __name__ == "__main__":
 
     }
     globalconf = config.GlobalConfig()
-    dict1 = read_opt_chain_data(globalconf, "20170217", report_dict_yhoo2)
+    dict1 = read_opt_chain_data(globalconf, "20170616", report_dict_yhoo2)
