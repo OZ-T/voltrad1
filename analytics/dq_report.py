@@ -55,22 +55,18 @@ report_dict_yhoo = {
 
 
 def run_dq_report_market(hoy):
-    prepare_dq_report_market(hoy,report_dict_ib)
+    globalconf = config.GlobalConfig()
+    dict1 = read_opt_chain_data(globalconf,hoy,report_dict_ib)
+    save_image_plot_lines_multi_strike(globalconf, dict1)
 
-def prepare_dq_report_market(hoy,r_dict):
-    plt.rcParams.update({'figure.max_open_warning': 0})
+def read_opt_chain_data(globalconf,hoy,r_dict):
     ayer = (dt.datetime.strptime(hoy, '%Y%m%d') - dt.timedelta(1)).strftime('%Y%m%d')
     fecha = (hoy, ayer)
-
-    globalconf = config.GlobalConfig()
     log = logger("dq_report")
-
     symbols = r_dict['symbols'] # ['ES','SPY']
     expiries = r_dict['expiries'] # ['2017-06','2017-07','2017-08','2017-09','2017-10','2017-11','2017-12','2018-01']
     db_type = r_dict['db_type'] # "optchain_ib"
     path = globalconf.config['paths']['data_folder']
-    web_server = globalconf.config['paths']['nginx_static_folder']
-
     variables = r_dict['variables']
            #  ['lastOptPrice', 'bidImpliedVol',
            # 'modelTheta', 'askImpliedVol', 'bidPrice',
@@ -91,6 +87,7 @@ def prepare_dq_report_market(hoy,r_dict):
             if expiry in file:
                 final_list.append(file)
     log.info(("final_list = ", final_list))
+    return_df_dict = {}
     for repo in final_list:
         log.info("repo = " + repo)
         store = sqlite3.connect(path + repo)
@@ -113,34 +110,37 @@ def prepare_dq_report_market(hoy,r_dict):
                     df3 = df2.pivot(index=r_dict['current_datetime'], columns='optsymbol', values=variable)
                     df3.index = pd.to_datetime(df3.index, format=r_dict['format_index'])
                     df3 = df3.loc[:,:].apply(pd.to_numeric, errors='coerce')
-                    if not df3.empty:
-                        fig, ax = subplots()
-                        xticks = df3.index
-                        ax.set_xticklabels([x.strftime('%Y-%m-%d %H') for x in xticks])
-                        ax.set_xticks(np.arange(len(df3)), minor=False)
-                        t_plot = df3.plot(x=df3.index.to_series().dt.strftime('%Y-%m-%d %H'),
-                                             figsize=(16,12),
-                                             ax=ax,
-                                             grid=True,
-                                             # https://matplotlib.org/examples/color/colormaps_reference.html
-                                             colormap='gist_ncar',
-                                             # xticks=xticks.to_pydatetime(),
-                                             # xticks=[x for x in df3.index.to_series().dt.strftime('%Y-%m-%d %H')],
-                                             rot=45,
-                                             title=str((variable,
-                                                        right,
-                                                        symbol,
-                                                        repo))).legend(ncol=4,loc='center left',
-                                                                                             bbox_to_anchor=(1, 0.5))
-
-                        handles, labels = ax.get_legend_handles_labels()
-                        lgd = ax.legend(handles, labels, loc='center left',ncol=4, bbox_to_anchor=(1, 0.5))
-                        ax.grid('on')
-                        fig = t_plot.get_figure()
-                        fig.savefig( web_server + variable + symbol + right
-                                     + repo.replace(".db","").replace("optchain_ib_expiry","") + ".png",
-                                     bbox_extra_artists=(lgd,), bbox_inches='tight')
+                    title = str(variable+"_"+symbol+"_"+right+"_"+repo.replace(".db", "").replace("optchain_", ""))
+                    return_df_dict[title] = df3
+    return return_df_dict
 
 
+def save_image_plot_lines_multi_strike(globalconf,dict_df):
+    plt.rcParams.update({'figure.max_open_warning': 0})
+    web_server = globalconf.config['paths']['nginx_static_folder']
+    for title, df3 in dict_df.items():
+        if not df3.empty:
+            fig, ax = subplots()
+            xticks = df3.index
+            ax.set_xticklabels([x.strftime('%Y-%m-%d %H') for x in xticks])
+            ax.set_xticks(np.arange(len(df3)), minor=False)
+            t_plot = df3.plot(x=df3.index.to_series().dt.strftime('%Y-%m-%d %H'),
+                              figsize=(16, 12),
+                              ax=ax,
+                              grid=True,
+                              # https://matplotlib.org/examples/color/colormaps_reference.html
+                              colormap='gist_ncar',
+                              # xticks=xticks.to_pydatetime(),
+                              # xticks=[x for x in df3.index.to_series().dt.strftime('%Y-%m-%d %H')],
+                              rot=45,
+                              title=title).legend(ncol=4, loc='center left',
+                                                        bbox_to_anchor=(1, 0.5))
+
+            handles, labels = ax.get_legend_handles_labels()
+            lgd = ax.legend(handles, labels, loc='center left', ncol=4, bbox_to_anchor=(1, 0.5))
+            ax.grid('on')
+            fig = t_plot.get_figure()
+            fig.savefig(web_server + title + ".png",
+                        bbox_extra_artists=(lgd,), bbox_inches='tight')
 
 
