@@ -6,7 +6,7 @@ import os
 from matplotlib.pyplot import *
 import datetime as dt
 import matplotlib as plt
-
+import matplotlib.pyplot as pyplt
 report_dict_ib = {
     "symbols":['ES','SPY'],
     "expiries":['2017-06','2017-07','2017-08','2017-09','2017-10','2017-11','2017-12','2018-01'],
@@ -140,6 +140,6 @@ def save_image_plot_lines_multi_strike(globalconf,dict_df):
             fig.savefig(web_server + title + ".png",
                         bbox_extra_artists=(lgd,), bbox_inches='tight')
             # plt.close(plt.gcf()) ???
-            plt.close(fig)
+            pyplt.close(fig)
 
 
