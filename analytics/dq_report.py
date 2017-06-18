@@ -27,7 +27,8 @@ report_dict_ib = {
     'right':'right',
     'strike':'strike',
     'expiry':'expiry',
-    'format_index':"%Y%m%d%H%M%S"
+    'format_index':"%Y%m%d%H%M%S",
+    'valid_rights': ['P', 'C']
 }
 
 report_dict_yhoo = {
@@ -50,7 +51,8 @@ report_dict_yhoo = {
     'right':'Type',
     'strike':'strike',
     'expiry':'expiry',
-    'format_index':"%Y%m%d%H%M%S"
+    'format_index':"%Y%m%d%H%M%S",
+    'valid_rights':['put','call']
 }
 
 
@@ -98,7 +100,7 @@ def read_opt_chain_data(globalconf,hoy,r_dict):
             df1.sort_values(by=[ r_dict['current_datetime'] ], inplace=True)
             log.info("len(df1) = %d " % (len(df1)) )
             df1['optsymbol'] = df1[r_dict['right']].astype(str).str.cat(df1[r_dict['strike']].astype(str))
-            for right in ['C','P']:
+            for right in r_dict['valid_rights']:
                 df2 = df1[ (df1[r_dict['right']] == right) ]
                 for variable in variables:
                     df2 = df2.drop_duplicates(subset=[r_dict['current_datetime'], r_dict['symbol'],
