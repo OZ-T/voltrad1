@@ -10,6 +10,44 @@ from pandas.tseries.holiday import AbstractHolidayCalendar, Holiday, nearest_wor
     USMartinLutherKingJr, USPresidentsDay, GoodFriday, USMemorialDay, \
     USLaborDay, USThanksgivingDay
 
+
+def expiry_date(expiry_ident):
+    """
+    Translates an expiry date which could be "20150305" or "201505" into a datetime
+    :param expiry_ident: Expiry to be processed
+    :type days: str or datetime.datetime
+    :returns: datetime.datetime or datetime.date
+    >>> expiry_date('201503')
+    datetime.datetime(2015, 3, 1, 0, 0)
+    >>> expiry_date('20150305')
+    datetime.datetime(2015, 3, 5, 0, 0)
+    >>> expiry_date(datetime.datetime(2015,5,1))
+    datetime.datetime(2015, 5, 1, 0, 0)
+    """
+
+    if isinstance(expiry_ident, str):
+        # do string expiry calc
+        if len(expiry_ident) == 6:
+            expiry_date = datetime.datetime.strptime(expiry_ident, "%Y%m")
+        elif len(expiry_ident) == 8:
+            expiry_date = datetime.datetime.strptime(expiry_ident, "%Y%m%d")
+        else:
+            raise Exception("")
+
+    elif isinstance(expiry_ident, datetime.datetime) or isinstance(
+            expiry_ident, datetime.date):
+        expiry_date = expiry_ident
+
+    else:
+        raise Exception(
+            "expiry_date needs to be a string with 4 or 6 digits, ")
+
+    # 'Natural' form is datetime
+    return expiry_date
+
+
+
+
 class USTradingCalendar(AbstractHolidayCalendar):
     """
     !@brief This class is representing a US Calendar standard includes holidays.
