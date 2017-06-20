@@ -92,11 +92,7 @@ def write_acc_summary_to_sqllite(globalconf, log, dataframe):
 
 
 def print_10_days_acc_summary_and_current_positions():
-    """ 
-    print_10_days_acc_summary_and_current_positions
-    Read portfolio data from IB and print to console.
-    Summary information about account and portfolio for last 10 days is read from H5 and printed to console also.
-    """
+    """ Summary information about account and portfolio for last 10 days is read from db and printed to console also."""
     days = 10
     globalconf = config.GlobalConfig(level=logger.ERROR)
     log = logger("print_10_days_acc_summary_and_current_positions")
@@ -150,9 +146,7 @@ def print_10_days_acc_summary_and_current_positions():
     print(df1)
 
 def store_acc_summary_and_portfolio_from_ib_to_db():
-    """ Stores in HDF5 snapshot of portfolio data.
-    Intended for batch run, Summary information about account and portfolio.
-    """
+    """ Stores Snapshot Summary information about account and portfolio from IB into db """
     log=logger("store_acc_summary_and_portfolio_from_ib_to_h5")
     if dt.datetime.now().date() in utils.get_trading_close_holidays(dt.datetime.now().year):
         log.info("This is a US Calendar holiday. Ending process ... ")

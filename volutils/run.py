@@ -119,14 +119,19 @@ if __name__ == '__main__':
     if len(sys.argv)==1:
         print("Enter the name of a function located in %s" % config_file)
         all_config_data=list(get_all_config().keys())
-        print("Any one from:")
+        print("Options available:\n")
+        count = 0
         for x in all_config_data:
+            count = count + 1
             full_funcname, type_casting=get_config(x)
             funcsource, funcname = full_funcname.rsplit('.', 1)
             mod = importlib.import_module(funcsource)
             func = getattr(mod, funcname, None)
-            print(x +": "+ str(full_funcname))
-            print("\t" + str(inspect.getdoc(func)))
+            print("")
+            print(str(count) +". "+ x +": "+ str(full_funcname))
+            print(str(inspect.getdoc(func)))
+            print("")
+            print("")
         print("Example . p %s" % all_config_data[0])
         
         exit()
