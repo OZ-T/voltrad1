@@ -53,14 +53,13 @@ report_dict_yhoo = {
 }
 
 
-def run_dq_report_market(hoy):
+def run_dq_report_market(hoy,num):
     globalconf = config.GlobalConfig()
-    dict1 = read_opt_chain_data(globalconf,hoy,report_dict_ib)
+    dict1 = read_opt_chain_data(globalconf,hoy,num,report_dict_ib)
     save_image_plot_lines_multi_strike(globalconf, dict1)
 
-def read_opt_chain_data(globalconf,hoy,r_dict):
-    ayer = (dt.datetime.strptime(hoy, '%Y%m%d') - dt.timedelta(1)).strftime(r_dict['formato_hoy'])
-    fecha = (hoy, ayer)
+def read_opt_chain_data(globalconf,hoy,num,r_dict):
+    ayer = (dt.datetime.strptime(hoy, '%Y%m%d') - dt.timedelta(num)).strftime(r_dict['formato_hoy'])
     log = logger("dq_report")
     symbols = r_dict['symbols'] # ['ES','SPY']
     expiries = r_dict['expiries'] # ['2017-06','2017-07','2017-08','2017-09','2017-10','2017-11','2017-12','2018-01']
@@ -93,7 +92,7 @@ def read_opt_chain_data(globalconf,hoy,r_dict):
         for symbol in symbols:
             log.info("symbol = " + symbol)
             df1 = pd.read_sql_query("SELECT * FROM " + symbol
-                                    + " where " + r_dict['filtro_sqlite'] + " in " + str(fecha), store)
+                                    + " where " + r_dict['filtro_sqlite'] + " between '" + ayer + "' and '" + hoy +"'", store)
             df1.sort_values(by=[ r_dict['current_datetime'] ], inplace=True)
             log.info("len(df1) = %d " % (len(df1)) )
             df1['optsymbol'] = df1[r_dict['right']].astype(str).str.cat(df1[r_dict['strike']].astype(str))
@@ -113,7 +112,7 @@ def read_opt_chain_data(globalconf,hoy,r_dict):
                     return_df_dict[title] = df3
     return return_df_dict
 
-# TODO Filter the non standar expiries in the yahoo dataset
+# TODO Filter the non standard expiries in the yahoo dataset
 #  df2.loc[pd.to_datetime(df2[r_dict['expiry']],format=r_dict['format_expiry']) == pd.date_range('2017-7-1', '2017-7-31', freq='WOM-3FRI').to_pydatetime()[0]]
 #  df2.loc[pd.to_datetime(df2[r_dict['expiry']],format="%Y-%m-%d %H:%M:%S") == pd.date_range('2017-7-1', '2017-7-31', freq='WOM-3FRI').to_pydatetime()[0]]
 
@@ -167,4 +166,4 @@ if __name__ == "__main__":
 
     }
     globalconf = config.GlobalConfig()
-    dict1 = read_opt_chain_data(globalconf, "20170616", report_dict_yhoo2)
+    dict1 = read_opt_chain_data(globalconf, "20170616", 1,report_dict_yhoo2)

@@ -130,8 +130,6 @@ if __name__ == '__main__':
             print("")
             print(str(count) +". "+ x +": "+ str(full_funcname))
             print(str(inspect.getdoc(func)))
-            print("")
-            print("")
         print("Example . p %s" % all_config_data[0])
         
         exit()
