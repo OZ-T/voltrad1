@@ -3,8 +3,8 @@
 
 # In[50]:
 
-import run_analytics as ra
-from run_analytics import timefunc
+import analytics.run_analytics as ra
+from analytics.run_analytics import timefunc
 import pandas as pd
 import numpy as np
 import datetime as dt

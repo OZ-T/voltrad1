@@ -10,15 +10,16 @@ import sys
 from volsetup import config
 
 globalconf = config.GlobalConfig()
-config_file= globalconf.config['paths']['config_folder'] + "commandlist.yaml"
+config_file = globalconf.config['paths']['config_folder'] + "commandlist.yaml"
 
-TRACE=False
+TRACE = False
 
-REPL=True
-    
+REPL = True
+
+
 def get_all_config():
     """
-    Get all configuration     
+    Get all configuration
     """
     try:
         with open(config_file,'r') as f:
@@ -119,7 +120,12 @@ if __name__ == '__main__':
         print("Enter the name of a function located in %s" % config_file)
         all_config_data=list(get_all_config().keys())
         print("Any one from:")
-        print(all_config_data)
+        for x in all_config_data:
+            full_funcname, type_casting=get_config(x)
+            funcsource, funcname = full_funcname.rsplit('.', 1)
+            mod = importlib.import_module(funcsource)
+            func = getattr(mod, funcname, None)
+            print((x,str(inspect.getdoc(func))))
         print("Example . p %s" % all_config_data[0])
         
         exit()

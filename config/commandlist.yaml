@@ -82,8 +82,8 @@ cancelall:
 # TIC portfolio management
 ticrpt:
    pointer: analytics.analytics_methods.print_tic_report
-portfolio:
-   pointer: operations.vol_grab_accounting.print_portfolio_from_ib
+#portfolio:
+#   pointer: operations.vol_grab_accounting.print_portfolio_from_ib
 accdelta:
   pointer: analytics.analytics_methods.print_account_delta
 accsnap:
