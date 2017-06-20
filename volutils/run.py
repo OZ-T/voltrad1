@@ -125,7 +125,7 @@ if __name__ == '__main__':
             funcsource, funcname = full_funcname.rsplit('.', 1)
             mod = importlib.import_module(funcsource)
             func = getattr(mod, funcname, None)
-            print((x,str(inspect.getdoc(func))))
+            print((x,str(full_funcname),str(inspect.getdoc(func))))
         print("Example . p %s" % all_config_data[0])
         
         exit()
