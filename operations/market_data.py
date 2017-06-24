@@ -165,7 +165,10 @@ def store_underlying_ib_to_db():
                 for date, row in request.items():
                     temp1 = pd.DataFrame(row, index=[0])
                     temp1['symbol'] = str(row_req['symbol'])
-                    temp1['expiry'] = str(row_req['underl_expiry'])
+                    if int(row_req['underl_expiry']) > 0:
+                        temp1['expiry'] = symbol_expiry
+                    else:
+                        temp1['expiry'] = str(row_req['underl_expiry'])
                     temp1['type'] = str(row_req['underl_type'])
                     temp1['load_dttm'] = endDateTime
                     dataframe = dataframe.append(temp1.reset_index().drop('index', 1))
