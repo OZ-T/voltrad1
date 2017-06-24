@@ -127,7 +127,7 @@ def store_underlying_ib_to_db():
         log.info("Does this symbol has a table in sqlite? " + str(tbl_exist))
 
         if tbl_exist:
-            if long(row_req['underl_expiry']) > 0:
+            if int(row_req['underl_expiry']) > 0:
                 sql = "SELECT MAX(DATE) as max1 FROM " + str(row_req['symbol']) +" WHERE EXPIRY = '" + symbol_expiry + "' ;"
             else:
                 sql = "SELECT MAX(DATE) as max1 FROM " + str(row_req['symbol']) + " ;"
