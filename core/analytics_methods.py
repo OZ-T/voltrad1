@@ -15,7 +15,7 @@ from volsetup.logger import logger
 from swigibpy import Contract as IBcontract
 from swigibpy import Order as IBOrder
 import time
-from analytics import run_analytics as ra
+from core import run_analytics as ra
 import json
 from numpy.lib.stride_tricks import as_strided
 from numpy import log, sqrt
@@ -86,10 +86,8 @@ def windowed_view(x, window_size):
 
 def rolling_max_dd(x, window_size, min_periods=1):
     """Compute the rolling maximum drawdown of `x`.
-
     `x` must be a 1d numpy array.
     `min_periods` should satisfy `1 <= min_periods <= window_size`.
-
     Returns an 1d array with length `len(x) - min_periods + 1`.
     """
     if min_periods < window_size:
