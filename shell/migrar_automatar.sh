@@ -1,3 +1,5 @@
+# this was used durung migration to sqlite due to memory constrqints in VPS
+
 cd /mnt/volume-fra1-01/voltrad1
 p migrate_h5_optchain_yhoo_sqlite "QQQ"
 p migrate_h5_optchain_yhoo_sqlite "USO"

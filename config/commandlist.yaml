@@ -1,24 +1,20 @@
-# Operations
+# Used in crontab for automated data gathering
 batch_acc_to_db:
   pointer:  operations.accounting.store_acc_summary_and_portfolio_from_ib_to_db
-print_acc_port:
-  pointer:  operations.accounting.print_10_days_acc_summary_and_current_positions
 batch_orders_to_db:
   pointer:  operations.orders.store_orders_from_ib_to_db
-migrate_h5_orders_sqlite:
-  pointer:  operations.orders.migrate_h5_to_sqllite_orders
-migrate_h5_port_sqlite:
-  pointer:  operations.accounting.migrate_h5_to_sqllite_portfolio
-migrate_h5_acc_sqlite:
-  pointer:  operations.accounting.migrate_h5_to_sqllite_acc_summary
-
-# Market data
-migrate_h5_optchain_ib_sqlite:
-  pointer:  operations.market_data.migrate_h5_to_sqllite_optchain_ib
-migrate_h5_optchain_yhoo_sqlite:
-  pointer:  operations.market_data.migrate_h5_to_sqllite_optchain_yahoo
 batch_optchain_yhoo_to_db:
   pointer:  operations.market_data.store_optchain_yahoo_to_db
+
+# H5 legacy
+migrate_h5:
+  pointer:  operations.h5_legacy_methods.migrate_h5
+
+
+# Operations
+print_acc_port:
+  pointer:  operations.accounting.print_10_days_acc_summary_and_current_positions
+
 
 # Web reporting generation
 run_dq_report_market:
