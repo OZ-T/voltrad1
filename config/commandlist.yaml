@@ -5,6 +5,8 @@ batch_orders_to_db:
   pointer:  operations.orders.store_orders_from_ib_to_db
 batch_optchain_yhoo_to_db:
   pointer:  operations.market_data.store_optchain_yahoo_to_db
+batch_underl_ib_to_db:
+  pointer:  operations.market_data.store_underlying_ib_to_db
 
 # H5 legacy
 migrate_h5:
