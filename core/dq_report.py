@@ -66,17 +66,6 @@ def read_opt_chain_data(globalconf,hoy,num,r_dict):
     db_type = r_dict['db_type'] # "optchain_ib"
     path = globalconf.config['paths']['data_folder']
     variables = r_dict['variables']
-           #  ['lastOptPrice', 'bidImpliedVol',
-           # 'modelTheta', 'askImpliedVol', 'bidPrice',
-           # 'modelDelta', 'bidGamma', 'modelOptPrice', 'closePrice', 'highPrice',
-           # 'askSize', 'CallOI', 'askOptPrice', 'Volume', 'modelImpliedVol',
-           # 'lastTheta', 'askUndPrice', 'bidTheta', 'modelUndPrice',
-           # 'askGamma', 'bidDelta', 'askVega', 'bidVega', 'modelVega',
-           # 'lastUndPrice', 'bidOptPrice',
-           # 'askPrice', 'bidSize', 'lastDelta', 'askDelta',
-           #  'askTheta', 'lowPrice',
-           # 'modelGamma', 'lastImpliedVol', 'lastGamma', 'PutOI', 'bidUndPrice',
-           # 'lastVega', 'lastSize', 'lastPrice' ]
     files = [x[2] for x in os.walk(path) if (x[2]) ][0]
     filtered_files = [x for x in files if x.startswith(db_type)]
     final_list = []

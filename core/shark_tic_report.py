@@ -3,8 +3,8 @@
 
 # In[50]:
 
-import analytics.run_analytics as ra
-from analytics.run_analytics import timefunc
+import core.run_analytics as ra
+from core.run_analytics import timefunc
 import pandas as pd
 import numpy as np
 import datetime as dt
@@ -44,7 +44,7 @@ datos_toxls=pd.DataFrame()
 #
 @timefunc
 def run_shark_analytics(i_symbol, i_date, i_expiry, i_secType, accountid, scenarioMode,
-                        simulName, appendh5, appendsql, toxls, log2, globalconf2, ):
+                        simulName, appendh5, appendpgsql, toxls, log2, globalconf2, ):
     log2.info(" ------------- Running [%s] [%s] for valuation date: [%s] ------------- " %
               ( str(i_symbol), str(i_expiry), str(i_date)))
 
@@ -670,7 +670,7 @@ def run_shark_analytics(i_symbol, i_date, i_expiry, i_secType, accountid, scenar
                                    'DToperaciones': 500})
         store.close()
 
-    if appendsql == 1:
+    if appendpgsql == 1:
         con, meta = globalconf2.connect_sqldb()
         row_datos.to_sql(name=str(SHARK_TIC_TABLE_PREFFIX+i_symbol+i_expiry), con=con, if_exists='append', chunksize=50, index=True)
 
@@ -684,7 +684,7 @@ def get_ivol_series(date_ini,date_end):
 
 @timefunc
 def get_strategy_start_date(con,meta,symbol,expiry,accountid,scenarioMode,simulName,timedelta1,
-                            appendh5,appendsql,log,globalconf):
+                            appendh5,appendpgsql,log,globalconf):
     if appendh5 == 1:
         # 1.- Comprobar primero si hay ya registros en la ABT para la estrategia
         store_abt = globalconf.open_ib_abt_strategy_tic(scenarioMode)
@@ -705,7 +705,7 @@ def get_strategy_start_date(con,meta,symbol,expiry,accountid,scenarioMode,simulN
             log.info("There are no rows for the TIC strategy in the ABT H5")
             store_abt.close()
 
-    elif appendsql == 1:
+    elif appendpgsql == 1:
         table1 = str(SHARK_TIC_TABLE_PREFFIX+symbol+expiry)
         # 1.- Comprobar primero si hay ya registros en la ABT para la estrategia
         if table1 in [t.name for t in meta.sorted_tables]:
@@ -731,15 +731,15 @@ def get_strategy_start_date(con,meta,symbol,expiry,accountid,scenarioMode,simulN
 
 @timefunc
 def run_analytics(symbol, expiry, secType,accountid,valuation_dt,scenarioMode,simulName,
-                  appendh5,appendsql,toxls,timedelta1,log,globalconf):
+                  appendh5,appendpgsql,toxls,timedelta1,log,globalconf):
     """
-        Run analytics main method.
+        Run core main method.
     :param symbol:
     :param expiry:
     :param secType:
     :param accountid:
     :param valuation_dt:
-    :param scenarioMode: If the valuation analytics is run against real portfolio data (paper or real account)
+    :param scenarioMode: If the valuation core is run against real portfolio data (paper or real account)
                         or against simulated orders & portfolio. In the later case the portfolio and orders are
                         read not from the H5 db but from customized excel templates
                         The real historical market data is always used in both cases though
@@ -748,12 +748,12 @@ def run_analytics(symbol, expiry, secType,accountid,valuation_dt,scenarioMode,si
     log.info("---------------------------------------------------------------------------------------------")
     log.info("Run_analytics symbol=%s expiry=%s valuation_dt=%s" % (symbol, expiry, str(valuation_dt)) )
     con , meta = None , None
-    if appendsql == 1:
+    if appendpgsql == 1:
         log.info("connecting to sql db... ")
         con , meta = globalconf.connect_sqldb()
 
     start = get_strategy_start_date(con,meta,symbol, expiry,accountid,scenarioMode,simulName,
-                                    timedelta1,appendh5,appendsql,log,globalconf)
+                                    timedelta1,appendh5,appendpgsql,log,globalconf)
     log.info("Starting date to use: [%s] " % (str(start)) )
     expiry_dt = dt.datetime.strptime(expiry, '%Y%m%d')
     end = min(valuation_dt,expiry_dt)
@@ -768,7 +768,7 @@ def run_analytics(symbol, expiry, secType,accountid,valuation_dt,scenarioMode,si
             diff += 1
             run_shark_analytics(i_symbol=symbol, i_date=d, i_expiry=expiry, i_secType=secType,
                                 accountid=accountid, scenarioMode=scenarioMode,
-                                simulName=simulName, appendh5=appendh5, appendsql=appendsql,
+                                simulName=simulName, appendh5=appendh5, appendpgsql=appendpgsql,
                                 toxls=toxls, log2=log, globalconf2=globalconf)
         d += delta
 
@@ -786,7 +786,7 @@ def run_report():
         log.info("underl=[%s] [%s] [%s] [%s] [%s] [%d]"
                  % (row['symbol'], row['type'], str(row['Expiry']), row['Exchange'], row['Currency'], int(index)))
         run_analytics(symbol=row['symbol'], expiry=str(row['Expiry']), secType=row['type'], accountid=accountid,
-                      valuation_dt=fecha_valoracion, scenarioMode="N", simulName="NA", appendh5=1, appendsql=0, toxls=0,
+                      valuation_dt=fecha_valoracion, scenarioMode="N", simulName="NA", appendh5=0, appendpgsql=0, toxls=0,
                       timedelta1=1,log=log,globalconf=globalconf)
 
 
@@ -802,11 +802,11 @@ if __name__=="__main__":
     scenarioMode = "N"
     simulName = "spy0317dls"
     appendh5 = 1
-    appendsql = 0
+    appendpgsql = 0
     toxls = 0
     timedelta1 = 1
     # Parameters END
     #################################################################################################################
     run_analytics(symbol=symbol, expiry=expiry, secType=secType, accountid=accountid,
                   valuation_dt=fecha_valoracion,scenarioMode=scenarioMode,simulName=simulName,appendh5=appendh5,
-                  appendsql=appendsql,toxls=toxls,timedelta1=timedelta1,log=log,globalconf=globalconf)
+                  appendpgsql=appendpgsql,toxls=toxls,timedelta1=timedelta1,log=log,globalconf=globalconf)

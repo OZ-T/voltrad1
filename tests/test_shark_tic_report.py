@@ -1,6 +1,6 @@
 # coding: utf-8
 
-from analytics import shark_tic_report as vd
+from core import shark_tic_report as vd
 import datetime as dt
 from volsetup import config
 from volsetup.logger import logger

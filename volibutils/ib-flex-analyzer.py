@@ -2,7 +2,26 @@ import lxml.objectify as lxml_objectify
 
 import numpy as np
 import pandas as pd
+import glob
+import os
 
+#
+#Requires: pandas, lxml
+#
+#Steps to better understanding your Interactive Brokers account:
+#
+#1. Create Flex requests that retrieve every available field
+#
+#2. Save returned Flex XML reports for contiguous non-overlapping periods of
+#   time; the end date must be the last business day of a month otherwise some
+#   of the flex fields like `MTDYTDPerformanceSummary` will not be present. I
+#   recommend that you use the last business day of the year for historical
+#   data. At time of this writing I was able to create annual reports for 2011
+#   through 2014, and 2015 year-to-date.
+#
+#3. Use the FlexStatement class to parse individual reports, or modify
+#   `analyze-comprehensive.py` to your suiting to roll up multiple years of P&L.
+#
 
 class FlexStatement(object):
 
@@ -147,3 +166,22 @@ def clean_in_out(cash_trans):
     return pd.Series([inout.amount[inout.amount > 0].sum(),
                       inout.amount[inout.amount < 0].sum()],
                      index=['Deposit', 'Withdrawal'])
+
+
+
+
+if __name__ == "__main__":
+	paths = glob.glob(os.path.expanduser('~/Dropbox/ib_flex_reports/*.xml'))
+
+	statements = [FlexStatement(path) for path in paths]
+
+	mtm = rollup_statements(statements)
+	realized = rollup_statements(statements, 'realized')
+
+
+	fees = statements[0].fees
+	for _s in statements[1:]:
+		fees = fees.add(_s.fees, fill_value=0)
+
+	totals = mtm.sum(0).add(fees, fill_value=0)
+	totals.Total += fees.sum()

@@ -1,5 +1,5 @@
 from flask import Flask, request, render_template
-from analytics import run_analytics as ra
+from core import run_analytics as ra
 from flask_restful import reqparse, abort, Api, Resource
 import os,sys
 import pandas as pd
@@ -91,7 +91,7 @@ api.add_resource(H5Table, '/tic/h5table/<name>/<int:start>/<int:end>/<node>') # 
 #Gekko index API service
 api.add_resource(H5Gekko, '/tic/gekko')
 
-@app.route("/analytics")
+@app.route("/core")
 def analytics():
 	dataframe=ra.extrae_account_snapshot_new(year=2016,month=10,day=11,accountid="???")
 	return dataframe.to_html()#

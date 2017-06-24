@@ -9,7 +9,7 @@ import time
 import pandas as pd
 import numpy as np
 # import pandas_datareader.data as web
-from analytics.opt_pricing_methods import bsm_mcs_euro
+from core.opt_pricing_methods import bsm_mcs_euro
 from volsetup.logger import logger
 
 globalconf = config.GlobalConfig()
@@ -671,7 +671,7 @@ def run_opt_pricing():
                                                            float(row['modelImpliedVol']),100000,row['right']) , axis=1)
 
     df.to_excel(
-        datetime.now().strftime('C:/Users/David/Dropbox/proyectos/Python/voltrad1/db/analytics%Y_%m_%d_%H_%M_%S.xlsx'),
+        datetime.now().strftime('C:/Users/David/Dropbox/proyectos/Python/voltrad1/db/core%Y_%m_%d_%H_%M_%S.xlsx'),
         sheet_name='chains')
 
 

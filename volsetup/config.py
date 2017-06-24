@@ -153,7 +153,7 @@ class GlobalConfig(object):
     def open_ib_abt_strategy_tic(self,scenarioMode):
         """
         open_ib_abt_strategy_tic
-        :param scenarioMode: If the valuation analytics is run against real portfolio data (paper or real account)
+        :param scenarioMode: If the valuation core is run against real portfolio data (paper or real account)
                                 or against simulated orders & portfolio. In the later case the portfolio and orders are
                                 read not from the H5 db but from customized excel templates
                                 The real historical market data is always used in both cases though
