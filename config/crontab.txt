@@ -30,6 +30,8 @@ DATE=date +%d-%m-%y
 # download historical data for underlying contracts
 10 14 * * 1-5 /home/david/shell/run_healthcheck_ibg.sh >> /var/log/voltrad1/ib_healthcheck_ibg_$($DATE).log 2>&1 &
 15 14 * * 1-5 nohup /home/david/shell/p batch_underl_ib_to_db >> /var/log/voltrad1/ib_underlying_$($DATE).log 2>&1 &
+45 14 * * 1-5 nohup /home/david/shell/p run_volest_report >> /var/log/voltrad1/ib_volest_rpt_$($DATE).log 2>&1 &
+
 
 # cron job every weekday during RTH (regular trading hours US)
 1 15-23 * * 1-5 /home/david/shell/run_healthcheck_ibg.sh >> /var/log/voltrad1/ib_healthcheck_ibg_$($DATE).log 2>&1 &
