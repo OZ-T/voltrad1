@@ -653,9 +653,8 @@ class VolatilityEstimator(object):
         """
 
         y = self._get_estimator(window)
-
         bench_vol = VolatilityEstimator(globalconf=self._globalconf, log=self._log, db_type=self._db_type, symbol=bench,
-                                         expiry=self._expiry,
+                                         expiry=None,
                                          last_date=self._last_date, num_days_back=self._num_days_back, resample=self._resample,
                                          estimator=self._estimator, clean=self._clean)
 
@@ -738,7 +737,7 @@ class VolatilityEstimator(object):
         y = self._get_estimator(window)
 
         bench_vol = VolatilityEstimator(globalconf=self._globalconf, log=self._log, db_type=self._db_type, symbol=bench,
-                                         expiry=self._expiry,
+                                         expiry=None,
                                          last_date=self._last_date, num_days_back=self._num_days_back, resample=self._resample,
                                          estimator=self._estimator, clean=self._clean)
 
@@ -795,7 +794,7 @@ class VolatilityEstimator(object):
         y = self._get_estimator(window)
 
         bench_vol = VolatilityEstimator(globalconf=self._globalconf, log=self._log, db_type=self._db_type, symbol=bench,
-                                         expiry=self._expiry,
+                                         expiry=None,
                                          last_date=self._last_date, num_days_back=self._num_days_back, resample=self._resample,
                                          estimator=self._estimator, clean=self._clean)
 
@@ -807,7 +806,7 @@ class VolatilityEstimator(object):
         return results.summary()
 
     def term_sheet_to_pdf(self, window=30, windows=[30, 60, 90, 120], quantiles=[0.25, 0.75], bins=100, normed=True,
-                   bench='SPY', open=False):
+                   bench='SPY'):
 
         cones_fig, cones_plt = self.cones(windows=windows, quantiles=quantiles)
         rolling_quantiles_fig, rolling_quantiles_plt = self.rolling_quantiles(window=window, quantiles=quantiles)
@@ -840,6 +839,8 @@ class VolatilityEstimator(object):
         print (filename + ' output complete')
 
 
+
+
     def term_sheet_to_html(self, window=30, windows=[30, 60, 90, 120], quantiles=[0.25, 0.75], bins=100, normed=True,
                    bench='SPY', open=False):
         cones_fig, cones_plt = self.cones(windows=windows, quantiles=quantiles)
@@ -869,19 +870,27 @@ class VolatilityEstimator(object):
         #plt.axis('off')
         #mpld3.save_html(fig, fn)
 
+    def define_fig(self,name):
+        web_server = self._globalconf.config['paths']['nginx_static_folder']
+        filename = self._symbol.upper() + '_'+ name +'.png'
+        fn = os.path.abspath(os.path.join(web_server,"volest", filename))
+        return fn
 
-    def term_sheet_to_png(self, window=30, windows=[30, 60, 90, 120], quantiles=[0.25, 0.75], bins=100, normed=True,
-                   bench='SPY', open=False):
+    def term_sheet_to_png(self, window=30, windows=[30, 60, 90, 120], quantiles=[0.25, 0.75], bins=100, normed=True):
 
         cones_fig, cones_plt = self.cones(windows=windows, quantiles=quantiles)
         rolling_quantiles_fig, rolling_quantiles_plt = self.rolling_quantiles(window=window, quantiles=quantiles)
         rolling_extremes_fig, rolling_extremes_plt = self.rolling_extremes(window=window)
         rolling_descriptives_fig, rolling_descriptives_plt = self.rolling_descriptives(window=window)
         histogram_fig, histogram_plt = self.histogram(window=window, bins=bins, normed=normed)
-        benchmark_compare_fig, benchmark_compare_plt = self.benchmark_compare(window=window, bench=bench)
-        benchmark_corr_fig, benchmark_corr_plt = self.benchmark_correlation(window=window, bench=bench)
-        benchmark_regression = self.benchmark_regression(window=window, bench=bench)
 
-        web_server = ""
-        title = "cones"
-        cones_fig.savefig(web_server + title + ".png", bbox_inches='tight')
+        cones_fig.savefig(self.define_fig("cones"), bbox_inches='tight')
+        rolling_quantiles_fig.savefig(self.define_fig("rolling_quantiles"), bbox_inches='tight')
+        rolling_extremes_fig.savefig(self.define_fig("rolling_extremes"), bbox_inches='tight')
+        rolling_descriptives_fig.savefig(self.define_fig("rolling_desc"), bbox_inches='tight')
+        histogram_fig.savefig(self.define_fig("histogram"), bbox_inches='tight')
+        pyplt.close(cones_fig)
+        pyplt.close(rolling_quantiles_fig)
+        pyplt.close(rolling_extremes_fig)
+        pyplt.close(rolling_descriptives_fig)
+        pyplt.close(histogram_fig)

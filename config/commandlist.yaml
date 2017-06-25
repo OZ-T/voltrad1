@@ -7,20 +7,18 @@ batch_optchain_yhoo_to_db:
   pointer:  operations.market_data.store_optchain_yahoo_to_db
 batch_underl_ib_to_db:
   pointer:  operations.market_data.store_underlying_ib_to_db
-
+# Web reporting generation
+run_dq_report_market:
+  pointer: core.reporting.run_dq_report_market
+run_volest_report:
+  pointer: core.reporting.run_volest_report
 # H5 legacy
 migrate_h5:
   pointer:  operations.h5_legacy_methods.migrate_h5
-
-
 # Operations
 print_acc_port:
   pointer:  operations.accounting.print_10_days_acc_summary_and_current_positions
 
-
-# Web reporting generation
-run_dq_report_market:
-  pointer: core.dq_report.run_dq_report_market
 
 # trend and risk indicators
 coppock:
@@ -49,8 +47,6 @@ hist_opt:
    pointer: core.analytics_methods.print_historical_option
 ecocal:
    pointer: core.analytics_methods.print_ecalendar
-simul_tic:
-   pointer: core.analytics_methods.print_TBD
 
 # Order commands
 fill1opt:
@@ -76,7 +72,6 @@ cancel:
       orderId: int
 cancelall:
    pointer: volibutils.orders_methods.cancel_all_open_orders
-
 # TIC portfolio management
 ticrpt:
    pointer: core.analytics_methods.print_tic_report
@@ -86,36 +81,11 @@ accdelta:
   pointer: core.analytics_methods.print_account_delta
 accsnap:
   pointer: core.analytics_methods.print_account_snapshot
-
 # general market analysis
 hist_under:
    pointer: core.analytics_methods.print_historical_underl
-
 # Batch commands & anciliary commands
 batch_tic_rpt:
    pointer: core.shark_tic_report.run_report
-fix_ecalendar:
-  pointer: volsetup.fix_h5_economic_calendar.run
-fix_histo_optchain:
-  pointer: volsetup.fix_h5_historical_opt.run
-
-batch_hist_underlying:
-  pointer:  volquotes.historical_data_loader.run_reader
 batch_hist_options:
   pointer:  volquotes.historical_opt_chains_loader.run_reader
-
-
-
-# DONT USE
-fix_acc_h5:
-  pointer:  operations.accounting.consolidate_anciliary_h5_account
-fix_port_h5:
-  pointer:  operations.accounting.consolidate_anciliary_h5_portfolio
-fix_orders_h5:
-  pointer:  operations.orders.consolidate_anciliary_h5_orders
-fix_optchain:
-  pointer: volsetup.fix_h5_optchain_ib.run
-fix_optchain_yhoo:
-  pointer: volsetup.fix_h5_yahoo_optchain.run
-
-

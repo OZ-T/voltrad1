@@ -100,6 +100,7 @@ def read_market_data_from_sqllite(globalconf, log, db_type,symbol,expiry,last_da
         conversion = {'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last', 'volume': 'sum'}
         dataframe = dataframe.resample(resample, how=conversion).dropna()
         dataframe['return'] = (dataframe['close'] / dataframe['close'].shift(1)) - 1
+    log.info(("Resampled size ", len(dataframe)))
     return dataframe
 
 def write_market_data_to_sqllite(globalconf, log, dataframe, db_type):

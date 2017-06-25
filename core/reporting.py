@@ -136,6 +136,22 @@ def save_image_plot_lines_multi_strike(globalconf,dict_df):
             pyplt.close(fig)
 
 
+import core.vol_estimators as volest
+
+def run_volest_report():
+    log = logger("Volest report ...")
+    globalconf = config.GlobalConfig()
+    today =  dt.date.today()
+    vol = volest.VolatilityEstimator(globalconf=globalconf,log=log,db_type="underl_ib_hist",symbol="SPY",expiry=None,
+                                     last_date=today.strftime('%Y%m%d'), num_days_back=200, resample="1D",estimator="GarmanKlass",clean=True)
+    window=30
+    windows=[30, 60, 90, 120]
+    quantiles=[0.25, 0.75]
+    bins=100
+    normed=True
+    vol.term_sheet_to_png(window, windows, quantiles, bins, normed)
+
+
 if __name__ == "__main__":
     report_dict_yhoo2 = {
         "symbols": ['SPY'],

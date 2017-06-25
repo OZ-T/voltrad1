@@ -2,7 +2,7 @@ from operations.market_data import get_market_db_file
 import volsetup.config as config
 from volsetup.logger import logger
 from operations.market_data import read_market_data_from_sqllite
-
+import datetime as dt
 import unittest
 
 # http://python-guide-pt-br.readthedocs.io/en/latest/writing/tests/
@@ -27,8 +27,9 @@ import core.vol_estimators as volest
 if __name__ == "__main__":
     log = logger("Testing ...")
     globalconf = config.GlobalConfig()
-    vol = volest.VolatilityEstimator(globalconf=globalconf,log=log,db_type="underl_ib_hist",symbol="USO",expiry="",
-                                     last_date="20170623", num_days_back=200, resample="1D",estimator="GarmanKlass",clean=True)
+    today =  dt.date.today()
+    vol = volest.VolatilityEstimator(globalconf=globalconf,log=log,db_type="underl_ib_hist",symbol="AAPL",expiry=None,
+                                     last_date=today.strftime('%Y%m%d'), num_days_back=200, resample="1D",estimator="GarmanKlass",clean=True)
 
     #fig, plt = vol.cones(windows=[30, 60, 90, 120], quantiles=[0.25, 0.75])
     #plt.show()
@@ -40,6 +41,6 @@ if __name__ == "__main__":
     normed=True
     bench='SPY'
     # creates a pdf term sheet with all metrics
-    # vol.term_sheet_to_pdf(window, windows, quantiles, bins, normed, bench)
+    vol.term_sheet_to_pdf(window, windows, quantiles, bins, normed, bench)
     # vol.term_sheet_to_png(window, windows, quantiles, bins, normed, bench)
-    vol.term_sheet_to_html(window, windows, quantiles, bins, normed, bench)
+    # vol.term_sheet_to_html(window, windows, quantiles, bins, normed, bench)
