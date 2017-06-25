@@ -36,13 +36,37 @@ def get_partition_names(db_type):
         which will be used for the name of the tables inside the sqlite DB
     """
     if db_type == "optchain_ib":
-        return1 = ['expiry',"%Y%m%d","symbol","current_datetime"]
+        return1 = {'expiry':'expiry',
+                   "format_expiry":"%Y%m%d",
+                   "symbol":"symbol",
+                   "sorting_var":"current_datetime",
+                   "filtro_sqlite": "substr(current_datetime,1,8)",
+                   'formato_filtro': '%Y%m%d'
+                   }
     elif db_type == "optchain_yhoo":
-        return1 = ["Expiry_txt","%Y-%m-%d  %H:%M:%S","Underlying","Quote_Time_txt"]
+        return1 = {'expiry':"Expiry_txt",
+                   "format_expiry":"%Y-%m-%d  %H:%M:%S",
+                   "symbol":"Underlying",
+                   "sorting_var":"Quote_Time_txt",
+                   "filtro_sqlite": "substr(Quote_time,1,10)",
+                   'formato_filtro': '%Y-%m-%d'
+                   }
     elif db_type == "optchain_ib_hist":
-        return1 = []
+        return1 = {'expiry':"",
+                   "format_expiry":"",
+                   "symbol":"",
+                   "sorting_var":"",
+                   "filtro_sqlite": "",
+                   'formato_filtro': ''
+                   }
     elif db_type == "underl_ib_hist":
-        return1 = ["expiry","NO_EXPIRY","symbol","load_dttm"]
+        return1 = {'expiry':"expiry",
+                   "format_expiry":"NO_EXPIRY",
+                   "symbol":"symbol",
+                   "sorting_var":"date",
+                   "filtro_sqlite": "substr(date,1,8)",
+                   'formato_filtro': '%Y%m%d'
+                   }
 
     return return1
 
@@ -52,6 +76,32 @@ def formated_string_for_file(expiry, expiry_in_format):
     """
     return dt.datetime.strptime(expiry, expiry_in_format).strftime('%Y-%m')
 
+def read_market_data_from_sqllite(globalconf, log, db_type,symbol,expiry,last_date,num_days_back,resample):
+    path = globalconf.config['paths']['data_folder']
+    log.info("Reading market data from sqllite ... ")
+    criteria = get_partition_names(db_type)
+    first_date = (dt.datetime.strptime(last_date, '%Y%m%d') - dt.timedelta(num_days_back)).strftime(
+        criteria['formato_filtro'])
+    db_file = get_market_db_file(globalconf, db_type, "")
+    store = sqlite3.connect(path + db_file)
+    sql = "select * from " + symbol + " where 1=1 "
+    if last_date:
+        sql = sql + " and " + criteria['filtro_sqlite'] + " between '" + first_date + "' and '" + last_date +"'"
+    if expiry:
+        sql = sql + " and expiry = '" +str("/"+symbol+"/"+expiry)+ "'"
+
+    dataframe = pd.read_sql_query(sql, store)
+    dataframe = dataframe.drop_duplicates(subset=[criteria["sorting_var"], criteria["expiry"]], keep='last')
+    dataframe = dataframe.sort_values(by=[criteria["sorting_var"]])
+
+    dataframe[criteria["sorting_var"]] = pd.to_datetime(dataframe[criteria["sorting_var"]])
+    dataframe.index = dataframe[criteria["sorting_var"]]
+    if resample:
+        conversion = {'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last', 'volume': 'sum'}
+        dataframe = dataframe.resample(resample, how=conversion).dropna()
+        dataframe['return'] = (dataframe['close'] / dataframe['close'].shift(1)) - 1
+    return dataframe
+
 def write_market_data_to_sqllite(globalconf, log, dataframe, db_type):
     """
     Write to sqllite the market data snapshot passed as argument
@@ -59,31 +109,31 @@ def write_market_data_to_sqllite(globalconf, log, dataframe, db_type):
     log.info("Appending market data to sqllite ... ")
     path = globalconf.config['paths']['data_folder']
     criteria = get_partition_names(db_type)
-    expiries = dataframe[criteria[0]].unique().tolist()
+    expiries = dataframe[criteria["expiry"]].unique().tolist()
     log.info(("These are the expiries included in the data to be loaded: ", expiries))
     # expiries_file = map(lambda i: formated_string_for_file(i,criteria[1]) , expiries)
     # remove empty string expiries (bug in H5 legacy files)
     expiries = [x for x in expiries if x]
 
     for expiry in expiries:
-        if criteria[1] == "NO_EXPIRY":
+        if criteria["format_expiry"] == "NO_EXPIRY":
             expiry_file = ""
         else:
-            expiry_file = formated_string_for_file(expiry, criteria[1])
+            expiry_file = formated_string_for_file(expiry, criteria["format_expiry"])
         db_file = get_market_db_file(globalconf,db_type,expiry_file)
         store = sqlite3.connect(path + db_file)
-        symbols = dataframe[criteria[2]].unique().tolist()
+        symbols = dataframe[criteria["symbol"]].unique().tolist()
         log.info(("For expiry: ",expiry," these are the symbols included in the data to be loaded:  ", symbols))
         # remove empty string symbols (bug in H5 legacy files)
         symbols = [x for x in symbols if x]
         for name in symbols:
             name = name.replace("^", "")
-            joe = dataframe.loc[ (dataframe[criteria[2]] == name) & (dataframe[criteria[0]] == expiry) ]
+            joe = dataframe.loc[ (dataframe[criteria["symbol"]] == name) & (dataframe[criteria["expiry"]] == expiry) ]
             #joe.sort(columns=['current_datetime'], inplace=True)  DEPRECATED
             # remove this field which is not to be used
             if 'Halted' in joe.columns:
                 joe = joe.drop(['Halted'], axis=1)
-            joe = joe.sort_values(by=[criteria[3]])
+            joe = joe.sort_values(by=[criteria["sorting_var"]])
             if 'Expiry' in joe.columns:
                 joe = joe.drop(['Expiry'], axis=1)
             joe.to_sql(name, store, if_exists='append')

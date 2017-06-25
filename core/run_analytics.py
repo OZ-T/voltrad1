@@ -675,33 +675,6 @@ def run_opt_pricing():
         sheet_name='chains')
 
 
-def pruebas_lectura_hdf5():
-    #tic_portfolio_underl(symbol='ES',expiry='20160819')
-
-    store=globalconf.open_ib_h5_store()
-    #print store.keys()
-    #print ("/2016/Jul/17" in store)
-    dataframe = pd.DataFrame()
-    for hora in store.get_node("/2016/Jul/20"):
-        for minuto in store.get_node(hora._v_pathname):
-            df1=store.select(minuto._v_pathname)
-            df1['load_dttm']=minuto._v_pathname
-            dataframe = dataframe.append(df1)
-        #dataframe = dataframe.append( pd.concat([store.select(minuto._v_pathname) for minuto in store.get_node(hora._v_pathname)])  )
-
-    dataframe.to_excel(
-    datetime.now().strftime('C:/Users/David/Dropbox/proyectos/Python/voltrad1/db/shark%Y_%m_%d_%H_%M_%S.xlsx'),
-        sheet_name='shark')
-
-    #print store.select(node._v_pathname)
-    #df = pd.concat([store.select(node._v_pathname) for node in store.get_node('')])
-    store.close()
-
-    #store = pd.HDFStore('test.h5')
-    #store.append('df/foo1',pd.DataFrame(np.random.randn(10,2)))
-    #store.append('df/foo2',pd.DataFrame(np.random.randn(10,2)))
-    #pd.concat([ store.select(node._v_pathname) for node in store.get_node('df') ])
-
 def testing_operaciones_bug():
     oper_series1=pd.DatetimeIndex(['2016-07-25 21:07:26+02:00','2016-08-15 19:08:26+02:00', '2016-08-15 19:19:08+02:00',
                '2016-08-15 20:32:21+02:00'])
