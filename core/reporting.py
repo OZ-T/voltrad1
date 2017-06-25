@@ -130,8 +130,9 @@ def save_image_plot_lines_multi_strike(globalconf,dict_df):
             lgd = ax.legend(handles, labels, loc='center left', ncol=4, bbox_to_anchor=(1, 0.5))
             ax.grid('on')
             fig = t_plot.get_figure()
-            fig.savefig(web_server + title + ".png",
-                        bbox_extra_artists=(lgd,), bbox_inches='tight')
+            filename = title + ".png"
+            fn = os.path.abspath(os.path.join(web_server, "voltrad1", filename))
+            fig.savefig(fn , bbox_extra_artists=(lgd,), bbox_inches='tight')
             # plt.close(plt.gcf()) ???
             pyplt.close(fig)
 
