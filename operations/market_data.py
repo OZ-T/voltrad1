@@ -134,7 +134,8 @@ def write_market_data_to_sqllite(globalconf, log, dataframe, db_type):
             # remove this field which is not to be used
             if 'Halted' in joe.columns:
                 joe = joe.drop(['Halted'], axis=1)
-            joe = joe.sort_values(by=[criteria["sorting_var"]])
+            log.info("columns "+str(joe.columns))
+            #joe = joe.sort_values(by=[criteria["sorting_var"]])
             if 'Expiry' in joe.columns:
                 joe = joe.drop(['Expiry'], axis=1)
             joe.to_sql(name, store, if_exists='append')
