@@ -24,7 +24,7 @@ class MarketData_tests(unittest.TestCase):
         self.assertEqual(len(df), 100)
 
 import core.vol_estimators as volest
-if __name__ == "__main__":
+if __name__ == "__KKKmain__":
     log = logger("Testing ...")
     globalconf = config.GlobalConfig()
     today =  dt.date.today()
@@ -44,3 +44,13 @@ if __name__ == "__main__":
     vol.term_sheet_to_pdf(window, windows, quantiles, bins, normed, bench)
     # vol.term_sheet_to_png(window, windows, quantiles, bins, normed, bench)
     # vol.term_sheet_to_html(window, windows, quantiles, bins, normed, bench)
+
+if __name__ == "__main__":
+    import datetime as dt
+    from volutils import utils
+
+    dt_now = dt.datetime.now()  # - timedelta(days=4)
+    last_record_stored = dt.datetime.strptime("2017-06-22 22:59:00", '%Y-%m-%d %H:%M:%S')
+    bh = utils.BusinessHours(last_record_stored, dt_now, worktiming=[15, 21], weekends=[6, 7])
+    days = bh.getdays()
+    print(days)

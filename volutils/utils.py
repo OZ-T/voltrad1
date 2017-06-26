@@ -97,7 +97,8 @@ class BusinessHours:
         """
         days = (self.datetime2-self.datetime1).days
         # exclude any day in the week marked as holiday (ex: saturday , sunday)
-        noofweeks = days / 7
+        # use integer division // required by Python 3
+        noofweeks = days // 7
         extradays = days % 7
         startday = self.datetime1.isoweekday()
         days = days - (noofweeks * self.weekends.__len__())
@@ -114,7 +115,7 @@ class BusinessHours:
         return days
 
     def gethours(self):
-        return int(self.getminutes() / 60)
+        return int(self.getminutes() // 60)
 
     def getminutes(self):
         """
@@ -192,7 +193,7 @@ class BusinessHours:
                         hour=self.worktiming[0],
                         minute=0)
                     worktime += (dt_end-dt_end_open).total_seconds()
-        return int(worktime / 60)
+        return int(worktime // 60)
 
     def is_weekend(self, datetime):
         """
