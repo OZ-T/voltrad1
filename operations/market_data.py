@@ -16,6 +16,29 @@ from volibutils.sync_client import IBClient
 from volibutils.RequestUnderlyingData import RequestUnderlyingData
 from time import sleep
 
+
+def get_db_types(globalconf):
+    db_types = ["optchain_ib","optchain_yhoo","optchain_ib_hist","underl_ib_hist"]
+    return db_types
+
+
+def get_underlying_symbols(globalconf, db_type):
+    # TODO: get this from configuration
+    symbols = {
+        "optchain_ib": ["ES", "SPY"],
+        "optchain_yhoo": ["ES", "SPY", "USO", "SPX"],
+        "optchain_ib_hist": ["ES", "SPY"],
+        "underl_ib_hist": ["ES", "SPY", "GOOG"]
+    }
+    return symbols[db_type]
+
+
+def get_expiries(globalconf, dsId, symbol_expiry):
+    # TODO: get available expiries for options on the given underlying
+    expiries = None
+    return expiries
+
+
 def get_market_db_file(globalconf,db_type,expiry):
     if db_type == "optchain_ib":
         return1 = globalconf.config['sqllite']['optchain_ib'].format(expiry)
