@@ -42,7 +42,7 @@ def get_columns(name,store):
 def get_datasources(globalconf):
     dict = get_datasource_files(globalconf)
     dataframe = pd.DataFrame()
-    for name, db in dict.iteritems():
+    for name, db in dict.items():
         store = sqlite3.connect(db)
         sql = "SELECT name FROM sqlite_master WHERE type='table'"
         df = pd.read_sql_query(sql, store)
