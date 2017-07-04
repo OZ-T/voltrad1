@@ -22,6 +22,36 @@ def get_db_types(globalconf):
     return db_types
 
 
+def get_datasource_files(globalconf):
+    data_folder = globalconf.config['paths']['data_folder']
+    dir = os.path.abspath(data_folder)
+    exts = ".db"
+    dict = {}
+    for root, dirs, files in os.walk(dir):
+        for name in files:
+            filename = os.path.join(root, name)
+            if filename.lower().endswith(exts):
+                dict[name] = filename
+    return dict
+
+def get_columns(name,store):
+    sql = "SELECT * FROM "+name +" WHERE 0=1"
+    df = pd.read_sql_query(sql, store)
+    return list(df.columns)
+
+def get_datasources(globalconf):
+    dict = get_datasource_files(globalconf)
+    dataframe = pd.DataFrame()
+    for name, db in dict.iteritems():
+        store = sqlite3.connect(db)
+        sql = "SELECT name FROM sqlite_master WHERE type='table'"
+        df = pd.read_sql_query(sql, store)
+        df['file'] = name
+        df['columns'] = df['name'].map( lambda a: get_columns(a,store) )
+        df = df.set_index('name')
+        dataframe = dataframe.append(df)
+    print(dataframe)
+
 def get_underlying_symbols(globalconf, db_type):
     # TODO: get this from configuration
     symbols = {
