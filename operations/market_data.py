@@ -50,7 +50,7 @@ def get_datasources(globalconf):
         df['columns'] = df['name'].map( lambda a: get_columns(a,store) )
         df = df.set_index('name')
         dataframe = dataframe.append(df)
-    print(dataframe)
+    return dataframe
 
 def get_underlying_symbols(globalconf, db_type):
     # TODO: get this from configuration
