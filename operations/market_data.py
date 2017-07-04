@@ -12,6 +12,31 @@ import time
 import pandas_datareader.data as web
 from pandas_datareader._utils import RemoteDataError
 import sys
+from volibutils.sync_client import IBClient
+from volibutils.RequestUnderlyingData import RequestUnderlyingData
+from time import sleep
+
+
+def get_db_types(globalconf):
+    db_types = ["optchain_ib","optchain_yhoo","optchain_ib_hist","underl_ib_hist"]
+    return db_types
+
+
+def get_underlying_symbols(globalconf, db_type):
+    # TODO: get this from configuration
+    symbols = {
+        "optchain_ib": ["ES", "SPY"],
+        "optchain_yhoo": ["ES", "SPY", "USO", "SPX"],
+        "optchain_ib_hist": ["ES", "SPY"],
+        "underl_ib_hist": ["ES", "SPY", "GOOG"]
+    }
+    return symbols[db_type]
+
+
+def get_expiries(globalconf, dsId, symbol_expiry):
+    # TODO: get available expiries for options on the given underlying
+    expiries = None
+    return expiries
 
 
 def get_market_db_file(globalconf,db_type,expiry):
@@ -34,13 +59,37 @@ def get_partition_names(db_type):
         which will be used for the name of the tables inside the sqlite DB
     """
     if db_type == "optchain_ib":
-        return1 = ['expiry',"%Y%m%d","symbol","current_datetime"]
+        return1 = {'expiry':'expiry',
+                   "format_expiry":"%Y%m%d",
+                   "symbol":"symbol",
+                   "sorting_var":"current_datetime",
+                   "filtro_sqlite": "substr(current_datetime,1,8)",
+                   'formato_filtro': '%Y%m%d'
+                   }
     elif db_type == "optchain_yhoo":
-        return1 = ["Expiry_txt","%Y-%m-%d  %H:%M:%S","Underlying","Quote_Time_txt"]
+        return1 = {'expiry':"Expiry_txt",
+                   "format_expiry":"%Y-%m-%d  %H:%M:%S",
+                   "symbol":"Underlying",
+                   "sorting_var":"Quote_Time_txt",
+                   "filtro_sqlite": "substr(Quote_time,1,10)",
+                   'formato_filtro': '%Y-%m-%d'
+                   }
     elif db_type == "optchain_ib_hist":
-        return1 = []
+        return1 = {'expiry':"",
+                   "format_expiry":"",
+                   "symbol":"",
+                   "sorting_var":"",
+                   "filtro_sqlite": "",
+                   'formato_filtro': ''
+                   }
     elif db_type == "underl_ib_hist":
-        return1 = ["expiry","NO_EXPIRY","symbol","load_dttm"]
+        return1 = {'expiry':"expiry",
+                   "format_expiry":"NO_EXPIRY",
+                   "symbol":"symbol",
+                   "sorting_var":"date",
+                   "filtro_sqlite": "substr(date,1,8)",
+                   'formato_filtro': '%Y%m%d'
+                   }
 
     return return1
 
@@ -50,6 +99,33 @@ def formated_string_for_file(expiry, expiry_in_format):
     """
     return dt.datetime.strptime(expiry, expiry_in_format).strftime('%Y-%m')
 
+def read_market_data_from_sqllite(globalconf, log, db_type,symbol,expiry,last_date,num_days_back,resample):
+    path = globalconf.config['paths']['data_folder']
+    log.info("Reading market data from sqllite ... ")
+    criteria = get_partition_names(db_type)
+    first_date = (dt.datetime.strptime(last_date, '%Y%m%d') - dt.timedelta(num_days_back)).strftime(
+        criteria['formato_filtro'])
+    db_file = get_market_db_file(globalconf, db_type, "")
+    store = sqlite3.connect(path + db_file)
+    sql = "select * from " + symbol + " where 1=1 "
+    if last_date:
+        sql = sql + " and " + criteria['filtro_sqlite'] + " between '" + first_date + "' and '" + last_date +"'"
+    if expiry:
+        sql = sql + " and expiry = '" +str("/"+symbol+"/"+expiry)+ "'"
+
+    dataframe = pd.read_sql_query(sql, store)
+    dataframe = dataframe.drop_duplicates(subset=[criteria["sorting_var"], criteria["expiry"]], keep='last')
+    dataframe = dataframe.sort_values(by=[criteria["sorting_var"]])
+
+    dataframe[criteria["sorting_var"]] = pd.to_datetime(dataframe[criteria["sorting_var"]])
+    dataframe.index = dataframe[criteria["sorting_var"]]
+    if resample:
+        conversion = {'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last', 'volume': 'sum'}
+        dataframe = dataframe.resample(resample, how=conversion).dropna()
+        dataframe['return'] = (dataframe['close'] / dataframe['close'].shift(1)) - 1
+    log.info(("Resampled size ", len(dataframe)))
+    return dataframe
+
 def write_market_data_to_sqllite(globalconf, log, dataframe, db_type):
     """
     Write to sqllite the market data snapshot passed as argument
@@ -57,37 +133,129 @@ def write_market_data_to_sqllite(globalconf, log, dataframe, db_type):
     log.info("Appending market data to sqllite ... ")
     path = globalconf.config['paths']['data_folder']
     criteria = get_partition_names(db_type)
-    expiries = dataframe[criteria[0]].unique().tolist()
+    expiries = dataframe[criteria["expiry"]].unique().tolist()
     log.info(("These are the expiries included in the data to be loaded: ", expiries))
     # expiries_file = map(lambda i: formated_string_for_file(i,criteria[1]) , expiries)
     # remove empty string expiries (bug in H5 legacy files)
     expiries = [x for x in expiries if x]
 
     for expiry in expiries:
-        if criteria[1] == "NO_EXPIRY":
+        if criteria["format_expiry"] == "NO_EXPIRY":
             expiry_file = ""
         else:
-            expiry_file = formated_string_for_file(expiry, criteria[1])
+            expiry_file = formated_string_for_file(expiry, criteria["format_expiry"])
         db_file = get_market_db_file(globalconf,db_type,expiry_file)
         store = sqlite3.connect(path + db_file)
-        symbols = dataframe[criteria[2]].unique().tolist()
+        symbols = dataframe[criteria["symbol"]].unique().tolist()
         log.info(("For expiry: ",expiry," these are the symbols included in the data to be loaded:  ", symbols))
         # remove empty string symbols (bug in H5 legacy files)
         symbols = [x for x in symbols if x]
         for name in symbols:
             name = name.replace("^", "")
-            joe = dataframe.loc[ (dataframe[criteria[2]] == name) & (dataframe[criteria[0]] == expiry) ]
+            joe = dataframe.loc[ (dataframe[criteria["symbol"]] == name) & (dataframe[criteria["expiry"]] == expiry) ]
             #joe.sort(columns=['current_datetime'], inplace=True)  DEPRECATED
             # remove this field which is not to be used
             if 'Halted' in joe.columns:
                 joe = joe.drop(['Halted'], axis=1)
-            joe = joe.sort_values(by=[criteria[3]])
+            log.info("columns "+str(joe.columns))
+            #joe = joe.sort_values(by=[criteria["sorting_var"]])
             if 'Expiry' in joe.columns:
                 joe = joe.drop(['Expiry'], axis=1)
             joe.to_sql(name, store, if_exists='append')
         store.close()
 
+def store_underlying_ib_to_db():
+    log=logger("historical data loader")
+    log.info("Getting historical underlying data from IB ... ")
+    globalconf = config.GlobalConfig()
+    path = globalconf.config['paths']['data_folder']
+    underly_def = globalconf.get_tickers_historical_ib()
+    client = IBClient(globalconf)
+    clientid1 = int(globalconf.config['ib_api']['clientid_data'])
+    client.connect(clientid1=clientid1)
 
+    dt_now=dt.datetime.now()
+    endDateTime =  dt_now.strftime('%Y%m%d %H:%M:%S')
+    # lo mas que se puede pedir para barras de 30 min es un mes historico
+    # barSizeSetting = "30 mins"
+    barSizeSetting = "1 min"
+    whatToShow = "TRADES"
+    useRTH = 1
+    formatDate = 1
+    wait_secs = 40
+
+    db_file = get_market_db_file(globalconf=globalconf, db_type="underl_ib_hist", expiry="NONE")
+    store = sqlite3.connect(path + db_file)
+
+    for index, row_req in underly_def.iterrows():
+        log.info("underl=[%s] [%s] [%s] [%d] [%s] [%s] [%s] [%s] [%d]"
+                        % ( str(row_req['symbol']), str(row_req['underl_type']),
+                            str(row_req['underl_expiry']), 0, '', '',
+                            str(row_req['underl_ex']), str(row_req['underl_curr']), int(index) ) )
+
+        ticker = RequestUnderlyingData(str(row_req['symbol']), str(row_req['underl_type']), str(row_req['underl_expiry']), 0, '', '',
+                                       str(row_req['underl_ex']), str(row_req['underl_curr']), int(index))
+        symbol_expiry = "/" + str(row_req['symbol']) + "/" + str(row_req['underl_expiry'])
+
+        sql = "SELECT count(*) as count1 FROM sqlite_master WHERE type='table' AND name='" + str(row_req['symbol']) + "';"
+        tbl_exist = pd.read_sql_query(sql, store)['count1'][0]
+        log.info("Does this symbol has a table in sqlite? " + str(tbl_exist))
+
+        if tbl_exist:
+            if int(row_req['underl_expiry']) > 0:
+                sql = "SELECT MAX(DATE) as max1 FROM " + str(row_req['symbol']) +" WHERE EXPIRY = '" + symbol_expiry + "' ;"
+            else:
+                sql = "SELECT MAX(DATE) as max1 FROM " + str(row_req['symbol']) + " ;"
+
+            last_date = pd.read_sql_query( sql , store)['max1'][0]
+            log.info("Last date in data store for symbol " + symbol_expiry + " is " + str(last_date) )
+            if last_date is not None:
+                last_record_stored = dt.datetime.strptime(str(last_date), '%Y%m%d %H:%M:%S')
+                # no se debe usar .seconds que da respuesta incorrecta debe usarse .total_seconds()
+                # days= int(round( (dt_now - last_record_stored).total_seconds() / 60 / 60 / 24  ,0))
+                # lo anterior no sirve porque debe considerarse la diferencia en business days
+                # days = np.busday_count(last_record_stored.date(), dt_now.date())
+                bh = utils.BusinessHours(last_record_stored, dt_now, worktiming=[15, 21], weekends=[6, 7])
+                days = bh.getdays()
+                durationStr = str(days) + " D"
+            else:
+                last_record_stored = 0
+                durationStr = "30 D"
+                barSizeSetting = "30 mins"
+
+            if str(row_req['symbol']) in ['NDX','SPX','VIX']:
+                barSizeSetting = "30 mins"
+        else:
+            last_record_stored = 0
+            durationStr = "30 D"
+            barSizeSetting = "30 mins"
+
+        log.info( "last_record_stored=[%s] endDateTime=[%s] durationStr=[%s] barSizeSetting=[%s]"
+                  % ( str(last_record_stored), str(endDateTime) , durationStr, barSizeSetting) )
+
+        historicallist = client.get_historical(ticker, endDateTime, durationStr, barSizeSetting,whatToShow, useRTH,formatDate)
+        dataframe = pd.DataFrame()
+        if historicallist:
+            for reqId, request in historicallist.items():
+                for date, row in request.items():
+                    temp1 = pd.DataFrame(row, index=[0])
+                    temp1['symbol'] = str(row_req['symbol'])
+                    if int(row_req['underl_expiry']) > 0:
+                        temp1['expiry'] = symbol_expiry
+                    else:
+                        temp1['expiry'] = str(row_req['underl_expiry'])
+                    temp1['type'] = str(row_req['underl_type'])
+                    temp1['load_dttm'] = endDateTime
+                    dataframe = dataframe.append(temp1.reset_index().drop('index', 1))
+            dataframe = dataframe.sort_values(by=['date']).set_index('date')
+            log.info( "appending data to sqlite ...")
+            write_market_data_to_sqllite(globalconf, log, dataframe, "underl_ib_hist")
+
+        log.info("sleeping [%s] secs ..." % (str(wait_secs)))
+        sleep(wait_secs)
+
+    client.disconnect()
+    store.close()
 
 def store_optchain_yahoo_to_db():
     globalconf = config.GlobalConfig()
@@ -135,92 +303,5 @@ def CustomParser(data):
     return j1
 
 
-def migrate_h5_to_sqllite_optchain_yahoo(filter_symbol):
-    """
-    migrate_h5_to_sqllite_optchain_yahoo
-    """
-    hdf5_pattern = "optchain_yahoo_*.h5*"
-    h5_db_alias = "optchain_yhoo"
-    migrate_h5_to_sqllite_optchain(hdf5_pattern, h5_db_alias,True,filter_symbol)
-
-
-def migrate_h5_to_sqllite_underly_hist():
-    """
-    migrate_h5_to_sqllite_optchain_yahoo
-    """
-    hdf5_pattern = "underly_ib_hist_*.h5*"
-    h5_db_alias = "underl_ib_hist"
-    migrate_h5_to_sqllite_optchain(hdf5_pattern, h5_db_alias,False,"ALL")
-
-
-def migrate_h5_to_sqllite_optchain_ib():
-    """
-    migrate_h5_to_sqllite_optchain_ib
-    """
-    hdf5_pattern = "optchain_ib_*.h5*"
-    h5_db_alias = "optchain_ib"
-    migrate_h5_to_sqllite_optchain(hdf5_pattern, h5_db_alias,False,"ALL")
-
-
-def migrate_h5_to_sqllite_optchain(hdf5_pattern, h5_db_alias,drop_expiry,filter_symbol):
-    """
-         
-    """
-    globalconf = config.GlobalConfig()
-    log = logger("migrate_h5_to_sqllite_optchain")
-    path = globalconf.config['paths']['data_folder']
-    lst1 = glob.glob(path + hdf5_pattern)
-    if not lst1:
-        log.info("No h5 files to append ... ")
-    else:
-        log.info(("List of h5 files that will be appended: ", lst1))
-        time.sleep(1)
-        try:
-            input("Press Enter to continue...")
-        except SyntaxError:
-            pass
-
-        for hdf5_path in lst1:
-            store_file = pd.HDFStore(hdf5_path)
-            root1 = store_file.root
-            # todos los nodos hijos de root que son los underlying symbols
-            list = [x._v_pathname for x in root1]
-            log.info(("Processing file: ", hdf5_path))
-            # only migrate the symbol indicated if available
-            if filter_symbol != "ALL":
-                list = [filter_symbol]
-            store_file.close()
-            log.info(("List of symbols: " + str(list)))
-            for symbol in list:
-                store_file = pd.HDFStore(hdf5_path)
-                node1 = store_file.get_node(symbol)
-                if node1:
-                    log.info(("Symbol: " + symbol))
-                    # Unfortunately th JSON field doesnt contain more info that the already present fields
-                    # df1['json_dict'] = df1['JSON'].apply(CustomParser)
-                    # following line converts dict column into n columns for the dataframe:
-                    # https://stackoverflow.com/questions/20680272/reading-a-csv-into-pandas-where-one-column-is-a-json-string
-                    # df1 = pd.concat([df1.drop(['json_dict','JSON'], axis=1), df1['json_dict'].apply(pd.Series)], axis=1)
-                    # df1 = df1.drop(['JSON'], axis=1)
-
-
-                    # this is a specifc case for underlying hisotry
-                    if symbol == "/ES" and h5_db_alias == "underl_ib_hist":
-                        for lvl1 in node1:
-                            log.info(("Level 1 pathname in the root if the H5: ", lvl1._v_pathname))
-                            if lvl1:
-                                df1 = store_file.select(lvl1._v_pathname)
-                                df1['expiry'] = lvl1._v_pathname
-                                write_market_data_to_sqllite(globalconf, log, df1, h5_db_alias)
-                    else:
-                        df1 = store_file.select(node1._v_pathname)
-                    # Expiry is already in the index
-                    if drop_expiry == True:
-                        df1 = df1.drop(['Expiry'], axis=1)
-                    write_market_data_to_sqllite(globalconf, log, df1, h5_db_alias)
-                store_file.close()
-
-
 if __name__ == "__main__":
-    #migrate_h5_to_sqllite_optchain_yahoo()
-    migrate_h5_to_sqllite_underly_hist()
+    store_underlying_ib_to_db()
