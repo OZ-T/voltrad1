@@ -48,7 +48,7 @@ def get_datasources(globalconf):
         df = pd.read_sql_query(sql, store)
         df['file'] = name
         df['columns'] = df['name'].map( lambda a: get_columns(a,store) )
-        df = df.set_index('name')
+        df = df.set_index(['name', 'file'])
         dataframe = dataframe.append(df)
     return dataframe
 
