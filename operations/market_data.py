@@ -53,15 +53,17 @@ def get_datasources(globalconf):
         dict_out = {}
         dict_out['type'] = db_type
         dict_out['expiries'] = []
+        dict_out['symbols'] = []
         count = 0
         for db_name, db_file in db_files.items():
             store = sqlite3.connect(db_file)
             dict_out['expiries'].append(db_name)
+            sql = "SELECT name FROM sqlite_master WHERE type='table'"
+            dict_out['symbols'].extend(list(pd.read_sql_query(sql, store).values.flatten()))
             if count == 0:
-                sql = "SELECT name FROM sqlite_master WHERE type='table'"
-                dict_out['symbols'] = list(pd.read_sql_query(sql, store).values.flatten())
                 dict_out['columns'] = get_columns(dict_out['symbols'][0],store)
             count = count + 1
+        dict_out['symbols'] = list(set(dict_out['symbols']))
         list1.append(dict_out)
     return list1
 
