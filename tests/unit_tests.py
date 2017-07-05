@@ -58,4 +58,4 @@ class MarketData_tests(unittest.TestCase):
 if __name__ == "__main__":
     import operations.market_data as md
     globalconf = config.GlobalConfig()
-    md.get_datasources(globalconf)
+    print (md.get_datasources(globalconf))

@@ -37,20 +37,19 @@ def get_datasource_files(globalconf):
 def get_columns(name,store):
     sql = "SELECT * FROM "+name +" WHERE 0=1"
     df = pd.read_sql_query(sql, store)
+
     return list(df.columns)
 
 def get_datasources(globalconf):
     dict = get_datasource_files(globalconf)
-    dataframe = pd.DataFrame()
+    dict_out = {}
     for name, db in dict.items():
         store = sqlite3.connect(db)
         sql = "SELECT name FROM sqlite_master WHERE type='table'"
-        df = pd.read_sql_query(sql, store)
-        df['file'] = name
-        df['columns'] = df['name'].map( lambda a: get_columns(a,store) )
-        df = df.set_index(['name', 'file'])
-        dataframe = dataframe.append(df)
-    return dataframe
+        dict_out['name'] = name
+        dict_out['symbols'] = list(pd.read_sql_query(sql, store).values.flatten())
+        dict_out['columns'] = get_columns(dict_out['symbols'][0],store)
+    return dict_out
 
 def get_underlying_symbols(globalconf, db_type):
     # TODO: get this from configuration
