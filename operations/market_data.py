@@ -18,7 +18,7 @@ from time import sleep
 
 
 def get_db_types(globalconf):
-    db_types = ["optchain_ib","optchain_yhoo","optchain_ib_hist","underl_ib_hist"]
+    db_types = ["optchain_ib_exp","optchain_yhoo","optchain_ib_hist","underly_ib_hist"]
     return db_types
 
 
@@ -27,11 +27,17 @@ def get_datasource_files(globalconf):
     dir = os.path.abspath(data_folder)
     exts = ".db"
     dict = {}
+    db_types = get_db_types(globalconf)
+    for x in db_types:
+        dict[x] = {}
     for root, dirs, files in os.walk(dir):
         for name in files:
-            filename = os.path.join(root, name)
-            if filename.lower().endswith(exts):
-                dict[name] = filename
+            type1 = [x for x in db_types if x in name]
+            if type1:
+                filename = os.path.join(root, name)
+                if filename.lower().endswith(exts):
+                    dict[type1[0]][name] = filename
+    # print(("XXXXX: ",dict))
     return dict
 
 def get_columns(name,store):
@@ -43,13 +49,19 @@ def get_columns(name,store):
 def get_datasources(globalconf):
     dict = get_datasource_files(globalconf)
     list1 = []
-    for name, db in dict.items():
-        store = sqlite3.connect(db)
-        sql = "SELECT name FROM sqlite_master WHERE type='table'"
+    for db_type, db_files in dict.items():
         dict_out = {}
-        dict_out['name'] = name
-        dict_out['symbols'] = list(pd.read_sql_query(sql, store).values.flatten())
-        dict_out['columns'] = get_columns(dict_out['symbols'][0],store)
+        dict_out['type'] = db_type
+        dict_out['expiries'] = []
+        count = 0
+        for db_name, db_file in db_files.items():
+            store = sqlite3.connect(db_file)
+            dict_out['expiries'].append(db_name)
+            if count == 0:
+                sql = "SELECT name FROM sqlite_master WHERE type='table'"
+                dict_out['symbols'] = list(pd.read_sql_query(sql, store).values.flatten())
+                dict_out['columns'] = get_columns(dict_out['symbols'][0],store)
+            count = count + 1
         list1.append(dict_out)
     return list1
 
