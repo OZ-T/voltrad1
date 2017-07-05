@@ -36,7 +36,7 @@ class Test(Resource):
 
 
 class WebDirectory(Resource):
-    def get(self,name):
+    def get(self, name):
         dir = os.path.abspath(DATA_DIR + "/" + name)
         # print (dir)
         # walk through data directory
@@ -56,43 +56,38 @@ class WebDirectory(Resource):
         # return resp
 
 
-class DataSources(Resource):
-    """
-    List available data sources
-    """
+class MarketDataInfo(Resource):
     def get(self):
-        # list available data sources
-        data = md.get_db_types(globalconf)
+        # return JSON with symbol items availablewith description of the data
+        # available including: source, expiries, columns, time periods
+        #   ES/20170616
+        #       source =ibopt,ibund,yhooopt
+        #       expiries
+        #       columns
+        #       dates    
+        df = md.get_datasources(globalconf)
+
+        df_list = df.values.tolist()
+        #df_list = merged.values.T.tolist()
+        #df_list = list(df.values.flatten())
+
+        JSONP_data = jsonify(df_list)
+        return JSONP_data
+        #return data.to_json(orient='records')
+
+class SymbolData(Resource):
+    def get(self, symbolExpiry):
+        data = {}
         return jsonify(result=data)
-
-
-class UnderlySymbols(Resource):
-    def get(self, dsId):
-        # list available underlying symbols in the data source
-        data = md.get_underlying_symbols(globalconf, dsId)
-        return jsonify(result=data)
-
-
-class Expiries(Resource):
-    def get(self, dsId, symbolExpiry):
-        # list available expiries for the underlying 
-        data = md.get_expiries(globalconf, dsId, symbolExpiry)
-        return jsonify(result=data)
-
-
-class MarketDates(Resource):
-    def get(self, dsId, symbolExpiry, expiry):
-        # list available dates with data for the expiry
-        data = str(expiry)
-        return jsonify(result=data)
-
-class OptionChains(Resource):
-    def get(self, dsId, symbolExpiry, expiry, dateIni, dateEnd):
-        # list available dates with data for the expiry
-        dini=datetime.strptime(dateIni, '%Y%m%d')
-        dend=datetime.strptime(dateEnd, '%Y%m%d')
-        data = str(expiry)
-        return jsonify(result=data)
+    def post(self):
+        # returns the result of a query to the market data databases
+        # the query itself is a json in the body of the request
+        # {symbol:ES/20170616,sources:[ibopt,ibund],dates:... }
+        # Get the parsed contents of the form data
+        json = request.json
+        print(json)
+        # Render template
+        return jsonify(json)
 
 
 class H5Gekko(Resource):
@@ -107,13 +102,9 @@ api.add_resource(WebDirectory, '/tic/dir/<name>')  # http://localhost:9001/h5dir
 api.add_resource(H5Gekko, '/tic/gekko')
 api.add_resource(Test, '/tic/test1')
 
-# new stuff
-api.add_resource(DataSources, '/tic/data/')
-api.add_resource(UnderlySymbols, '/tic/data/<dsId>/')
-api.add_resource(Expiries, '/tic/data/<dsId>/<symbolExpiry>/')
-api.add_resource(MarketDates, '/tic/data/<dsId>/<symbolExpiry>/<expiry>/')
-api.add_resource(OptionChains, '/tic/data/<dsId>/<symbolExpiry>/<expiry>/<dateIni>/<dateEnd>')
-
+# Better version
+api.add_resource(MarketDataInfo, '/tic/market_data/')
+api.add_resource(SymbolData, '/tic/market_data/<symbolExpiry>')
 
 if __name__ == '__main__':
 
