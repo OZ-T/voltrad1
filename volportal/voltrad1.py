@@ -65,15 +65,11 @@ class MarketDataInfo(Resource):
         #       expiries
         #       columns
         #       dates    
-        df = md.get_datasources(globalconf)
-
-        df_list = df.values.tolist()
-        #df_list = merged.values.T.tolist()
-        #df_list = list(df.values.flatten())
-
-        JSONP_data = jsonify(df_list)
+        data = md.get_datasources(globalconf)
+        JSONP_data = jsonify(result=data)
         return JSONP_data
-        #return data.to_json(orient='records')
+        # return data.to_json(orient='records')
+        #return data
 
 class SymbolData(Resource):
     def get(self, symbolExpiry):
