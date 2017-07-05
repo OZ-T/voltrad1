@@ -42,14 +42,16 @@ def get_columns(name,store):
 
 def get_datasources(globalconf):
     dict = get_datasource_files(globalconf)
-    dict_out = {}
+    list1 = []
     for name, db in dict.items():
         store = sqlite3.connect(db)
         sql = "SELECT name FROM sqlite_master WHERE type='table'"
+        dict_out = {}
         dict_out['name'] = name
         dict_out['symbols'] = list(pd.read_sql_query(sql, store).values.flatten())
         dict_out['columns'] = get_columns(dict_out['symbols'][0],store)
-    return dict_out
+        list1.append(dict_out)
+    return list1
 
 def get_underlying_symbols(globalconf, db_type):
     # TODO: get this from configuration
