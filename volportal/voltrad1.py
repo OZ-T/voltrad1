@@ -56,7 +56,7 @@ class WebDirectory(Resource):
         # return resp
 
 
-class MarketDataInfo(Resource):
+class OptChainMarketDataInfo(Resource):
     def get(self):
         # return JSON with symbol items availablewith description of the data
         # available including: source, expiries, columns, time periods
@@ -64,15 +64,16 @@ class MarketDataInfo(Resource):
         #       source =ibopt,ibund,yhooopt
         #       expiries
         #       columns
-        #       dates    
-        data = md.get_datasources(globalconf)
+
+        data = md.get_optchain_datasources(globalconf)
         JSONP_data = jsonify(result=data)
         return JSONP_data
         # return data.to_json(orient='records')
         #return data
 
-class SymbolData(Resource):
-    def get(self, symbolExpiry):
+class OptChainMarketData(Resource):
+    def get(self, underlySymbolExpiry):
+        #       dates
         data = {}
         return jsonify(result=data)
     def post(self):
@@ -99,8 +100,8 @@ api.add_resource(H5Gekko, '/tic/gekko')
 api.add_resource(Test, '/tic/test1')
 
 # Better version
-api.add_resource(MarketDataInfo, '/tic/market_data/')
-api.add_resource(SymbolData, '/tic/market_data/<symbolExpiry>')
+api.add_resource(OptChainMarketDataInfo, '/tic/optchain_data/')
+api.add_resource(OptChainMarketData, '/tic/optchain_data/<underlySymbolExpiry>')
 
 if __name__ == '__main__':
 

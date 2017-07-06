@@ -17,37 +17,39 @@ from volibutils.RequestUnderlyingData import RequestUnderlyingData
 from time import sleep
 
 
-def get_db_types(globalconf):
-    db_types = ["optchain_ib_exp","optchain_yhoo","optchain_ib_hist","underly_ib_hist"]
+def get_optchain_db_types(globalconf):
+    db_types = ["optchain_ib_exp","optchain_yhoo","optchain_ib_hist"]
     return db_types
 
 
-def get_datasource_files(globalconf):
+def get_optchain_datasource_files(globalconf):
     data_folder = globalconf.config['paths']['data_folder']
     dir = os.path.abspath(data_folder)
     exts = ".db"
     dict = {}
-    db_types = get_db_types(globalconf)
+    db_types = get_optchain_db_types(globalconf)
     for x in db_types:
         dict[x] = {}
     for root, dirs, files in os.walk(dir):
         for name in files:
-            type1 = [x for x in db_types if x in name]
+            type1 = [x for x in db_types if (x in name ) & ( name.lower().endswith(exts) )]
             if type1:
+                # print(("XXXXX2: ", type1,name))
                 filename = os.path.join(root, name)
                 if filename.lower().endswith(exts):
                     dict[type1[0]][name] = filename
-    # print(("XXXXX: ",dict))
+    # print(("XXXXX3: ",dict))
     return dict
+
 
 def get_columns(name,store):
     sql = "SELECT * FROM "+name +" WHERE 0=1"
     df = pd.read_sql_query(sql, store)
-
     return list(df.columns)
 
-def get_datasources(globalconf):
-    dict = get_datasource_files(globalconf)
+
+def get_optchain_datasources(globalconf):
+    dict = get_optchain_datasource_files(globalconf)
     list1 = []
     for db_type, db_files in dict.items():
         dict_out = {}
@@ -57,7 +59,7 @@ def get_datasources(globalconf):
         count = 0
         for db_name, db_file in db_files.items():
             store = sqlite3.connect(db_file)
-            dict_out['expiries'].append(db_name)
+            dict_out['expiries'].append(db_name[-10:-3])
             sql = "SELECT name FROM sqlite_master WHERE type='table'"
             dict_out['symbols'].extend(list(pd.read_sql_query(sql, store).values.flatten()))
             if count == 0:
