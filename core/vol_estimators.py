@@ -34,13 +34,15 @@
 
 import datetime
 import os
+
 import math
 import datetime
 import pandas
 import numpy as np
 import statsmodels.api as sm
-from matplotlib.pyplot import *
 import matplotlib
+matplotlib.use('Agg') # Must be before importing matplotlib.pyplot or pylab!
+from matplotlib.pyplot import *
 import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates

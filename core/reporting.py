@@ -1,6 +1,6 @@
 # fix to Invalid DISPLAY Error
 import matplotlib
-matplotlib.use('agg') # Must be before importing matplotlib.pyplot or pylab!
+matplotlib.use('Agg') # Must be before importing matplotlib.pyplot or pylab!
 import pandas as pd
 import sqlite3
 from volsetup.logger import logger
