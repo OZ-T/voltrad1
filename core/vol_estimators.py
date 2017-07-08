@@ -887,7 +887,6 @@ class VolatilityEstimator(object):
         rolling_extremes_fig, rolling_extremes_plt = self.rolling_extremes(window=window)
         rolling_descriptives_fig, rolling_descriptives_plt = self.rolling_descriptives(window=window)
         histogram_fig, histogram_plt = self.histogram(window=window, bins=bins, normed=normed)
-        mpld3.show()
         mpld3.save_json(cones_fig, self.define_fig("cones",ext))
         mpld3.save_json(rolling_quantiles_fig, self.define_fig("rolling_quantiles",ext))
         mpld3.save_json(rolling_extremes_fig, self.define_fig("rolling_extremes",ext))
