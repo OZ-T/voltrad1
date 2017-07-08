@@ -142,12 +142,20 @@ def save_image_plot_lines_multi_strike(globalconf,dict_df):
 
 import core.vol_estimators as volest
 
-def run_volest_report():
+def run_volest_report(today_txt):
+    """
+    today_txt '%Y%m%d'
+    """
     log = logger("Volest report ...")
     globalconf = config.GlobalConfig()
-    today =  dt.date.today()
+    if today_txt is None:
+        today = dt.date.today()
+        last_date = today.strftime('%Y%m%d')
+    else:
+        last_date = today_txt
+
     vol = volest.VolatilityEstimator(globalconf=globalconf,log=log,db_type="underl_ib_hist",symbol="SPY",expiry=None,
-                                     last_date=today.strftime('%Y%m%d'), num_days_back=200, resample="1D",estimator="GarmanKlass",clean=True)
+                                     last_date=last_date, num_days_back=200, resample="1D",estimator="GarmanKlass",clean=True)
     window=30
     windows=[30, 60, 90, 120]
     quantiles=[0.25, 0.75]

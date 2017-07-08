@@ -867,6 +867,26 @@ class VolatilityEstimator(object):
         pyplt.close(histogram_fig)
 
 
+    def term_sheet_to_db(self, window=30, windows=[30, 60, 90, 120], quantiles=[0.25, 0.75], bins=100, normed=True,
+                   bench='SPY', open=False):
+        ext = '.json'
+        cones_fig, cones_plt = self.cones(windows=windows, quantiles=quantiles)
+        rolling_quantiles_fig, rolling_quantiles_plt = self.rolling_quantiles(window=window, quantiles=quantiles)
+        rolling_extremes_fig, rolling_extremes_plt = self.rolling_extremes(window=window)
+        rolling_descriptives_fig, rolling_descriptives_plt = self.rolling_descriptives(window=window)
+        histogram_fig, histogram_plt = self.histogram(window=window, bins=bins, normed=normed)
+        cones_fig_dict = mpld3.fig_to_dict(cones_fig)
+        rolling_quantiles_fig_dict = mpld3.fig_to_dict(rolling_quantiles_fig)
+        rolling_extremes_fig_dict = mpld3.fig_to_dict(rolling_extremes_fig)
+        rolling_descriptives_fig_dict = mpld3.fig_to_dict(rolling_descriptives_fig)
+        histogram_fig_dict = mpld3.fig_to_dict(histogram_fig)
+        pyplt.close(cones_fig)
+        pyplt.close(rolling_quantiles_fig)
+        pyplt.close(rolling_extremes_fig)
+        pyplt.close(rolling_descriptives_fig)
+        pyplt.close(histogram_fig)
+
+
     def term_sheet_to_json(self, window=30, windows=[30, 60, 90, 120], quantiles=[0.25, 0.75], bins=100, normed=True,
                    bench='SPY', open=False):
         ext = '.json'
