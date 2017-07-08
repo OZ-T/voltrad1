@@ -72,11 +72,11 @@ class OptChainMarketDataInfo(Resource):
         #return data
 
 class OptChainMarketData(Resource):
-    def get(self, underlySymbolExpiry):
+    def get(self, underlySymbol):
         #       dates
         data = {}
         return jsonify(result=data)
-    def post(self):
+    def post(self, underlySymbol):
         # returns the result of a query to the market data databases
         # the query itself is a json in the body of the request
         # {symbol:ES/20170616,sources:[ibopt,ibund],dates:... }
@@ -101,7 +101,7 @@ api.add_resource(Test, '/tic/test1')
 
 # Better version
 api.add_resource(OptChainMarketDataInfo, '/tic/optchain_data/')
-api.add_resource(OptChainMarketData, '/tic/optchain_data/<underlySymbolExpiry>')
+api.add_resource(OptChainMarketData, '/tic/optchain_data/<underlySymbol>')
 
 if __name__ == '__main__':
 

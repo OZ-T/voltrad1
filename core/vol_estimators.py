@@ -869,25 +869,49 @@ class VolatilityEstimator(object):
         #plt.axis('off')
         #mpld3.save_html(fig, fn)
 
-    def define_fig(self,name):
+    def define_fig(self,name,ext):
         web_server = self._globalconf.config['paths']['nginx_static_folder']
-        filename = self._symbol.upper() + '_'+ name +'.png'
+        filename = self._symbol.upper() + '_'+ name + ext
         fn = os.path.abspath(os.path.join(web_server,"volest", filename))
         return fn
 
-    def term_sheet_to_png(self, window=30, windows=[30, 60, 90, 120], quantiles=[0.25, 0.75], bins=100, normed=True):
 
+
+    def term_sheet_to_json(self, window=30, windows=[30, 60, 90, 120], quantiles=[0.25, 0.75], bins=100, normed=True,
+                   bench='SPY', open=False):
+        ext = '.json'
+        cones_fig, cones_plt = self.cones(windows=windows, quantiles=quantiles)
+        rolling_quantiles_fig, rolling_quantiles_plt = self.rolling_quantiles(window=window, quantiles=quantiles)
+        rolling_extremes_fig, rolling_extremes_plt = self.rolling_extremes(window=window)
+        rolling_descriptives_fig, rolling_descriptives_plt = self.rolling_descriptives(window=window)
+        histogram_fig, histogram_plt = self.histogram(window=window, bins=bins, normed=normed)
+        mpld3.show()
+        mpld3.save_json(cones_fig, self.define_fig("cones",ext))
+        mpld3.save_json(rolling_quantiles_fig, self.define_fig("rolling_quantiles",ext))
+        mpld3.save_json(rolling_extremes_fig, self.define_fig("rolling_extremes",ext))
+        mpld3.save_json(rolling_descriptives_fig, self.define_fig("rolling_desc",ext))
+        mpld3.save_json(histogram_fig, self.define_fig("histogram",ext))
+        pyplt.close(cones_fig)
+        pyplt.close(rolling_quantiles_fig)
+        pyplt.close(rolling_extremes_fig)
+        pyplt.close(rolling_descriptives_fig)
+        pyplt.close(histogram_fig)
+
+
+
+    def term_sheet_to_png(self, window=30, windows=[30, 60, 90, 120], quantiles=[0.25, 0.75], bins=100, normed=True):
+        ext = '.png'
         cones_fig, cones_plt = self.cones(windows=windows, quantiles=quantiles)
         rolling_quantiles_fig, rolling_quantiles_plt = self.rolling_quantiles(window=window, quantiles=quantiles)
         rolling_extremes_fig, rolling_extremes_plt = self.rolling_extremes(window=window)
         rolling_descriptives_fig, rolling_descriptives_plt = self.rolling_descriptives(window=window)
         histogram_fig, histogram_plt = self.histogram(window=window, bins=bins, normed=normed)
 
-        cones_fig.savefig(self.define_fig("cones"), bbox_inches='tight')
-        rolling_quantiles_fig.savefig(self.define_fig("rolling_quantiles"), bbox_inches='tight')
-        rolling_extremes_fig.savefig(self.define_fig("rolling_extremes"), bbox_inches='tight')
-        rolling_descriptives_fig.savefig(self.define_fig("rolling_desc"), bbox_inches='tight')
-        histogram_fig.savefig(self.define_fig("histogram"), bbox_inches='tight')
+        cones_fig.savefig(self.define_fig("cones",ext), bbox_inches='tight')
+        rolling_quantiles_fig.savefig(self.define_fig("rolling_quantiles",ext), bbox_inches='tight')
+        rolling_extremes_fig.savefig(self.define_fig("rolling_extremes",ext), bbox_inches='tight')
+        rolling_descriptives_fig.savefig(self.define_fig("rolling_desc",ext), bbox_inches='tight')
+        histogram_fig.savefig(self.define_fig("histogram",ext), bbox_inches='tight')
         pyplt.close(cones_fig)
         pyplt.close(rolling_quantiles_fig)
         pyplt.close(rolling_extremes_fig)
