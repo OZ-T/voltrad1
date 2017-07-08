@@ -840,43 +840,31 @@ class VolatilityEstimator(object):
         print (filename + ' output complete')
 
 
-
-
-    def term_sheet_to_html(self, window=30, windows=[30, 60, 90, 120], quantiles=[0.25, 0.75], bins=100, normed=True,
-                   bench='SPY', open=False):
-        cones_fig, cones_plt = self.cones(windows=windows, quantiles=quantiles)
-        # rolling_quantiles_fig, rolling_quantiles_plt = self.rolling_quantiles(window=window, quantiles=quantiles)
-        # rolling_extremes_fig, rolling_extremes_plt = self.rolling_extremes(window=window)
-        # rolling_descriptives_fig, rolling_descriptives_plt = self.rolling_descriptives(window=window)
-        # histogram_fig, histogram_plt = self.histogram(window=window, bins=bins, normed=normed)
-        # benchmark_compare_fig, benchmark_compare_plt = self.benchmark_compare(window=window, bench=bench)
-        # benchmark_corr_fig, benchmark_corr_plt = self.benchmark_correlation(window=window, bench=bench)
-        # benchmark_regression = self.benchmark_regression(window=window, bench=bench)
-
-        #cones_plt.show()
-        mpld3.show()
-        #filename = self._symbol.upper() + '_termsheet_' + datetime.datetime.today().strftime("%Y%m%d") + '.html'
-        #fn = os.path.abspath(os.path.join(filename))
-
-        #mpld3.save_html(cones_fig, fn)
-        #mpld3.save_html(rolling_quantiles_fig, fn)
-        #mpld3.save_html(rolling_extremes_fig, fn)
-        #mpld3.save_html(rolling_descriptives_fig, fn)
-        #mpld3.save_html(histogram_fig, fn)
-        #mpld3.save_html(benchmark_compare_fig, fn)
-        #mpld3.save_html(benchmark_corr_fig, fn)
-
-        #fig = plt.figure()
-        #plt.text(0.01, 0.01, benchmark_regression, fontsize=12)
-        #plt.axis('off')
-        #mpld3.save_html(fig, fn)
-
     def define_fig(self,name,ext):
         web_server = self._globalconf.config['paths']['nginx_static_folder']
         filename = self._symbol.upper() + '_'+ name + ext
         fn = os.path.abspath(os.path.join(web_server,"volest", filename))
         return fn
 
+
+    def term_sheet_to_html(self, window=30, windows=[30, 60, 90, 120], quantiles=[0.25, 0.75], bins=100, normed=True,
+                   bench='SPY', open=False):
+        ext = '.html'
+        cones_fig, cones_plt = self.cones(windows=windows, quantiles=quantiles)
+        rolling_quantiles_fig, rolling_quantiles_plt = self.rolling_quantiles(window=window, quantiles=quantiles)
+        rolling_extremes_fig, rolling_extremes_plt = self.rolling_extremes(window=window)
+        rolling_descriptives_fig, rolling_descriptives_plt = self.rolling_descriptives(window=window)
+        histogram_fig, histogram_plt = self.histogram(window=window, bins=bins, normed=normed)
+        mpld3.save_html(cones_fig, self.define_fig("cones",ext))
+        mpld3.save_html(rolling_quantiles_fig, self.define_fig("rolling_quantiles",ext))
+        mpld3.save_html(rolling_extremes_fig, self.define_fig("rolling_extremes",ext))
+        mpld3.save_html(rolling_descriptives_fig, self.define_fig("rolling_desc",ext))
+        mpld3.save_html(histogram_fig, self.define_fig("histogram",ext))
+        pyplt.close(cones_fig)
+        pyplt.close(rolling_quantiles_fig)
+        pyplt.close(rolling_extremes_fig)
+        pyplt.close(rolling_descriptives_fig)
+        pyplt.close(histogram_fig)
 
 
     def term_sheet_to_json(self, window=30, windows=[30, 60, 90, 120], quantiles=[0.25, 0.75], bins=100, normed=True,
