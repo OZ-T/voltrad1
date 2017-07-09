@@ -68,7 +68,7 @@ def read_graph_from_db(globalconf,log,symbol, last_date, estimator):
     name = "VOLEST"
     import sqlite3
     db_file = globalconf.config['sqllite']['graphs_db']
-    path = globalconf.config['paths']['data_folder']
+    path = globalconf.config['paths']['analytics_folder']
     store = sqlite3.connect(path + db_file)
     import pandas as pd
     df1 = pd.read_sql_query("SELECT div,script FROM " + name + " where symbol = '" + symbol + "'"
@@ -88,7 +88,7 @@ def save_graph_to_db(globalconf,log,script, div, symbol, expiry, last_date, num_
     save_dttm = dt.datetime.now()
     import sqlite3
     db_file = globalconf.config['sqllite']['graphs_db']
-    path = globalconf.config['paths']['data_folder']
+    path = globalconf.config['paths']['analytics_folder']
     dict1 = dict([
         ['script', [script]],
         ['div', [div]],
