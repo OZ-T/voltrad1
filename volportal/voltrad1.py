@@ -11,7 +11,8 @@ from flask import jsonify
 from flask import Response
 from flask.json import JSONEncoder
 from operations import market_data as md
-
+from core import vol_estimators as ve
+from volsetup.logger import logger
 
 class MiniJSONEncoder(JSONEncoder):
     """Minify JSON output."""
@@ -20,6 +21,7 @@ class MiniJSONEncoder(JSONEncoder):
 
 
 globalconf = config.GlobalConfig()
+log = logger("Flask REST API ...")
 DATA_DIR = globalconf.config['paths']['nginx_static_folder']
 exts = (".png")
 parser = reqparse.RequestParser()
@@ -86,6 +88,13 @@ class OptChainMarketData(Resource):
         # Render template
         return jsonify(json)
 
+class VolGraph(Resource):
+    def get(self,symbol, last_date, estimator):
+
+        div,script = ve.read_graph_from_db(globalconf,log,symbol, last_date, estimator)
+        JSONP_data = jsonify({"div":div,"script":script})
+        return JSONP_data
+
 
 class H5Gekko(Resource):
     def get(self):
@@ -102,6 +111,8 @@ api.add_resource(Test, '/tic/test1')
 # Better version
 api.add_resource(OptChainMarketDataInfo, '/tic/optchain_data/')
 api.add_resource(OptChainMarketData, '/tic/optchain_data/<underlySymbol>')
+
+api.add_resource(VolGraph, '/tic/graph/<symbol>/<last_date>/<estimator>')
 
 if __name__ == '__main__':
 

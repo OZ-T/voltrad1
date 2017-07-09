@@ -58,6 +58,55 @@ from operations.market_data import read_market_data_from_sqllite
 # http://stackoverflow.com/questions/4700614/how-to-put-the-legend-out-of-the-plot
 # http://www.blog.pythonlibrary.org/2010/09/04/python-101-how-to-open-a-file-or-program/
 
+
+
+def read_graph_from_db(globalconf,log,symbol, last_date, estimator):
+    """
+    return the last saved graph of that type
+    """
+    log.info("Reading Graph data from sqllite ... ")
+    name = "VOLEST"
+    import sqlite3
+    db_file = globalconf.config['sqllite']['graphs_db']
+    path = globalconf.config['paths']['data_folder']
+    store = sqlite3.connect(path + db_file)
+    import pandas as pd
+    df1 = pd.read_sql_query("SELECT div,script FROM " + name + " where symbol = '" + symbol + "'"
+                            + " and last_date = '" + last_date + "'"
+                            + " and estimator = '" + estimator + "' order by save_dttm desc ;"
+                            , store)
+
+    store.close()
+    return df1['div'].values[0], df1['script'].values[0]
+
+
+def save_graph_to_db(globalconf,log,script, div, symbol, expiry, last_date, num_days_back, resample, estimator):
+    name = "VOLEST"
+    log.info("Appending Graph data to sqllite ... ")
+    import datetime as dt
+    import pandas as pd
+    save_dttm = dt.datetime.now()
+    import sqlite3
+    db_file = globalconf.config['sqllite']['graphs_db']
+    path = globalconf.config['paths']['data_folder']
+    dict1 = dict([
+        ['script', [script]],
+        ['div', [div]],
+        ['symbol', [symbol]],
+        ['expiry', [expiry]],
+        ['last_date', [last_date]],
+        ['num_days_back', [num_days_back]],
+        ['resample', [resample]],
+        ['estimator', [estimator]],
+        ['save_dttm', [save_dttm]]
+    ])
+    df = pd.DataFrame.from_dict(dict1, orient='columns')
+    df.set_index(keys=['symbol', 'last_date', 'estimator'], drop=True, inplace=True)
+    store = sqlite3.connect(path + db_file)
+    df.to_sql(name, store, if_exists='append')
+    store.close()
+
+
 class VolatilityEstimator(object):
     def __init__(self, globalconf, log, db_type, symbol, expiry, last_date, num_days_back, resample, estimator, clean):
         if symbol is None or symbol == '':
@@ -228,15 +277,7 @@ class VolatilityEstimator(object):
         else:
             return result
 
-    def cones(self, windows=[30, 60, 90, 120], quantiles=[0.25, 0.75]):
-        """Plots volatility cones
-        Parameters
-        ----------
-        windows : [int, int, ...]
-            List of rolling windows for which to calculate the estimator cones
-        quantiles : [lower, upper]
-            List of lower and upper quantiles for which to plot the cones
-        """
+    def cones_prepare_data(self, windows=[30, 60, 90, 120], quantiles=[0.25, 0.75]):
         if len(windows) < 2:
             raise ValueError('Two or more window periods required')
         if len(quantiles) != 2:
@@ -270,12 +311,48 @@ class VolatilityEstimator(object):
         else:
             f = lambda x: "%i%%" % round(x * 100, 0)
 
-        #
-        # figure args
-        #
+        return top_q, median, bottom_q, realized, min, max, f, data
+
+    def cones_bokeh(self, windows=[30, 60, 90, 120], quantiles=[0.25, 0.75]):
+        """Plots volatility cones
+        Parameters
+        ----------
+        windows : [int, int, ...]
+            List of rolling windows for which to calculate the estimator cones
+        quantiles : [lower, upper]
+            List of lower and upper quantiles for which to plot the cones
+        """
+        top_q, median, bottom_q, realized, min, max, f, data = self.cones_prepare_data(windows, quantiles)
+
+        from bokeh.palettes import Spectral11
+        from bokeh.plotting import figure
+        from bokeh.embed import components
+
+        numlines = 6
+        mypalette = Spectral11[0:numlines]
+
+        p = figure(width=500, height=300)
+        p.multi_line(xs=[windows, windows,windows,windows,windows,windows],
+                     ys=[top_q, median, bottom_q, realized, min, max],
+                     line_color=mypalette,
+                     line_width=5)
+        script, div = components(p)
+        save_graph_to_db(self._globalconf, self._log , script, div, self._symbol, self._expiry, self._last_date,
+                         self._num_days_back, self._resample, self._estimator)
+
+
+    def cones(self, windows=[30, 60, 90, 120], quantiles=[0.25, 0.75]):
+        """Plots volatility cones
+        Parameters
+        ----------
+        windows : [int, int, ...]
+            List of rolling windows for which to calculate the estimator cones
+        quantiles : [lower, upper]
+            List of lower and upper quantiles for which to plot the cones
+        """
+        top_q, median, bottom_q, realized, min, max, f, data  = self.cones_prepare_data(windows, quantiles)
 
         fig = plt.figure(figsize=(8, 6))
-
         left, width = 0.07, 0.65
         bottom, height = 0.2, 0.7
         bottom_h = left_h = left + width + 0.02
@@ -285,10 +362,6 @@ class VolatilityEstimator(object):
 
         cones = plt.axes(rect_cones)
         box = plt.axes(rect_box)
-
-        #
-        # cones plot args
-        #
 
         # set the plots
         cones.plot(windows, max, label="Max")
@@ -926,3 +999,22 @@ class VolatilityEstimator(object):
         pyplt.close(rolling_extremes_fig)
         pyplt.close(rolling_descriptives_fig)
         pyplt.close(histogram_fig)
+
+
+if __name__ =="__main__":
+    from volsetup import config
+    from volsetup.logger import logger
+    log = logger("some testing ...")
+    globalconf = config.GlobalConfig()
+    last_date = "20170612"
+    vol = VolatilityEstimator(globalconf=globalconf,log=log,db_type="underl_ib_hist",symbol="SPY",expiry=None,
+                                     last_date=last_date, num_days_back=200, resample="1D",estimator="GarmanKlass",clean=True)
+    window=30
+    windows=[30, 60, 90, 120]
+    quantiles=[0.25, 0.75]
+    bins=100
+    normed=True
+    vol.cones_bokeh(windows=windows, quantiles=quantiles)
+
+    print (read_graph_from_db(globalconf=globalconf, log=log, symbol="SPY", last_date=last_date, estimator="GarmanKlass"))
+
