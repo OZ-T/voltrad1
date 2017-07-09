@@ -42,7 +42,7 @@ import numpy as np
 import statsmodels.api as sm
 import matplotlib
 matplotlib.use('Agg') # Must be before importing matplotlib.pyplot or pylab!
-from matplotlib.pyplot import *
+# from matplotlib.pyplot import *
 import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
@@ -53,6 +53,11 @@ from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt, mpld3
 import matplotlib.pyplot as pyplt
 from operations.market_data import read_market_data_from_sqllite
+
+from bokeh.plotting import figure
+from bokeh.models.annotations import Legend
+from bokeh.embed import components
+from bokeh.layouts import layout
 
 # references
 # http://stackoverflow.com/questions/4700614/how-to-put-the-legend-out-of-the-plot
@@ -76,11 +81,22 @@ def read_graph_from_db(globalconf,log,symbol, last_date, estimator):
                             + " and estimator = '" + estimator + "' order by save_dttm desc ;"
                             , store)
 
+    if df1.empty:
+        df2 = pd.read_sql_query("SELECT max(last_date) as max1 from " + name, store)
+        last_date = df2.iloc[0]['max1']
+        df1 = pd.read_sql_query("SELECT div,script FROM " + name + " where symbol = '" + symbol + "'"
+                                + " and last_date = '" + last_date + "'"
+                                + " and estimator = '" + estimator + "' order by save_dttm desc ;"
+                                , store)
+
+
     store.close()
     return df1['div'].values[0], df1['script'].values[0]
 
 
 def save_graph_to_db(globalconf,log,script, div, symbol, expiry, last_date, num_days_back, resample, estimator):
+    # Embedding bokeh plots in web pages
+    # http://bokeh.pydata.org/en/0.9.3/docs/user_guide/embed.html
     name = "VOLEST"
     log.info("Appending Graph data to sqllite ... ")
     import datetime as dt
@@ -323,22 +339,43 @@ class VolatilityEstimator(object):
             List of lower and upper quantiles for which to plot the cones
         """
         top_q, median, bottom_q, realized, min, max, f, data = self.cones_prepare_data(windows, quantiles)
+        colors_list = ['orange','blue','pink','black','red','green']
+        methods_list = ['x','diamond','x','square','inverted_triangle','inverted_triangle']
+        line_dash_list = ['dotted', 'dotdash', 'dotted', 'solid', 'dashed', 'dashed']
+        xs = [windows, windows, windows, windows, windows, windows]
+        ys = [top_q, median, bottom_q, realized, min, max]
+        legends_list = [str(int(quantiles[1] * 100)) + " Prctl", 'Median',
+                        str(int(quantiles[0] * 100)) + " Prctl", 'Realized', 'Min', 'Max']
+        title = self._estimator + ' (' + self._symbol + ', daily from ' + self._last_date + ' days back ' + str(self._num_days_back) + ')'
+        p = figure(title=title, plot_width=700, plot_height=500,toolbar_sticky=False,
+                   x_axis_label="Days",y_axis_label="Volatility",toolbar_location="below")
+        legend_items = []
+        for (colr, leg, x, y, method, line_dash) in zip(colors_list, legends_list, xs, ys, methods_list, line_dash_list):
+            # call dynamically the method to plot line, circle etc...
+            renderers = []
+            if method:
+                renderers.append( getattr(p, method)(x, y, color=colr,size=4) )
+            renderers.append( p.line(x, y, color=colr, line_dash=line_dash) )
+            legend_items.append((leg,renderers))
+        # doesnt work: legend = Legend(location=(0, -30), items=legend_items)
+        legend = Legend(location=(0, -30), legends=legend_items)
+        p.add_layout(legend, 'right')
 
-        from bokeh.palettes import Spectral11
-        from bokeh.plotting import figure
-        from bokeh.embed import components
+        from bokeh.charts import BoxPlot
+        df = pandas.DataFrame({"data": data[0], "group": 0})
+        df = df.append(pandas.DataFrame({"data": data[1], "group": 1}))
+        df = df.append(pandas.DataFrame({"data": data[2], "group": 2}))
+        df = df.append(pandas.DataFrame({"data": data[3], "group": 3}))
+        p2 = BoxPlot(df, values='data', label='group', title="Boxplot Summary",toolbar_location="below",
+                     legend="bottom_right", plot_width=600, plot_height=400,toolbar_sticky=False)
+        from bokeh.models.ranges import DataRange1d
+        p2.y_range = DataRange1d(np.min(df['data']-0.01), np.max(df['data']+0.01))
 
-        numlines = 6
-        mypalette = Spectral11[0:numlines]
-
-        p = figure(width=500, height=300)
-        p.multi_line(xs=[windows, windows,windows,windows,windows,windows],
-                     ys=[top_q, median, bottom_q, realized, min, max],
-                     line_color=mypalette,
-                     line_width=5)
-        script, div = components(p)
+        layout1 = layout([[p, p2]])
+        script, div = components(layout1)
         save_graph_to_db(self._globalconf, self._log , script, div, self._symbol, self._expiry, self._last_date,
                          self._num_days_back, self._resample, self._estimator)
+        return layout1
 
 
     def cones(self, windows=[30, 60, 90, 120], quantiles=[0.25, 0.75]):
@@ -1001,12 +1038,13 @@ class VolatilityEstimator(object):
         pyplt.close(histogram_fig)
 
 
-if __name__ =="__main__":
+if __name__ =="__mainKK__":
     from volsetup import config
     from volsetup.logger import logger
     log = logger("some testing ...")
     globalconf = config.GlobalConfig()
-    last_date = "20170612"
+
+    last_date = "20170706"
     vol = VolatilityEstimator(globalconf=globalconf,log=log,db_type="underl_ib_hist",symbol="SPY",expiry=None,
                                      last_date=last_date, num_days_back=200, resample="1D",estimator="GarmanKlass",clean=True)
     window=30
@@ -1014,7 +1052,17 @@ if __name__ =="__main__":
     quantiles=[0.25, 0.75]
     bins=100
     normed=True
-    vol.cones_bokeh(windows=windows, quantiles=quantiles)
+    p = vol.cones_bokeh(windows=windows, quantiles=quantiles)
+    from bokeh.plotting import show
+    show(p)
+    from bokeh.plotting import figure, output_file, show
 
+if __name__ == "__main__":
+    from volsetup import config
+    from volsetup.logger import logger
+    log = logger("some testing ...")
+    globalconf = config.GlobalConfig()
+
+    last_date = "20170708"
     print (read_graph_from_db(globalconf=globalconf, log=log, symbol="SPY", last_date=last_date, estimator="GarmanKlass"))
 

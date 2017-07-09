@@ -161,9 +161,12 @@ def run_volest_report(today_txt):
     quantiles=[0.25, 0.75]
     bins=100
     normed=True
-    vol.term_sheet_to_png(window, windows, quantiles, bins, normed)
-    vol.term_sheet_to_json(window, windows, quantiles, bins, normed)
-    vol.term_sheet_to_html(window, windows, quantiles, bins, normed)
+    # vol.term_sheet_to_png(window, windows, quantiles, bins, normed)
+    # vol.term_sheet_to_json(window, windows, quantiles, bins, normed)
+    # vol.term_sheet_to_html(window, windows, quantiles, bins, normed)
+    #vol.term_sheet_to_db(window, windows, quantiles, bins, normed)
+
+    p = vol.cones_bokeh(windows=windows, quantiles=quantiles)
 
 
 if __name__ == "__main__":

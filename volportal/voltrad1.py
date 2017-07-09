@@ -13,6 +13,7 @@ from flask.json import JSONEncoder
 from operations import market_data as md
 from core import vol_estimators as ve
 from volsetup.logger import logger
+import datetime as dt
 
 class MiniJSONEncoder(JSONEncoder):
     """Minify JSON output."""
@@ -90,8 +91,10 @@ class OptChainMarketData(Resource):
 
 class VolGraph(Resource):
     def get(self,symbol, last_date, estimator):
+        today = dt.date.today()
+        last_date1 = today.strftime('%Y%m%d')
 
-        div,script = ve.read_graph_from_db(globalconf,log,symbol, last_date, estimator)
+        div,script = ve.read_graph_from_db(globalconf=globalconf,log=log,symbol=symbol, last_date=last_date1, estimator=estimator)
         JSONP_data = jsonify({"div":div,"script":script})
         return JSONP_data
 
