@@ -54,7 +54,7 @@ import matplotlib.pyplot as plt, mpld3
 import matplotlib.pyplot as pyplt
 from operations.market_data import read_market_data_from_sqllite
 
-from bokeh.plotting import figure
+# from bokeh.plotting import figure
 from bokeh.models.annotations import Legend
 from bokeh.embed import components
 from bokeh.layouts import layout
