@@ -358,7 +358,7 @@ class VolatilityEstimator(object):
             renderers.append( p.line(x, y, color=colr, line_dash=line_dash) )
             legend_items.append((leg,renderers))
         # doesnt work: legend = Legend(location=(0, -30), items=legend_items)
-        legend = Legend(location=(0, -30), legends=legend_items)
+        legend = Legend(location=(0, -30), items=legend_items)
         p.add_layout(legend, 'right')
 
         from bokeh.charts import BoxPlot
