@@ -96,50 +96,7 @@ class GlobalConfig(object):
         path=self.config['paths']['config_folder']
         return self.get_config_csv(name,path,sep=",")
 
-    def open_yahoo_h5_store_fix(self):
-        """
-        open_yahoo_h5_store_fix
-        :return: 
-        """
-        name = self.config['use_case_yahoo_options']['hdf5_db_nm_new']
-        path=self.config['paths']['data_folder']
-        return pd.HDFStore(path + name)
 
-    def open_yahoo_h5_store_fix_error(self):
-        """
-        open_yahoo_h5_store_fix_error
-        :return: 
-        """
-        name = self.config['use_case_yahoo_options']['hdf5_db_nm_new'] + datetime.now().strftime('%Y%m%d%H%M%S')
-        path = self.config['paths']['data_folder']
-        return pd.HDFStore(path + name)
-
-    def open_orders_store(self):
-        """
-        open_orders_store
-        :return: 
-        """
-        name=self.config['db']['hdf5_orders_db']
-        path=self.config['paths']['data_folder']
-        return pd.HDFStore(path + name)
-
-    def open_table(self,name):
-        """
-        open_table
-        :param name: 
-        :return: 
-        """
-        path=self.config['paths']['data_folder']
-        return pd.HDFStore(path + name)
-
-    def open_historical_store(self):
-        """
-        open_historical_store
-        :return: 
-        """
-        name=self.config['db']['hdf5_historical_db']
-        path=self.config['paths']['data_folder']
-        return pd.HDFStore(path + name)
 
     def open_historical_optchain_store(self):
         """
@@ -175,29 +132,6 @@ class GlobalConfig(object):
         path=self.config['paths']['data_folder']
         return pd.HDFStore(path + name)
 
-    def open_economic_calendar_h5_store_error(self):
-        """
-        open_economic_calendar_h5_store_error
-        :return: 
-        """
-        name=self.config['db']['hdf5_economic_calendar_db'] + datetime.now().strftime('%Y%m%d%H%M%S')
-        path=self.config['paths']['data_folder']
-        return pd.HDFStore(path + name)
-
-    def portfolio_store(self):
-        """
-        portfolio_store
-        :return: 
-        """
-        name=self.config['db']['hdf5_portfolio_db']
-        path=self.config['paths']['data_folder']
-        return pd.HDFStore(path + name)
-
-    def portfolio_store_error(self):
-        name=self.config['db']['hdf5_portfolio_db'] + datetime.now().strftime('%Y%m%d%H%M%S')
-        path=self.config['paths']['data_folder']
-        return pd.HDFStore(path + name)
-
 
     def portfolio_dataframe_simulation(self,simulName):
         name=self.config['simulation']['simulation_template']
@@ -219,58 +153,8 @@ class GlobalConfig(object):
         return dataframe
 
 
-    def account_store_new(self):
-        name = self.config['db']['hdf5_account_db_new']
-        path=self.config['paths']['data_folder']
-        return pd.HDFStore(path + name)
-
-
-    def account_store_by_name(self, name):
-        path=self.config['paths']['data_folder']
-        return pd.HDFStore(path + name)
-
-
-    def account_store_new_error(self):
-        name = self.config['db']['hdf5_account_db_new'] + datetime.now().strftime('%Y%m%d%H%M%S')
-        path=self.config['paths']['data_folder']
-        return pd.HDFStore(path + name)
-
-
-    def open_ib_h5_store(self):
-        name=self.config['use_case_ib_options']['hdf5_db_nm']
-        path=self.config['paths']['data_folder']
-        return pd.HDFStore(path + name)
-
-    def open_ib_h5_store_value_error(self):
-        name=self.config['use_case_ib_options']['hdf5_db_nm'] + datetime.now().strftime('%Y%m%d%H%M%S')
-        path=self.config['paths']['data_folder']
-        return pd.HDFStore(path + name)
-
-    def open_orders_store_value_error(self):
-        name=self.config['db']['hdf5_orders_db'] + datetime.now().strftime('%Y%m%d%H%M%S')
-        path=self.config['paths']['data_folder']
-        return pd.HDFStore(path + name)
-
-
-    def open_ib_h5_store_original(self):
-        name="optchain_ib_hist_db_original.h5"
-        path=self.config['paths']['data_folder']
-        return pd.HDFStore(path + name)
-
-
-    def open_ib_h5_store_abt(self):
-        name="abt_optchain_ib_hist_db.h5"
-        path=self.config['paths']['data_folder']
-        return pd.HDFStore(path + name)
-
     def open_ivol_h5_db(self):
         name="optchain_ivol_hist_db_new.h5"  #self.config['use_case_ivolatility']['hdf5_db_nm']
-        path=self.config['paths']['data_folder']
-        #return h5.File(path + name)
-        return pd.HDFStore(path + name)
-
-    def open_ivol_h5_db_old(self):
-        name=self.config['use_case_ivolatility']['hdf5_db_nm']
         path=self.config['paths']['data_folder']
         #return h5.File(path + name)
         return pd.HDFStore(path + name)
@@ -297,43 +181,6 @@ class GlobalConfig(object):
         """
         return (self.config['ib_api']['errors_to_trigger']).split(',')
 
-    def open_yahoo_h5_db(self):
-        """
-        Do not use: deprecated
-        :return:
-        """
-        name = self.config['use_case_yahoo_options']['hdf5_db_nm']
-        path = self.config['paths']['data_folder']
-        return h5.File(path + name)
-
-    def open_yahoo_h5_store(self):
-        name = self.config['use_case_yahoo_options']['hdf5_db_nm']
-        path=self.config['paths']['data_folder']
-        return pd.HDFStore(path + name)
-
-    def open_yahoo_h5_store_error(self):
-        name = self.config['use_case_yahoo_options']['hdf5_db_nm'] + datetime.now().strftime('%Y%m%d%H%M%S')
-        path = self.config['paths']['data_folder']
-        return pd.HDFStore(path + name)
-
-
-    def open_ib_h5_db(self):
-        """
-        Do not use: deprecated
-        :return:
-        """
-        name = self.config['use_case_ib_options']['hdf5_db_nm']
-        path = self.config['paths']['data_folder']
-        return h5.File(path + name)
-
-    def account_store(self):
-        """
-        Deprecated
-        :return:
-        """
-        name = self.config['db']['hdf5_account_db']
-        path = self.config['paths']['data_folder']
-        return pd.HDFStore(path + name)
 
     def connect_sqldb(self):
         '''Returns a connection and a metadata object'''

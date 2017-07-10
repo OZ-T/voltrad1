@@ -20,7 +20,6 @@ import json
 from numpy.lib.stride_tricks import as_strided
 from numpy import log, sqrt
 from pylab import axhline, figure, legend, plot, show
-
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -140,22 +139,56 @@ def COPP(df, a=11, b=14, n=50, close_nm='close'):
     df=df.drop('Copp_' + str(n) + '_shift1',1)
     return df
 
+from operations import market_data as md
+import datetime
+def coppock(symbol="SPX",period="1D"):
+    client , log_analytics, globalconf = init_func()
+    last_date = datetime.datetime.today().strftime("%Y%m%d")
+    df = md.read_market_data_from_sqllite(globalconf=globalconf, log=log_analytics,
+                                          db_type="underl_ib_hist",symbol=symbol,expiry=None,
+                                          last_date=last_date, num_days_back=100, resample="1D")
+
+    df = COPP(df, 12, 6, 10)
+    end_func(client)
+    return df
+
 
 def print_coppock_diario(symbol="SPX",period="1D"):
-    client , log_analytics, globalconf = init_func()
-    #start_dt1 = dt.datetime.strptime(start_dt, '%Y%m%d')
-    #end_dt1 = dt.datetime.strptime(end_dt, '%Y%m%d')
-    df=ra.extrae_historical_underl(symbol)
-    df.index = pd.to_datetime(df.index, format="%Y%m%d  %H:%M:%S")
-    df["date"] = df.index
-    df[[u'close', u'high', u'open', u'low']]=df[[u'close', u'high',u'open',u'low']].apply(pd.to_numeric)
-    conversion = {'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last',}
-    df = df.resample(period, how=conversion).dropna()
-    # conf. semanal: StoCop (60,30,50) NO hay suficiente historico para configuracion semanal del copock
-    # conf. diaria: StoCop (12,6,10)
-    df = COPP(df, 12, 6, 10)
+    df = coppock(symbol,period)
     print(df.iloc[-HISTORY_LIMIT:]) # pinta los ultimos 30 dias del coppock
-    end_func(client)
+
+
+def graph_coppock(symbol="SPX",period="1D"):
+    df = coppock(symbol,period)
+    import pandas as pd
+    from bokeh.plotting import figure, output_file, show
+    df['date'] = df.index
+    from math import pi
+    mids = (df.open + df.close) / 2
+    spans = abs(df.close - df.open)
+    inc = df.close > df.open
+    dec = df.open > df.close
+    w = 12 * 60 * 60 * 1000  # half day in ms
+    TOOLS = "pan,wheel_zoom,box_zoom,reset,save"
+    from bokeh.models import HoverTool
+    hover = HoverTool(tooltips=[
+        ("index", "$index"),
+        ("(open,high,low,close)", "($open,$high,$low,$close)"),
+        ("desc", "@desc"),
+    ])
+
+    p = figure(x_axis_type="datetime", tools=[hover], plot_width=1000, toolbar_location="left",toolbar_sticky=False)
+    p.toolbar_location="below"
+    p.segment(df.date, df.high, df.date, df.low, color="black")
+    p.rect(df.date[inc], mids[inc], w, spans[inc], fill_color="#D5E1DD", line_color="black")
+    p.rect(df.date[dec], mids[dec], w, spans[dec], fill_color="#F2583E", line_color="black")
+
+    p.title = "Daily Coppock (" + symbol + ")"
+    p.xaxis.major_label_orientation = pi / 4
+    p.grid.grid_line_alpha = 0.3
+
+
+    show(p)  # open a browser
 
 
 def print_volatity(symbol):

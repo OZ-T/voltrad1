@@ -18,11 +18,12 @@ migrate_h5:
 # Operations
 print_acc_port:
   pointer:  operations.accounting.print_10_days_acc_summary_and_current_positions
-
-
 # trend and risk indicators
 coppock:
    pointer: core.analytics_methods.print_coppock_diario
+
+
+##### NEED TO REVIEW
 emas:
    pointer: core.analytics_methods.print_emas
 summary:

@@ -58,4 +58,7 @@ class MarketData_tests(unittest.TestCase):
 if __name__ == "__main__":
     import operations.market_data as md
     globalconf = config.GlobalConfig()
-    print (md.get_datasources(globalconf))
+    from core import analytics_methods as am
+    #am.print_coppock_diario(symbol="SPX",period="1D")
+    am.graph_coppock(symbol="SPX",period="1D")
+    #print (md.get_datasources(globalconf))
