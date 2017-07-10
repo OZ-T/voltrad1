@@ -248,7 +248,7 @@ def graph_coppock(symbol="SPX",period="1D"):
     p.xaxis.major_label_orientation = pi / 4
     p.grid.grid_line_alpha = 0.3
     script, div = components(p)
-    save_graph_to_db(globalconf=globalconf, log=log, script=script, div=div, symbol=symbol,
+    save_graph_to_db(globalconf=globalconf, log=log_analytics, script=script, div=div, symbol=symbol,
                      expiry="0", last_date=last_date, num_days_back="-1", resample="NA",
                      estimator="COPPOCK",name="TREND")
     end_func(client)
