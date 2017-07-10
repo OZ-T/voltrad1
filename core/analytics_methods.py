@@ -22,6 +22,7 @@ from numpy import log, sqrt
 from pylab import axhline, figure, legend, plot, show
 from bokeh.embed import components
 import warnings
+from bokeh.models.annotations import Title
 
 warnings.filterwarnings("ignore")
 HISTORY_LIMIT = 20
@@ -243,7 +244,7 @@ def graph_coppock(symbol="SPX",period="1D"):
     p.rect(df.date[inc], mids[inc], w, spans[inc], fill_color="#D5E1DD", line_color="black")
     p.rect(df.date[dec], mids[dec], w, spans[dec], fill_color="#F2583E", line_color="black")
 
-    p.title = "Daily Coppock (" + symbol + ")"
+    p.title = Title(text="Daily Coppock (" + symbol + ")")
     p.xaxis.major_label_orientation = pi / 4
     p.grid.grid_line_alpha = 0.3
     script, div = components(p)
