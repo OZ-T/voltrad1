@@ -91,7 +91,7 @@ def read_graph_from_db(globalconf,log,symbol, last_date, estimator):
 
 
     store.close()
-    return df1['div'].values[0], df1['script'].values[0], last_date
+    return df1['div'].values[0], df1['script'].values[0]
 
 
 def save_graph_to_db(globalconf,log,script, div, symbol, expiry, last_date, num_days_back, resample, estimator):
@@ -145,9 +145,9 @@ class VolatilityEstimator(object):
         self._expiry = expiry
         self._resample = resample
         self._clean = clean
-        self._prices, self._last_date = read_market_data_from_sqllite(self._globalconf, self._log, db_type=self._db_type,
-                                                      symbol=self._symbol,expiry=self._expiry, last_date=self._last_date,
-                                                      num_days_back=self._num_days_back, resample=self._resample)
+        self._prices = read_market_data_from_sqllite(self._globalconf, self._log, db_type=self._db_type,
+                                                       symbol=self._symbol,expiry=self._expiry, last_date=self._last_date,
+                                                       num_days_back=self._num_days_back, resample=self._resample)
 
         matplotlib.rc('image', origin='upper')
         matplotlib.rcParams['font.family'] = 'Times New Roman'
