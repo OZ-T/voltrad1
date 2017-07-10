@@ -12,6 +12,7 @@ from flask import Response
 from flask.json import JSONEncoder
 from operations import market_data as md
 from core import vol_estimators as ve
+from core import analytics_methods as am
 from volsetup.logger import logger
 import datetime as dt
 
@@ -90,11 +91,12 @@ class OptChainMarketData(Resource):
         return jsonify(json)
 
 class VolGraph(Resource):
-    def get(self,symbol, last_date, estimator):
+    def get(self,symbol, last_date, estimator,name):
         today = dt.date.today()
         last_date1 = today.strftime('%Y%m%d')
 
-        div,script = ve.read_graph_from_db(globalconf=globalconf,log=log,symbol=symbol, last_date=last_date1, estimator=estimator)
+        div,script = am.read_graph_from_db(globalconf=globalconf,log=log,symbol=symbol,
+                                           last_date=last_date1, estimator=estimator,name=name)
         JSONP_data = jsonify({"div":div,"script":script})
         return JSONP_data
 
@@ -115,7 +117,7 @@ api.add_resource(Test, '/tic/test1')
 api.add_resource(OptChainMarketDataInfo, '/tic/optchain_data/')
 api.add_resource(OptChainMarketData, '/tic/optchain_data/<underlySymbol>')
 
-api.add_resource(VolGraph, '/tic/graph/<symbol>/<last_date>/<estimator>')
+api.add_resource(VolGraph, '/tic/graph/<symbol>/<last_date>/<name>/<estimator>')
 
 if __name__ == '__main__':
 

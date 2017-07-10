@@ -20,6 +20,7 @@ import json
 from numpy.lib.stride_tricks import as_strided
 from numpy import log, sqrt
 from pylab import axhline, figure, legend, plot, show
+from bokeh.embed import components
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -141,25 +142,84 @@ def COPP(df, a=11, b=14, n=50, close_nm='close'):
 
 from operations import market_data as md
 import datetime
-def coppock(symbol="SPX",period="1D"):
-    client , log_analytics, globalconf = init_func()
-    last_date = datetime.datetime.today().strftime("%Y%m%d")
+def coppock(globalconf, log_analytics, last_date, symbol="SPX",period="1D"):
     df = md.read_market_data_from_sqllite(globalconf=globalconf, log=log_analytics,
                                           db_type="underl_ib_hist",symbol=symbol,expiry=None,
                                           last_date=last_date, num_days_back=100, resample="1D")
 
     df = COPP(df, 12, 6, 10)
-    end_func(client)
     return df
 
 
 def print_coppock_diario(symbol="SPX",period="1D"):
-    df = coppock(symbol,period)
+    client, log_analytics, globalconf = init_func()
+    last_date = datetime.datetime.today().strftime("%Y%m%d")
+    df = coppock(globalconf, log_analytics, last_date, symbol, period)
     print(df.iloc[-HISTORY_LIMIT:]) # pinta los ultimos 30 dias del coppock
+    end_func(client)
+
+
+def read_graph_from_db(globalconf,log,symbol, last_date, estimator,name):
+    """
+    return the last saved graph of that type
+    """
+    log.info("Reading Graph data from sqllite ... ")
+    import sqlite3
+    db_file = globalconf.config['sqllite']['graphs_db']
+    path = globalconf.config['paths']['analytics_folder']
+    store = sqlite3.connect(path + db_file)
+    import pandas as pd
+    df1 = pd.read_sql_query("SELECT div,script FROM " + name + " where symbol = '" + symbol + "'"
+                            + " and last_date = '" + last_date + "'"
+                            + " and estimator = '" + estimator + "' order by save_dttm desc ;"
+                            , store)
+
+    if df1.empty:
+        df2 = pd.read_sql_query("SELECT max(last_date) as max1 from " + name, store)
+        last_date = df2.iloc[0]['max1']
+        df1 = pd.read_sql_query("SELECT div,script FROM " + name + " where symbol = '" + symbol + "'"
+                                + " and last_date = '" + last_date + "'"
+                                + " and estimator = '" + estimator + "' order by save_dttm desc ;"
+                                , store)
+
+
+    store.close()
+    return df1['div'].values[0], df1['script'].values[0]
+
+def save_graph_to_db(globalconf,log,script, div, symbol, expiry, last_date, num_days_back, resample, estimator,name):
+    # Embedding bokeh plots in web pages
+    # http://bokeh.pydata.org/en/0.9.3/docs/user_guide/embed.html
+    log.info("Appending Graph data to sqllite ... ")
+    import datetime as dt
+    import pandas as pd
+    save_dttm = dt.datetime.now()
+    import sqlite3
+    db_file = globalconf.config['sqllite']['graphs_db']
+    path = globalconf.config['paths']['analytics_folder']
+    dict1 = dict([
+        ['script', [script]],
+        ['div', [div]],
+        ['symbol', [symbol]],
+        ['expiry', [expiry]],
+        ['last_date', [last_date]],
+        ['num_days_back', [num_days_back]],
+        ['resample', [resample]],
+        ['estimator', [estimator]],
+        ['save_dttm', [save_dttm]]
+    ])
+    df = pd.DataFrame.from_dict(dict1, orient='columns')
+    df.set_index(keys=['symbol', 'last_date', 'estimator'], drop=True, inplace=True)
+    store = sqlite3.connect(path + db_file)
+    df.to_sql(name, store, if_exists='append')
+    store.close()
+
+
 
 
 def graph_coppock(symbol="SPX",period="1D"):
-    df = coppock(symbol,period)
+    client, log_analytics, globalconf = init_func()
+    last_date = datetime.datetime.today().strftime("%Y%m%d")
+    df = coppock(globalconf, log_analytics, last_date, symbol, period)
     import pandas as pd
     from bokeh.plotting import figure, output_file, show
     df['date'] = df.index
@@ -186,10 +246,11 @@ def graph_coppock(symbol="SPX",period="1D"):
     p.title = "Daily Coppock (" + symbol + ")"
     p.xaxis.major_label_orientation = pi / 4
     p.grid.grid_line_alpha = 0.3
-
-
-    show(p)  # open a browser
-
+    script, div = components(p)
+    save_graph_to_db(globalconf=globalconf, log=log, script=script, div=div, symbol=symbol,
+                     expiry="0", last_date=last_date, num_days_back="-1", resample="NA",
+                     estimator="COPPOCK",name="TREND")
+    end_func(client)
 
 def print_volatity(symbol):
     window=34.0
