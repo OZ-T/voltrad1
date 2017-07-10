@@ -12,6 +12,8 @@ run_dq_report_market:
   pointer: core.reporting.run_dq_report_market
 run_volest_report:
   pointer: core.reporting.run_volest_report
+run_trend_report:
+  pointer: core.reporting.run_trend_report
 # H5 legacy
 migrate_h5:
   pointer:  operations.h5_legacy_methods.migrate_h5

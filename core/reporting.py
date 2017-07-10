@@ -10,6 +10,8 @@ from matplotlib.pyplot import *
 import datetime as dt
 import matplotlib as plt
 import matplotlib.pyplot as pyplt
+import core.analytics_methods as am
+
 report_dict_ib = {
     "symbols":['ES','SPY'],
     "expiries":['2017-06','2017-07','2017-08','2017-09','2017-10','2017-11','2017-12','2018-01'],
@@ -141,6 +143,17 @@ def save_image_plot_lines_multi_strike(globalconf,dict_df):
 
 
 import core.vol_estimators as volest
+
+def run_trend_report(today_txt):
+    log = logger("Trend report ...")
+    globalconf = config.GlobalConfig()
+    if today_txt is None:
+        today = dt.date.today()
+        last_date = today.strftime('%Y%m%d')
+    else:
+        last_date = today_txt
+
+    am.graph_coppock(symbol="SPX",period="1D")
 
 def run_volest_report(today_txt):
     """
