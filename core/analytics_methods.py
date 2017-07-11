@@ -224,7 +224,7 @@ def graph_coppock(symbol="SPX",period="1D"):
     df = coppock(globalconf, log_analytics, last_date, symbol, period)
     import pandas as pd
     from bokeh.plotting import figure, output_file, show
-    df['date'] = df.index
+    df = df.reset_index()
     from math import pi
     mids = (df.open + df.close) / 2
     spans = abs(df.close - df.open)
@@ -232,14 +232,10 @@ def graph_coppock(symbol="SPX",period="1D"):
     dec = df.open > df.close
     w = 12 * 60 * 60 * 1000  # half day in ms
     TOOLS = "pan,wheel_zoom,box_zoom,reset,save"
-    from bokeh.models import HoverTool
-    hover = HoverTool(tooltips=[
-        ("index", "$index"),
-        ("(open,high,low,close)", "($open,$high,$low,$close)"),
-        ("desc", "@desc"),
-    ])
-
-    p = figure(x_axis_type="datetime", tools=[hover], plot_width=1000, toolbar_location="left",toolbar_sticky=False)
+    from bokeh.models import HoverTool, ColumnDataSource
+    source = ColumnDataSource(df)
+    TOOLS = "hover,save,pan,box_zoom,reset,wheel_zoom"
+    p = figure(x_axis_type="datetime", tools=TOOLS, plot_width=1000, toolbar_location="left",toolbar_sticky=False)
     p.toolbar_location="below"
     p.segment(df.date, df.high, df.date, df.low, color="black")
     p.rect(df.date[inc], mids[inc], w, spans[inc], fill_color="#D5E1DD", line_color="black")
@@ -248,11 +244,34 @@ def graph_coppock(symbol="SPX",period="1D"):
     p.title = Title(text="Daily Coppock (" + symbol + ")")
     p.xaxis.major_label_orientation = pi / 4
     p.grid.grid_line_alpha = 0.3
+
+
+    from bokeh.models.ranges import Range1d
+    from bokeh.models import LinearAxis
+    # Setting the second y axis range name and range
+    p.y_range = Range1d(np.min(df.low - 0.01 *df.low), np.max(df.high + 0.01 *df.high))
+    p.extra_y_ranges = {"foo": Range1d(start=np.min(df.Copp_10 - 0.01 * df.Copp_10), end=np.max(df.Copp_10 + 0.01 * df.Copp_10))}
+
+    # Using the aditional y range named "foo" and "right" y axis here.
+    p.line(df.date, df.Copp_10, y_range_name="foo")
+
+
+    # Adding the second axis to the plot.
+    p.add_layout(LinearAxis(y_range_name="foo"), 'right')
+
+
+
+
+    p.select_one(HoverTool).tooltips = [
+        ('date', '@date'),
+        ("(open,high,low,close)", "(@open{(.00)},@high{(.00)},@low{(.00)},@close{(.00)})"),
+    ]
     script, div = components(p)
     save_graph_to_db(globalconf=globalconf, log=log_analytics, script=script, div=div, symbol=symbol,
                      expiry="0", last_date=last_date, num_days_back="-1", resample="NA",
                      estimator="COPPOCK",name="TREND")
     end_func(client)
+    return p
 
 def print_volatity(symbol):
     window=34.0
