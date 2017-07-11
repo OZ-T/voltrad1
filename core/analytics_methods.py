@@ -180,11 +180,12 @@ def read_graph_from_db(globalconf,log,symbol, last_date, estimator,name):
         last_date = df2.iloc[0]['max1']
         df1 = pd.read_sql_query("SELECT div,script FROM " + name + " where symbol = '" + symbol + "'"
                                 + " and last_date = '" + last_date + "'"
-                                + " and estimator = '" + estimator + "' order by save_dttm desc ;"
+                                + " and estimator = UPPER('" + estimator + "') order by save_dttm desc ;"
                                 , store)
-
-
+        if df1.empty:
+            return None
     store.close()
+
     return df1['div'].values[0], df1['script'].values[0]
 
 def save_graph_to_db(globalconf,log,script, div, symbol, expiry, last_date, num_days_back, resample, estimator,name):
@@ -985,7 +986,16 @@ if __name__ == "__main__":
     #print_emas("SPX")
     #print_summary_underl("SPX")
     #print_fast_move("SPX")
-    print_tic_report(symbol="SPY", expiry="20170317",history=3)
+    #print_tic_report(symbol="SPY", expiry="20170317",history=3)
     #print_account_delta(valuation_dt="2017-01-31-20")
     #print_volatity("SPY")
     #print_volatility_cone(symbol="SPY")
+    today = dt.date.today()
+    last_date1 = today.strftime('%Y%m%d')
+    globalconf = config.GlobalConfig(level=logger.ERROR)
+    log = globalconf.log
+
+    div, script = read_graph_from_db(globalconf=globalconf, log=log, symbol="SPX",
+                                        last_date=last_date1, estimator="Coppock", name="TREND")
+
+    print((div, script))
