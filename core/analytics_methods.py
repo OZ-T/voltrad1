@@ -358,12 +358,11 @@ def print_fast_move(symbol):
 
 def print_emas(symbol="SPX"):
     client, log_analytics, globalconf = init_func()
-    df = ra.extrae_historical_underl(symbol)
-    df.index = pd.to_datetime(df.index, format="%Y%m%d  %H:%M:%S")
-    df["date"] = df.index
-    df[[u'close', u'high', u'open', u'low']]=df[[u'close', u'high',u'open',u'low']].apply(pd.to_numeric)
-    conversion = {'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last',}
-    df = df.resample('1D', how=conversion).dropna()
+    last_date = datetime.datetime.today().strftime("%Y%m%d")
+    df = md.read_market_data_from_sqllite(globalconf=globalconf, log=log_analytics,
+                                          db_type="underl_ib_hist",symbol=symbol,expiry=None,
+                                          last_date=last_date, num_days_back=100, resample="1D")
+
     n = 50
     ema50 = pd.Series(pd.Series.ewm(df['close'], span = n, min_periods = n,
                      adjust=True, ignore_na=False).mean(), name = 'EMA_' + str(n))
@@ -371,12 +370,12 @@ def print_emas(symbol="SPX"):
     df['RSK_EMA50'] = np.where(df['close'] > df['EMA_' + str(n)], "-----", "ALERT")
 
     # sacar los canales de IV del historico del VIX
-    vix = ra.extrae_historical_underl("VIX")
-    vix.index = pd.to_datetime(vix.index, format="%Y%m%d  %H:%M:%S")
-    vix["date"] = vix.index
-    vix[[u'close', u'high', u'open', u'low']]=vix[[u'close', u'high',u'open',u'low']].apply(pd.to_numeric)
-    conversion = {'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last',}
-    vix = vix.resample('1D', how=conversion).dropna().rename(columns={'close': 'vix'})['vix']
+    vix = md.read_market_data_from_sqllite(globalconf=globalconf, log=log_analytics,
+                                          db_type="underl_ib_hist",symbol="VIX",expiry=None,
+                                          last_date=last_date, num_days_back=100, resample="1D")
+
+
+    vix = vix.dropna().rename(columns={'close': 'vix'})['vix']
     df = df.join(vix)
     df['lower_wk_iv']=df['close'].shift(5) * (1 - (df['vix'].shift(5)*0.01 / np.sqrt(252/5)) )
     df['upper_wk_iv'] = df['close'].shift(5) * (1 + (df['vix'].shift(5)*0.01 / np.sqrt(252/5)))
