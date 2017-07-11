@@ -180,7 +180,7 @@ def read_graph_from_db(globalconf,log,symbol, last_date, estimator,name):
         last_date = df2.iloc[0]['max1']
         df1 = pd.read_sql_query("SELECT div,script FROM " + name + " where symbol = '" + symbol + "'"
                                 + " and last_date = '" + last_date + "'"
-                                + " and estimator = UPPER('" + estimator + "') order by save_dttm desc ;"
+                                + " and UPPER(estimator) = UPPER('" + estimator + "') order by save_dttm desc ;"
                                 , store)
         if df1.empty:
             return None
