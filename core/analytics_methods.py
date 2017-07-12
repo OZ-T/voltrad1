@@ -439,7 +439,7 @@ def graph_emas(symbol="SPX"):
     script, div = components(p)
     save_graph_to_db(globalconf=globalconf, log=log_analytics, script=script, div=div, symbol=symbol,
                      expiry="0", last_date=last_date, num_days_back="500", resample="NA",
-                     estimator="EMAS",name="TREND")
+                     estimator="EMA50",name="TREND")
     end_func(client)
     return p
 
