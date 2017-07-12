@@ -366,7 +366,7 @@ class VolatilityEstimator(object):
         df = df.append(pandas.DataFrame({"data": data[1], "group": 1}))
         df = df.append(pandas.DataFrame({"data": data[2], "group": 2}))
         df = df.append(pandas.DataFrame({"data": data[3], "group": 3}))
-        p2 = BoxPlot(df, values='data', label='group', title="Boxplot Summary",toolbar_location="below",
+        p2 = BoxPlot(df, values='data', label='group', title="Boxplot Summary (" + self._last_date + ") (" + self._symbol + ")" ,toolbar_location="below",
                      legend="bottom_right", plot_width=600, plot_height=400,toolbar_sticky=False)
         from bokeh.models.ranges import DataRange1d
         p2.y_range = DataRange1d(np.min(df['data']-0.01), np.max(df['data']+0.01))

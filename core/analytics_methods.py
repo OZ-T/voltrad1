@@ -259,9 +259,6 @@ def graph_coppock(symbol="SPX",period="1D"):
     # Adding the second axis to the plot.
     p.add_layout(LinearAxis(y_range_name="foo"), 'right')
 
-
-
-
     p.select_one(HoverTool).tooltips = [
         ('date', '@date'),
         ("(open,high,low,close)", "(@open{(.00)},@high{(.00)},@low{(.00)},@close{(.00)})"),
@@ -359,16 +356,26 @@ def print_fast_move(symbol):
 def print_emas(symbol="SPX"):
     client, log_analytics, globalconf = init_func()
     last_date = datetime.datetime.today().strftime("%Y%m%d")
+    df = get_emas(last_date, log_analytics, globalconf, symbol=symbol)
+    output = df.iloc[-HISTORY_LIMIT:].to_string(formatters={
+                                    'lower_wk_iv': '{:,.2f}'.format,
+                                    'upper_wk_iv': '{:,.2f}'.format,
+                                    'lower_mo_iv': '{:,.2f}'.format,
+                                    'upper_mo_iv': '{:,.2f}'.format,
+                                    'EMA_' + str(n): '{:,.2f}'.format
+                                })
+    print(output)
+    end_func(client)
+
+def get_emas(last_date, log_analytics, globalconf, symbol="SPX"):
     df = md.read_market_data_from_sqllite(globalconf=globalconf, log=log_analytics,
                                           db_type="underl_ib_hist",symbol=symbol,expiry=None,
-                                          last_date=last_date, num_days_back=100, resample="1D")
-
+                                          last_date=last_date, num_days_back=500, resample="1D")
     n = 50
     ema50 = pd.Series(pd.Series.ewm(df['close'], span = n, min_periods = n,
                      adjust=True, ignore_na=False).mean(), name = 'EMA_' + str(n))
     df = df.join(ema50)
     df['RSK_EMA50'] = np.where(df['close'] > df['EMA_' + str(n)], "-----", "ALERT")
-
     # sacar los canales de IV del historico del VIX
     vix = md.read_market_data_from_sqllite(globalconf=globalconf, log=log_analytics,
                                           db_type="underl_ib_hist",symbol="VIX",expiry=None,
@@ -386,16 +393,58 @@ def print_emas(symbol="SPX"):
                                   (df['close'] > df['lower_wk_iv']), "-----", "ALERT")
     df['CANAL_IV_MO'] = np.where( (df['close'] < df['upper_mo_iv']) &
                                    (df['close'] > df['lower_mo_iv']), "-----", "ALERT")
+    return df
 
-    output = df.iloc[-HISTORY_LIMIT:].to_string(formatters={
-                                    'lower_wk_iv': '{:,.2f}'.format,
-                                    'upper_wk_iv': '{:,.2f}'.format,
-                                    'lower_mo_iv': '{:,.2f}'.format,
-                                    'upper_mo_iv': '{:,.2f}'.format,
-                                    'EMA_' + str(n): '{:,.2f}'.format
-                                })
-    print(output)
+
+def graph_emas(symbol="SPX"):
+    client, log_analytics, globalconf = init_func()
+    last_date = datetime.datetime.today().strftime("%Y%m%d")
+
+    df = get_emas(last_date, log_analytics, globalconf, symbol=symbol).iloc[-50:]
+    from bokeh.plotting import figure
+    df = df.reset_index()
+    from bokeh.models import HoverTool, ColumnDataSource
+    source = ColumnDataSource(df)
+    TOOLS = "hover,save,pan,box_zoom,reset,wheel_zoom"
+    p = figure(x_axis_type="datetime", tools=TOOLS, plot_width=1000, toolbar_location="left",toolbar_sticky=False)
+
+
+
+    from math import pi
+    mids = (df.open + df.close) / 2
+    spans = abs(df.close - df.open)
+    inc = df.close > df.open
+    dec = df.open > df.close
+    w = 12 * 60 * 60 * 1000  # half day in ms
+
+    p.toolbar_location="below"
+    p.segment(df.date, df.high, df.date, df.low, color="black")
+    p.rect(df.date[inc], mids[inc], w, spans[inc], fill_color="#D5E1DD", line_color="black")
+    p.rect(df.date[dec], mids[dec], w, spans[dec], fill_color="#F2583E", line_color="black")
+
+    p.title = Title(text="EMA(50) (" + symbol + ")")
+    p.xaxis.major_label_orientation = pi / 4
+    p.grid.grid_line_alpha = 0.3
+
+
+    from bokeh.models.ranges import Range1d
+    from bokeh.models import LinearAxis
+    p.line(df.date, df.EMA_50)
+    p.line(df.date, df.lower_wk_iv)
+    p.line(df.date, df.upper_wk_iv)
+
+    p.line(df.date, df.lower_mo_iv)
+    p.line(df.date, df.upper_mo_iv)
+
+    script, div = components(p)
+    save_graph_to_db(globalconf=globalconf, log=log_analytics, script=script, div=div, symbol=symbol,
+                     expiry="0", last_date=last_date, num_days_back="500", resample="NA",
+                     estimator="EMAS",name="TREND")
     end_func(client)
+    return p
+
+
+
 
 def print_account_snapshot(valuation_dt):
     """

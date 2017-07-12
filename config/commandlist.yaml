@@ -23,11 +23,11 @@ print_acc_port:
 # trend and risk indicators
 coppock:
    pointer: core.analytics_methods.print_coppock_diario
+emas:
+   pointer: core.analytics_methods.print_emas
 
 
 ##### NEED TO REVIEW
-emas:
-   pointer: core.analytics_methods.print_emas
 summary:
   pointer: core.analytics_methods.print_summary_underl
 vol:
