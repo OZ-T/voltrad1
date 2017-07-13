@@ -12,3 +12,6 @@ if [[ $(( /home/david/anaconda3/bin/python /home/david/voltrad1/volibutils/run_i
 else
     echo $NOW1 "IBG is answering request. Nothing to do for now."
 fi
+
+# TODO: check this also
+# Connectivity between Trader Workstation and server is broken
