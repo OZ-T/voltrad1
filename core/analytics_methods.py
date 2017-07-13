@@ -216,8 +216,6 @@ def save_graph_to_db(globalconf,log,script, div, symbol, expiry, last_date, num_
     store.close()
 
 
-
-
 def graph_coppock(symbol="SPX",period="1D"):
     client, log_analytics, globalconf = init_func()
     last_date = datetime.datetime.today().strftime("%Y%m%d")
@@ -270,50 +268,88 @@ def graph_coppock(symbol="SPX",period="1D"):
     end_func(client)
     return p
 
-def print_volatity(symbol):
-    window=34.0
-    year_days=252.0
+def get_volatility_for_report(symbol,client,log_analytics,globalconf,last_date):
+    window = 34.0
+    year_days = 252.0
     length = 20
-    client, log_analytics, globalconf = init_func()
-    df = ra.extrae_historical_underl(symbol)
-    df.index = pd.to_datetime(df.index, format="%Y%m%d  %H:%M:%S")
-    df["date"] = df.index
-    df[[u'close', u'high', u'open', u'low']]=df[[u'close', u'high',u'open',u'low']].apply(pd.to_numeric)
-    conversion = {'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last',}
-    df = df.resample('1D', how=conversion).dropna().rename(columns={'close': symbol})
-    df['HV'] = pd.rolling_std(df[symbol],window=int(window),min_periods=int(window)) * np.sqrt(window / year_days)
-    df=df.drop(['high','open','low'], 1)
-    vix = ra.extrae_historical_underl("VIX")
-    vix.index = pd.to_datetime(vix.index, format="%Y%m%d  %H:%M:%S")
-    vix["date"] = vix.index
-    vix[[u'close', u'high', u'open', u'low']]=vix[[u'close', u'high',u'open',u'low']].apply(pd.to_numeric)
-    conversion = {'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last',}
-    vix = vix.resample('1D', how=conversion).dropna().rename(columns={'close': 'vix'})['vix']
-    vix_ewm = pd.Series(pd.Series.ewm(vix, span = length, min_periods = length,
-                     adjust=True, ignore_na=False).mean(), name = 'vix_ema' + str(length))
+    df = md.read_market_data_from_sqllite(globalconf=globalconf, log=log_analytics,
+                                          db_type="underl_ib_hist", symbol=symbol, expiry=None,
+                                          last_date=last_date, num_days_back=100, resample="1D")
+    df = df.rename(columns={'close': symbol})
+    df['HV'] = pd.rolling_std(df[symbol], window=int(window), min_periods=int(window)) * np.sqrt(window / year_days)
+    df = df.drop(['high', 'open', 'low'], 1)
+
+    vix = md.read_market_data_from_sqllite(globalconf=globalconf, log=log_analytics,
+                                           db_type="underl_ib_hist", symbol="VIX", expiry=None,
+                                           last_date=last_date, num_days_back=100, resample="1D")
+    vix = vix.rename(columns={'close': 'vix'})['vix']
+    vix_ewm = pd.Series(pd.Series.ewm(vix, span=length, min_periods=length,
+                                      adjust=True, ignore_na=False).mean(), name='vix_ema' + str(length))
     df = df.join(vix_ewm)
     df = df.join(vix)
     vix_std = pd.rolling_std(df['vix'], window=int(window), min_periods=int(window))
-    VIX_BB_2SD_UP = vix_ewm + 2 * vix_std
-    VIX_BB_2SD_DOWN = vix_ewm - 2 * vix_std
-    VIX_BB_1SD_UP = vix_ewm +  vix_std
-    VIX_BB_1SD_DOWN = vix_ewm -  vix_std
+    df['VIX_BB_2SD_UP'] = vix_ewm + 2 * vix_std
+    df['VIX_BB_2SD_DOWN'] = vix_ewm - 2 * vix_std
+    df['VIX_BB_1SD_UP'] = vix_ewm + vix_std
+    df['VIX_BB_1SD_DOWN'] = vix_ewm - vix_std
 
-    VIX_BB_2SD_UP.sort_index(inplace=True)
-    VIX_BB_2SD_DOWN.sort_index(inplace=True)
-    VIX_BB_1SD_UP.sort_index(inplace=True)
-    VIX_BB_1SD_UP.sort_index(inplace=True)
+    #df.VIX_BB_2SD_UP.sort_index(inplace=True)
+    #df.VIX_BB_2SD_DOWN.sort_index(inplace=True)
+    #df.VIX_BB_1SD_UP.sort_index(inplace=True)
+    #df.VIX_BB_1SD_UP.sort_index(inplace=True)
     df.sort_index(inplace=True)
     try:
-        df['ALERT_IV'] = np.where(( ( df['vix'] < VIX_BB_1SD_DOWN ) ) , "LOW","------")
-        df['ALERT_IV'] = np.where(( ( df['vix'] > VIX_BB_1SD_UP ) ) , "HIGH",df['ALERT_IV'])
-        df['ALERT_IV'] = np.where( (df['vix'] < VIX_BB_2SD_DOWN) , "EXTREME_LOW",df['ALERT_IV'])
-        df['ALERT_IV'] = np.where(( ( df['vix'] > VIX_BB_2SD_UP ) ) , "EXTREME_HIGH",df['ALERT_IV'])
+        df['ALERT_IV'] = np.where(((df['vix'] < df.VIX_BB_1SD_DOWN)), "LOW", "------")
+        df['ALERT_IV'] = np.where(((df['vix'] > df.VIX_BB_1SD_UP)), "HIGH", df['ALERT_IV'])
+        df['ALERT_IV'] = np.where((df['vix'] < df.VIX_BB_2SD_DOWN), "EXTREME_LOW", df['ALERT_IV'])
+        df['ALERT_IV'] = np.where(((df['vix'] > df.VIX_BB_2SD_UP)), "EXTREME_HIGH", df['ALERT_IV'])
     except ValueError as e:
         print("ValueError raised [" + str(e) + "]  Missing rows for VIX needed to generate alerts ...")
+    return df
+
+def print_volatity(symbol):
+    client, log_analytics, globalconf = init_func()
+    last_date = datetime.datetime.today().strftime("%Y%m%d")
+    df = get_volatility_for_report(symbol,client,log_analytics,globalconf,last_date)
 
     print( df.iloc[-HISTORY_LIMIT:])
     end_func(client)
+
+def graph_volatility(symbol):
+    client, log_analytics, globalconf = init_func()
+    last_date = datetime.datetime.today().strftime("%Y%m%d")
+    df = get_volatility_for_report(symbol,client,log_analytics,globalconf,last_date)
+    df = df.reset_index()
+    colors_list = ['orange', 'blue', 'pink', 'black', 'red', 'green']
+    methods_list = ['x', 'diamond', 'x', 'square', 'inverted_triangle', 'inverted_triangle']
+    line_dash_list = ['dotted', 'dotdash', 'dotted', 'solid', 'dashed', 'dashed']
+    xs = [df.date, df.date, df.date, df.date, df.date, df.date]
+    ys = [df.HV, df.vix, df.vix_ema20, df.VIX_BB_2SD_UP, df.VIX_BB_2SD_DOWN, df.VIX_BB_1SD_UP, df.VIX_BB_1SD_DOWN]
+    legends_list = ["HV", "VIX", "vix_ema20", 'VIX_BB_2SD_UP', 'VIX_BB_2SD_DOWN', 'VIX_BB_1SD_UP','VIX_BB_1SD_DOWN']
+    title = 'Volatility (' + symbol + ', daily from ' + last_date
+    from bokeh.plotting import figure
+    p = figure(title=title, plot_width=700, plot_height=500, toolbar_sticky=False,
+               x_axis_label="Dates", y_axis_label="Volatility", toolbar_location="below")
+    legend_items = []
+
+    for (colr, leg, x, y, method, line_dash) in zip(colors_list, legends_list, xs, ys, methods_list, line_dash_list):
+        # call dynamically the method to plot line, circle etc...
+        renderers = []
+        if method:
+            renderers.append(getattr(p, method)(x, y, color=colr, size=4))
+        renderers.append(p.line(x, y, color=colr, line_dash=line_dash))
+        legend_items.append((leg, renderers))
+    # doesnt work: legend = Legend(location=(0, -30), items=legend_items)
+    from bokeh.models.annotations import Legend
+    legend = Legend(location=(0, -30), items=legend_items)
+    p.add_layout(legend, 'right')
+
+    script, div = components(p)
+    save_graph_to_db(globalconf, log_analytics, script, div, symbol, "0", last_date,100, "1D", "Volatility","TREND")
+
+    end_func(client)
+    return p
+
 
 def print_fast_move(symbol):
     length = 20.0

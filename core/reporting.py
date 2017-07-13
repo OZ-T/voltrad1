@@ -155,6 +155,7 @@ def run_trend_report(today_txt):
 
     am.graph_coppock(symbol="SPY",period="1D")
     am.graph_emas(symbol="SPY")
+    am.graph_volatility(symbol="SPY")
 
 def run_volest_report(today_txt):
     """

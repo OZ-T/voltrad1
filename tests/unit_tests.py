@@ -61,7 +61,8 @@ if __name__ == "__main__":
     from core import analytics_methods as am
     #am.print_coppock_diario(symbol="SPX",period="1D")
     #p = am.graph_coppock(symbol="SPX",period="1D")
-    p = am.graph_emas(symbol="SPY")
+    #p = am.graph_emas(symbol="SPY")
+    p = am.graph_volatility(symbol="SPY")
     from bokeh.plotting import show
     show(p)
     #print (md.get_datasources(globalconf))

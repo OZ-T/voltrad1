@@ -25,13 +25,14 @@ coppock:
    pointer: core.analytics_methods.print_coppock_diario
 emas:
    pointer: core.analytics_methods.print_emas
+vol:
+  pointer: core.analytics_methods.print_volatity
+
 
 
 ##### NEED TO REVIEW
 summary:
   pointer: core.analytics_methods.print_summary_underl
-vol:
-  pointer: core.analytics_methods.print_volatity
 fastmove:
   pointer: core.analytics_methods.print_fast_move
 cone:
