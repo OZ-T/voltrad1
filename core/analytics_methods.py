@@ -329,7 +329,7 @@ def graph_volatility(symbol):
     legends_list = ["HV", "VIX", "vix_ema20", 'VIX_BB_2SD_UP', 'VIX_BB_2SD_DOWN', 'VIX_BB_1SD_UP','VIX_BB_1SD_DOWN']
     title = 'Volatility (' + symbol + ', daily from ' + last_date
     from bokeh.plotting import figure
-    p = figure(title=title, plot_width=700, plot_height=500, toolbar_sticky=False,
+    p = figure(x_axis_type="datetime",title=title, plot_width=700, plot_height=500, toolbar_sticky=False,
                x_axis_label="Dates", y_axis_label="Volatility", toolbar_location="below")
     legend_items = []
 
@@ -356,15 +356,15 @@ def graph_fast_move(symbol):
     last_date = datetime.datetime.today().strftime("%Y%m%d")
     df = get_fast_move_for_report(symbol,client, log_analytics, globalconf,last_date)
     df = df.reset_index()
-    colors_list = ['orange', 'blue', 'pink', 'black', 'red', 'green']
-    methods_list = ['x', 'diamond', 'x', 'square', 'inverted_triangle', 'inverted_triangle']
-    line_dash_list = ['dotted', 'dotdash', 'dotted', 'solid', 'dashed', 'dashed']
-    xs = [df.date, df.date, df.date, df.date, df.date, df.date]
-    ys = [df[symbol], df.lowerBand, df.upperBand, df.dbbmed, df.factor, df.atl]
-    legends_list = [symbol, "lowerBand", "upperBand", 'dbbmed', 'factor','atl']
-    title = 'Fast Move (' + symbol + ', daily from ' + last_date
+    colors_list = ['black', 'blue', 'green']
+    methods_list = ['x', 'diamond', 'square']
+    line_dash_list = ['solid', 'dotted', 'dotdash']
+    xs = [df.date, df.date, df.date]
+    ys = [df[symbol], df.lowerBand, df.upperBand]
+    legends_list = [symbol, "lowerBand", "upperBand"]
+    title = 'Fast Move (' + symbol + ', daily from ' + last_date + ')'
     from bokeh.plotting import figure
-    p = figure(title=title, plot_width=700, plot_height=500, toolbar_sticky=False,
+    p = figure(x_axis_type="datetime",title=title, plot_width=700, plot_height=500, toolbar_sticky=False,
                x_axis_label="Dates", y_axis_label="Fast Move", toolbar_location="left")
     legend_items = []
 
@@ -397,7 +397,7 @@ def graph_fast_move(symbol):
     last_date1  = np.max(df.date).strftime("%Y%m%d")
     script, div = components(p)
     save_graph_to_db(globalconf, log_analytics, script, div, symbol, "0", last_date1, 100, "1D", "FastMove","TREND")
-
+    print( df.iloc[-HISTORY_LIMIT:])
     end_func(client)
     return p
 
@@ -433,6 +433,7 @@ def get_fast_move_for_report(symbol,client, log_analytics, globalconf,last_date)
     al2.SetDefaultColor(Color.DARK_RED);
     al2.SetPaintingStrategy(PaintingStrategy.HISTOGRAM);
     """
+    df = df.dropna()
     return df
 
 
