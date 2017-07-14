@@ -287,12 +287,12 @@ def get_volatility_for_report(symbol,client,log_analytics,globalconf,last_date):
     vix_ewm = pd.Series(pd.Series.ewm(vix, span=length, min_periods=length,
                                       adjust=True, ignore_na=False).mean(), name='vix_ema' + str(length))
     df = df.join(vix_ewm)
-    df = df.join(vix)
+    df = df.join(vix).fillna(method='ffill')
     vix_std = pd.rolling_std(df['vix'], window=int(window), min_periods=int(window))
-    df['VIX_BB_2SD_UP'] = vix_ewm + 2 * vix_std
-    df['VIX_BB_2SD_DOWN'] = vix_ewm - 2 * vix_std
-    df['VIX_BB_1SD_UP'] = vix_ewm + vix_std
-    df['VIX_BB_1SD_DOWN'] = vix_ewm - vix_std
+    df['VIX_BB_2SD_UP'] = df['vix_ema' + str(length)] + 2 * vix_std
+    df['VIX_BB_2SD_DOWN'] = df['vix_ema' + str(length)] - 2 * vix_std
+    df['VIX_BB_1SD_UP'] = df['vix_ema' + str(length)] + vix_std
+    df['VIX_BB_1SD_DOWN'] = df['vix_ema' + str(length)] - vix_std
 
     #df.VIX_BB_2SD_UP.sort_index(inplace=True)
     #df.VIX_BB_2SD_DOWN.sort_index(inplace=True)
