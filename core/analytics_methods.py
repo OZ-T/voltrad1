@@ -330,7 +330,7 @@ def graph_volatility(symbol):
     title = 'Volatility (' + symbol + ', daily from ' + last_date
     from bokeh.plotting import figure
     p = figure(title=title, plot_width=700, plot_height=500, toolbar_sticky=False,
-               x_axis_label="Dates", y_axis_label="Volatility", toolbar_location="below")
+               x_axis_label="Dates", y_axis_label="Volatility", toolbar_location="above")
     legend_items = []
 
     for (colr, leg, x, y, method, line_dash) in zip(colors_list, legends_list, xs, ys, methods_list, line_dash_list):
@@ -343,7 +343,7 @@ def graph_volatility(symbol):
     # doesnt work: legend = Legend(location=(0, -30), items=legend_items)
     from bokeh.models.annotations import Legend
     legend = Legend(location=(0, -30), items=legend_items)
-    p.add_layout(legend, 'right')
+    p.add_layout(legend, 'below')
     last_date1  = np.max(df.date).strftime("%Y%m%d")
     script, div = components(p)
     save_graph_to_db(globalconf, log_analytics, script, div, symbol, "0", last_date1, 100, "1D", "Volatility","TREND")
@@ -365,7 +365,7 @@ def graph_fast_move(symbol):
     title = 'Fast Move (' + symbol + ', daily from ' + last_date
     from bokeh.plotting import figure
     p = figure(title=title, plot_width=700, plot_height=500, toolbar_sticky=False,
-               x_axis_label="Dates", y_axis_label="Fast Move", toolbar_location="below")
+               x_axis_label="Dates", y_axis_label="Fast Move", toolbar_location="above")
     legend_items = []
 
     for (colr, leg, x, y, method, line_dash) in zip(colors_list, legends_list, xs, ys, methods_list, line_dash_list):
@@ -375,9 +375,20 @@ def graph_fast_move(symbol):
             renderers.append(getattr(p, method)(x, y, color=colr, size=4))
         renderers.append(p.line(x, y, color=colr, line_dash=line_dash))
         legend_items.append((leg, renderers))
-    # doesnt work: legend = Legend(location=(0, -30), items=legend_items)
+    # doesn't work: legend = Legend(location=(0, -30), items=legend_items)
     from bokeh.models.annotations import Legend
     legend = Legend(location=(0, -30), items=legend_items)
+
+    from bokeh.models.ranges import Range1d
+    from bokeh.models import LinearAxis
+    # Setting the second y axis range name and range
+    p.y_range = Range1d(np.min(df.lowerBand * 0.98), np.max(df.upperBand *1.02))
+    p.extra_y_ranges = {"foo": Range1d(start=np.min(df['al1'] * 0.98), end=np.max(df['al1'] * 1.02))}
+
+    # Using the aditional y range named "foo" and "right" y axis here.
+    p.line(df.date, df['al1'], y_range_name="foo")
+    # Adding the second axis to the plot.
+    p.add_layout(LinearAxis(y_range_name="foo"), 'right')
     p.add_layout(legend, 'right')
     last_date1  = np.max(df.date).strftime("%Y%m%d")
     script, div = components(p)
@@ -407,7 +418,7 @@ def get_fast_move_for_report(symbol,client, log_analytics, globalconf,last_date)
                         adjust=True, ignore_na=False).mean(), name = 'dbb_ema' + str(int(dbb_length)))
     df['factor'] = df['dbbmed'] * 4.0 / 5.0
     df['atl'] = df['dbb'] - df['factor']
-    df['al1'] = np.where(((df['atl'] > 0.0)), np.nan , df['atl'] )
+    df['al1'] = - np.where(((df['atl'] > 0.0)), np.nan , df['atl'] )
 
     # TODO: Finish this:
     """
