@@ -395,7 +395,7 @@ def get_fast_move_for_report(symbol,client, log_analytics, globalconf,last_date)
 
     df = md.read_market_data_from_sqllite(globalconf=globalconf, log=log_analytics,
                                           db_type="underl_ib_hist", symbol=symbol, expiry=None,
-                                          last_date=last_date, num_days_back=100, resample="1D")
+                                          last_date=last_date, num_days_back=250, resample="1D")
     df = df.drop(['high', 'open', 'low'], 1).rename(columns={'close': symbol})
     stddev = pd.rolling_std(df[symbol],window=int(length),min_periods=int(length))
     midline = pd.Series(pd.Series.ewm(df[symbol], span = int(length), min_periods = int(length),
