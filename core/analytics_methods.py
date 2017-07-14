@@ -351,20 +351,52 @@ def graph_volatility(symbol):
     end_func(client)
     return p
 
+def graph_fast_move(symbol):
+    client, log_analytics, globalconf = init_func()
+    last_date = datetime.datetime.today().strftime("%Y%m%d")
+    df = get_fast_move_for_report(symbol,client, log_analytics, globalconf,last_date)
+    df = df.reset_index()
+    colors_list = ['orange', 'blue', 'pink', 'black', 'red', 'green']
+    methods_list = ['x', 'diamond', 'x', 'square', 'inverted_triangle', 'inverted_triangle']
+    line_dash_list = ['dotted', 'dotdash', 'dotted', 'solid', 'dashed', 'dashed']
+    xs = [df.date, df.date, df.date, df.date, df.date, df.date]
+    ys = [df[symbol], df.lowerBand, df.upperBand, df.dbbmed, df.factor, df.atl]
+    legends_list = [symbol, "lowerBand", "upperBand", 'dbbmed', 'factor','atl']
+    title = 'Fast Move (' + symbol + ', daily from ' + last_date
+    from bokeh.plotting import figure
+    p = figure(title=title, plot_width=700, plot_height=500, toolbar_sticky=False,
+               x_axis_label="Dates", y_axis_label="Fast Move", toolbar_location="below")
+    legend_items = []
 
-def print_fast_move(symbol):
+    for (colr, leg, x, y, method, line_dash) in zip(colors_list, legends_list, xs, ys, methods_list, line_dash_list):
+        # call dynamically the method to plot line, circle etc...
+        renderers = []
+        if method:
+            renderers.append(getattr(p, method)(x, y, color=colr, size=4))
+        renderers.append(p.line(x, y, color=colr, line_dash=line_dash))
+        legend_items.append((leg, renderers))
+    # doesnt work: legend = Legend(location=(0, -30), items=legend_items)
+    from bokeh.models.annotations import Legend
+    legend = Legend(location=(0, -30), items=legend_items)
+    p.add_layout(legend, 'right')
+    last_date1  = np.max(df.date).strftime("%Y%m%d")
+    script, div = components(p)
+    save_graph_to_db(globalconf, log_analytics, script, div, symbol, "0", last_date1, 100, "1D", "FastMove","TREND")
+
+    end_func(client)
+    return p
+
+
+def get_fast_move_for_report(symbol,client, log_analytics, globalconf,last_date):
     length = 20.0
     num_dev_dn = -2.0
     num_dev_up = 2.0
     dbb_length = 120.0
-    client, log_analytics, globalconf = init_func()
-    df = ra.extrae_historical_underl(symbol)
-    df.index = pd.to_datetime(df.index, format="%Y%m%d  %H:%M:%S")
-    df["date"] = df.index
-    df[[u'close', u'high', u'open', u'low']]=df[[u'close', u'high',u'open',u'low']].apply(pd.to_numeric)
-    conversion = {'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last',}
-    df = df.resample('1H', how=conversion).dropna().rename(columns={'close': symbol})
-    df = df.drop(['high', 'open', 'low'], 1)
+
+    df = md.read_market_data_from_sqllite(globalconf=globalconf, log=log_analytics,
+                                          db_type="underl_ib_hist", symbol=symbol, expiry=None,
+                                          last_date=last_date, num_days_back=100, resample="1D")
+    df = df.drop(['high', 'open', 'low'], 1).rename(columns={'close': symbol})
     stddev = pd.rolling_std(df[symbol],window=int(length),min_periods=int(length))
     midline = pd.Series(pd.Series.ewm(df[symbol], span = int(length), min_periods = int(length),
               adjust=True, ignore_na=False).mean(), name = symbol + '_ema' + str(int(length)))
@@ -386,6 +418,16 @@ def print_fast_move(symbol):
     al2.SetDefaultColor(Color.DARK_RED);
     al2.SetPaintingStrategy(PaintingStrategy.HISTOGRAM);
     """
+    return df
+
+
+def print_fast_move(symbol):
+
+    client, log_analytics, globalconf = init_func()
+    last_date = datetime.datetime.today().strftime("%Y%m%d")
+
+    df = get_fast_move_for_report(symbol,client, log_analytics, globalconf,last_date)
+
     print( df.iloc[-HISTORY_LIMIT:])
     end_func(client)
 
