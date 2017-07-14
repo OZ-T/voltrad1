@@ -262,8 +262,9 @@ def graph_coppock(symbol="SPX",period="1D"):
         ("(open,high,low,close)", "(@open{(.00)},@high{(.00)},@low{(.00)},@close{(.00)})"),
     ]
     script, div = components(p)
+    last_date1  = np.max(df.date).strftime("%Y%m%d")
     save_graph_to_db(globalconf=globalconf, log=log_analytics, script=script, div=div, symbol=symbol,
-                     expiry="0", last_date=last_date, num_days_back="-1", resample="NA",
+                     expiry="0", last_date=last_date1, num_days_back="-1", resample="NA",
                      estimator="COPPOCK",name="TREND")
     end_func(client)
     return p
@@ -343,9 +344,9 @@ def graph_volatility(symbol):
     from bokeh.models.annotations import Legend
     legend = Legend(location=(0, -30), items=legend_items)
     p.add_layout(legend, 'right')
-
+    last_date1  = np.max(df.date).strftime("%Y%m%d")
     script, div = components(p)
-    save_graph_to_db(globalconf, log_analytics, script, div, symbol, "0", last_date,100, "1D", "Volatility","TREND")
+    save_graph_to_db(globalconf, log_analytics, script, div, symbol, "0", last_date1, 100, "1D", "Volatility","TREND")
 
     end_func(client)
     return p
@@ -472,9 +473,10 @@ def graph_emas(symbol="SPX"):
     p.line(df.date, df.lower_mo_iv)
     p.line(df.date, df.upper_mo_iv)
 
+    last_date1  = np.max(df.date).strftime("%Y%m%d")
     script, div = components(p)
     save_graph_to_db(globalconf=globalconf, log=log_analytics, script=script, div=div, symbol=symbol,
-                     expiry="0", last_date=last_date, num_days_back="500", resample="NA",
+                     expiry="0", last_date=last_date1, num_days_back="500", resample="NA",
                      estimator="EMA50",name="TREND")
     end_func(client)
     return p
