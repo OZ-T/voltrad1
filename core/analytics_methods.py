@@ -330,7 +330,7 @@ def graph_volatility(symbol):
     title = 'Volatility (' + symbol + ', daily from ' + last_date
     from bokeh.plotting import figure
     p = figure(title=title, plot_width=700, plot_height=500, toolbar_sticky=False,
-               x_axis_label="Dates", y_axis_label="Volatility", toolbar_location="above")
+               x_axis_label="Dates", y_axis_label="Volatility", toolbar_location="below")
     legend_items = []
 
     for (colr, leg, x, y, method, line_dash) in zip(colors_list, legends_list, xs, ys, methods_list, line_dash_list):
@@ -365,7 +365,7 @@ def graph_fast_move(symbol):
     title = 'Fast Move (' + symbol + ', daily from ' + last_date
     from bokeh.plotting import figure
     p = figure(title=title, plot_width=700, plot_height=500, toolbar_sticky=False,
-               x_axis_label="Dates", y_axis_label="Fast Move", toolbar_location="above")
+               x_axis_label="Dates", y_axis_label="Fast Move", toolbar_location="left")
     legend_items = []
 
     for (colr, leg, x, y, method, line_dash) in zip(colors_list, legends_list, xs, ys, methods_list, line_dash_list):
@@ -377,7 +377,11 @@ def graph_fast_move(symbol):
         legend_items.append((leg, renderers))
     # doesn't work: legend = Legend(location=(0, -30), items=legend_items)
     from bokeh.models.annotations import Legend
-    legend = Legend(location=(0, -30), items=legend_items)
+    from sys import platform
+    if "linux" in platform.lower():
+        legend = Legend(location=(0, -30), items=legend_items)
+    else:
+        legend = Legend(location=(0, -30), legends=legend_items)
 
     from bokeh.models.ranges import Range1d
     from bokeh.models import LinearAxis
@@ -418,7 +422,7 @@ def get_fast_move_for_report(symbol,client, log_analytics, globalconf,last_date)
                         adjust=True, ignore_na=False).mean(), name = 'dbb_ema' + str(int(dbb_length)))
     df['factor'] = df['dbbmed'] * 4.0 / 5.0
     df['atl'] = df['dbb'] - df['factor']
-    df['al1'] = - np.where(((df['atl'] > 0.0)), np.nan , df['atl'] )
+    df['al1'] = - np.where(((df['atl'] > 0.0)), 0 , df['atl'] )
 
     # TODO: Finish this:
     """
