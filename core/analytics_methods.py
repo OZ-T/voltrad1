@@ -343,7 +343,7 @@ def graph_volatility(symbol):
     # doesnt work: legend = Legend(location=(0, -30), items=legend_items)
     from bokeh.models.annotations import Legend
     legend = Legend(location=(0, -30), items=legend_items)
-    p.add_layout(legend, 'below')
+    p.add_layout(legend, 'right')
     last_date1  = np.max(df.date).strftime("%Y%m%d")
     script, div = components(p)
     save_graph_to_db(globalconf, log_analytics, script, div, symbol, "0", last_date1, 100, "1D", "Volatility","TREND")
