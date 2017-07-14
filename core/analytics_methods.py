@@ -393,7 +393,7 @@ def graph_fast_move(symbol):
     p.line(df.date, df['al1'], y_range_name="foo")
     # Adding the second axis to the plot.
     p.add_layout(LinearAxis(y_range_name="foo"), 'right')
-    p.add_layout(legend, 'right')
+    # p.add_layout(legend, 'right')
     last_date1  = np.max(df.date).strftime("%Y%m%d")
     script, div = components(p)
     save_graph_to_db(globalconf, log_analytics, script, div, symbol, "0", last_date1, 100, "1D", "FastMove","TREND")
