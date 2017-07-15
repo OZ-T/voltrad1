@@ -1,16 +1,16 @@
 """ Module with orders related methods.
 """
 
-import volibutils.sync_client as ib
-from volsetup.logger import logger
-from volutils import utils as utils
-import glob
-import os
-import volsetup.config as config
-import pandas as pd
 import datetime as dt
 import sqlite3
-import time
+
+import pandas as pd
+
+import volibutils.sync_client as ib
+import volsetup.config as config
+from core import utils as utils
+from volsetup.logger import logger
+
 
 def write_orders_to_sqllite(globalconf, log, dataframe):
     """

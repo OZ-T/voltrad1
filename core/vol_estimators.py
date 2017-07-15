@@ -33,28 +33,22 @@
 # vol.term_sheet(window, windows, quantiles, bins, normed, bench)
 
 import datetime
+import math
 import os
 
-import math
-import datetime
-import pandas
-import numpy as np
-import statsmodels.api as sm
 import matplotlib
+import numpy as np
+import pandas
+import statsmodels.api as sm
+
 matplotlib.use('Agg') # Must be before importing matplotlib.pyplot or pylab!
 # from matplotlib.pyplot import *
 import matplotlib.mlab as mlab
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
-import matplotlib.mathtext as text
-from matplotlib.ticker import FuncFormatter
-from matplotlib.font_manager import FontProperties
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt, mpld3
 import matplotlib.pyplot as pyplt
-from operations.market_data import read_market_data_from_sqllite
+from core.market_data_methods import read_market_data_from_sqllite
 
-from bokeh.plotting import figure
 from bokeh.models.annotations import Legend
 from bokeh.embed import components
 from bokeh.layouts import layout
@@ -1055,7 +1049,7 @@ if __name__ =="__mainKK__":
     p = vol.cones_bokeh(windows=windows, quantiles=quantiles)
     from bokeh.plotting import show
     show(p)
-    from bokeh.plotting import figure, output_file, show
+    from bokeh.plotting import figure, show
 
 if __name__ == "__main__":
     from volsetup import config

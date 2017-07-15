@@ -9,6 +9,8 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 
+# https://jee-appy.blogspot.com.es/2016/02/how-to-send-mail-on-ubuntu-or-linux.html
+
 def send_email_with_image():
     """ 
     Send an HTML email with an embedded image and a plain text message for

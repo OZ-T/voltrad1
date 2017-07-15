@@ -1,20 +1,17 @@
-from flask import Flask, request, render_template
-from core import run_analytics as ra
-from flask_restful import reqparse, abort, Api, Resource
-import os
-import pandas as pd
-import json
-from volsetup import config
-from datetime import datetime
-from pandas.io.json import json_normalize
-from flask import jsonify
-from flask import Response
-from flask.json import JSONEncoder
-from operations import market_data as md
-from core import vol_estimators as ve
-from core import analytics_methods as am
-from volsetup.logger import logger
 import datetime as dt
+import os
+
+import pandas as pd
+from flask import Flask, request
+from flask import jsonify
+from flask.json import JSONEncoder
+from flask_restful import reqparse, Api, Resource
+
+import core.market_data_methods
+from core import market_data_methods as md
+from volsetup import config
+from volsetup.logger import logger
+
 
 class MiniJSONEncoder(JSONEncoder):
     """Minify JSON output."""
@@ -95,8 +92,8 @@ class VolGraph(Resource):
         today = dt.date.today()
         last_date1 = today.strftime('%Y%m%d')
 
-        div,script = am.read_graph_from_db(globalconf=globalconf,log=log,symbol=symbol,
-                                           last_date=last_date1, estimator=estimator,name=name)
+        div,script = core.market_data_methods.read_graph_from_db(globalconf=globalconf, log=log, symbol=symbol,
+                                                                 last_date=last_date1, estimator=estimator, name=name)
         JSONP_data = jsonify({"div":div,"script":script})
         return JSONP_data
 

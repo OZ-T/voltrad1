@@ -1,9 +1,11 @@
-from operations.market_data import get_market_db_file
-import volsetup.config as config
-from volsetup.logger import logger
-from operations.market_data import read_market_data_from_sqllite
 import datetime as dt
 import unittest
+
+import volsetup.config as config
+from core.market_data_methods import get_market_db_file
+from core.market_data_methods import read_market_data_from_sqllite
+from volsetup.logger import logger
+
 
 # http://python-guide-pt-br.readthedocs.io/en/latest/writing/tests/
 
@@ -24,7 +26,6 @@ class MarketData_tests(unittest.TestCase):
         self.assertEqual(len(df), 100)
     def test_business_hours(self):
         import datetime as dt
-        from volutils import utils
         dt_now = dt.datetime.now()  # - timedelta(days=4)
         last_record_stored = dt.datetime.strptime("2017-06-22 22:59:00", '%Y-%m-%d %H:%M:%S')
         bh = utils.BusinessHours(last_record_stored, dt_now, worktiming=[15, 21], weekends=[6, 7])
@@ -56,15 +57,15 @@ class MarketData_tests(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    import operations.market_data as md
     globalconf = config.GlobalConfig()
-    from core import analytics_methods as am
+    from core import analytics_methods as am, utils
+
     #am.print_coppock_diario(symbol="SPX",period="1D")
     #p = am.graph_coppock(symbol="SPX",period="1D")
     #p = am.graph_emas(symbol="SPY")
     #p = am.graph_volatility(symbol="SPY")
-    p = am.graph_fast_move(symbol="SPY")
+    #p = am.graph_fast_move(symbol="SPY")
 
-    from bokeh.plotting import show
-    show(p)
+    #show(p)
+    am.graph_volatility_cone(symbol='SPY')
     #print (md.get_datasources(globalconf))

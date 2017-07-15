@@ -1,19 +1,19 @@
 
 # coding: utf-8
 
-# In[50]:
+import datetime as dt
 
-import core.run_analytics as ra
-from core.run_analytics import timefunc
-import pandas as pd
 import numpy as np
-import datetime as dt
-from pandas import ExcelWriter
+import pandas as pd
 from scipy import stats
-import datetime as dt
+
+# In[50]:
+import core.market_data_methods
+import core.run_analytics as ra
+from core import utils as utils
+from core.run_analytics import timefunc
 from volsetup import config
 from volsetup.logger import logger
-from volutils import utils as utils
 
 # Regular trading hours in US (CEST time)
 # TODO: need to consider change saving time CEST vs CET
@@ -118,12 +118,12 @@ def run_shark_analytics(i_symbol, i_date, i_expiry, i_secType, accountid, scenar
     # precios de la cadena de opciones lo mas cerca posible de la fecha de valoracion
     # realmente saca todos los precios del dia anteriores a dicha fecha
     ###################################################################################################################
-    cadena_opcs=ra.extrae_options_chain(valuation_dttm=fecha_valoracion,symbol=i_symbol,expiry=i_expiry,secType=i_secType)
+    cadena_opcs= core.market_data_methods.extrae_options_chain(valuation_dttm=fecha_valoracion, symbol=i_symbol, expiry=i_expiry, secType=i_secType)
 
     # cadena de opciones en el cierre del dia anterior a la fecha de valoracion
     # realmente saca todos los precios del dia anteriores a dicha fecha
-    cadena_opcs_tminus1=ra.extrae_options_chain(valuation_dttm=fecha_val_tminus1, #cierre del dia anterior
-                                                symbol=i_symbol,expiry=i_expiry,secType=i_secType)
+    cadena_opcs_tminus1= core.market_data_methods.extrae_options_chain(valuation_dttm=fecha_val_tminus1,  #cierre del dia anterior
+                                                symbol=i_symbol, expiry=i_expiry, secType=i_secType)
 
     if cadena_opcs.empty or cadena_opcs_tminus1.empty:
         log2.info("No data to analyze cadena_opcs.empty=%s cadena_opcs_tminus1.empty=%s. Exiting ..."
@@ -196,8 +196,8 @@ def run_shark_analytics(i_symbol, i_date, i_expiry, i_secType, accountid, scenar
     cadena_opcs_orders= pd.DataFrame()
     for x in lista_dttm_con_trades:
         log2.info("Extraer options chain para fecha trade: [%s] " % (str(x)))
-        temporal1 =ra.extrae_options_chain(valuation_dttm=x,
-                                           symbol=i_symbol,expiry=i_expiry,secType=i_secType)
+        temporal1 = core.market_data_methods.extrae_options_chain(valuation_dttm=x,
+                                                                  symbol=i_symbol, expiry=i_expiry, secType=i_secType)
         cadena_opcs_orders=cadena_opcs_orders.append(temporal1)
 
     if cadena_opcs_orders.empty:
@@ -763,7 +763,7 @@ def run_analytics(symbol, expiry, secType,accountid,valuation_dt,scenarioMode,si
     weekend = set([5, 6])
     while d <= end:
         #print "date while " , d
-        if ( d.hour in _rth ) & ( d.weekday() not in weekend ) & ( d.date() not in utils.get_trading_close_holidays(d.year)) :
+        if ( d.hour in _rth ) & ( d.weekday() not in weekend ) & (d.date() not in utils.get_trading_close_holidays(d.year)) :
             #log.info( "date to run [%s] " % (str(d)))
             diff += 1
             run_shark_analytics(i_symbol=symbol, i_date=d, i_expiry=expiry, i_secType=secType,

@@ -1,5 +1,5 @@
 # -*- coding: UTF-8 -*-
-
+import core.market_data_methods
 from volsetup import config
 from datetime import datetime, timedelta
 from pytz import timezone
@@ -23,7 +23,7 @@ PCT_UP_CHAIN = 0.06
 DAY_BEFORE_EXPIRY_ROLL = 10
 
 def read_h5_source_data(start1,end1):
-    df1=ra.read_biz_calendar(start_dttm=start1,valuation_dttm=end1)
+    df1= core.market_data_methods.read_biz_calendar(start_dttm=start1, valuation_dttm=end1)
     # sacar del historical options chain P y C ATM y OTM volumenes y precios bid ask
     df2=ra.extrae_options_chain2(start_dttm=start1, end_dttm=end1, symbol="ES", expiry="", secType="FOP")
     return df1,df2

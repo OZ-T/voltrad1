@@ -27,16 +27,14 @@ emas:
    pointer: core.analytics_methods.print_emas
 vol:
   pointer: core.analytics_methods.print_volatity
+fastmove:
+  pointer: core.analytics_methods.print_fast_move
 
 
 
 ##### NEED TO REVIEW
 summary:
   pointer: core.analytics_methods.print_summary_underl
-fastmove:
-  pointer: core.analytics_methods.print_fast_move
-cone:
-  pointer: core.analytics_methods.print_volatility_cone
 
 # pretrade analysis commands
 lstprc:

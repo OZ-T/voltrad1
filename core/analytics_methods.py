@@ -3,45 +3,27 @@
 """Analytical methods useful for daily trading and strategy
 """
 
-import volibutils.sync_client as ib
-from volsetup import config
 import datetime as dt
-import pandas as pd
-import numpy as np
-import swigibpy as sy
-from volibutils.RequestOptionData import RequestOptionData
-from volibutils.RequestUnderlyingData import RequestUnderlyingData
-from volsetup.logger import logger
-from swigibpy import Contract as IBcontract
-from swigibpy import Order as IBOrder
-import time
-from core import run_analytics as ra
 import json
-from numpy.lib.stride_tricks import as_strided
-from numpy import log, sqrt
-from pylab import axhline, figure, legend, plot, show
-from bokeh.embed import components
 import warnings
+
+import numpy as np
+import pandas as pd
+from bokeh.embed import components
 from bokeh.models.annotations import Title
+from numpy import log, sqrt
+from numpy.lib.stride_tricks import as_strided
+from pylab import axhline, figure, legend, plot, show
+
+import core.market_data_methods
+from core import run_analytics as ra, market_data_methods as md
+from core.market_data_methods import get_contract_details, read_graph_from_db, save_graph_to_db
+from volsetup import config
+from volsetup.logger import logger
 
 warnings.filterwarnings("ignore")
 HISTORY_LIMIT = 20
 
-def get_contract_details(symbol,conId=None):
-    """
-    Get contract details method.
-    In the future will get details from DB given a ConId
-    There will be a process that populate in background this table DB
-    with all the potential contracts and the corresponding contract ID
-    """
-    db1={
-        "ES":{"secType":"FOP","exchange":"GLOBEX","multiplier":"50","currency":"USD",
-              "underlType":"FUT","underlCurrency":"XXX","underlExchange":"GLOBEX"},
-        "SPY":{"secType":"OPT","exchange":"SMART","multiplier":"100","currency":"USD",
-               "underlType":"STK","underlCurrency":"USD","underlExchange":"SMART"}
-    }
-    #if conId is None:
-    return db1[symbol]
 
 def init_func():
     """
@@ -141,7 +123,7 @@ def COPP(df, a=11, b=14, n=50, close_nm='close'):
     df=df.drop('Copp_' + str(n) + '_shift1',1)
     return df
 
-from operations import market_data as md
+
 import datetime
 def coppock(globalconf, log_analytics, last_date, symbol="SPX",period="1D"):
     df = md.read_market_data_from_sqllite(globalconf=globalconf, log=log_analytics,
@@ -160,68 +142,11 @@ def print_coppock_diario(symbol="SPX",period="1D"):
     end_func(client)
 
 
-def read_graph_from_db(globalconf,log,symbol, last_date, estimator,name):
-    """
-    return the last saved graph of that type
-    """
-    log.info("Reading Graph data from sqllite ... ")
-    import sqlite3
-    db_file = globalconf.config['sqllite']['graphs_db']
-    path = globalconf.config['paths']['analytics_folder']
-    store = sqlite3.connect(path + db_file)
-    import pandas as pd
-    df1 = pd.read_sql_query("SELECT div,script FROM " + name + " where symbol = '" + symbol + "'"
-                            + " and last_date = '" + last_date + "'"
-                            + " and estimator = '" + estimator + "' order by save_dttm desc ;"
-                            , store)
-
-    if df1.empty:
-        df2 = pd.read_sql_query("SELECT max(last_date) as max1 from " + name, store)
-        last_date = df2.iloc[0]['max1']
-        df1 = pd.read_sql_query("SELECT div,script FROM " + name + " where symbol = '" + symbol + "'"
-                                + " and last_date = '" + last_date + "'"
-                                + " and UPPER(estimator) = UPPER('" + estimator + "') order by save_dttm desc ;"
-                                , store)
-        if df1.empty:
-            return None
-    store.close()
-
-    return df1['div'].values[0], df1['script'].values[0]
-
-def save_graph_to_db(globalconf,log,script, div, symbol, expiry, last_date, num_days_back, resample, estimator,name):
-    # Embedding bokeh plots in web pages
-    # http://bokeh.pydata.org/en/0.9.3/docs/user_guide/embed.html
-    log.info("Appending Graph data to sqllite ... ")
-    import datetime as dt
-    import pandas as pd
-    save_dttm = dt.datetime.now()
-    import sqlite3
-    db_file = globalconf.config['sqllite']['graphs_db']
-    path = globalconf.config['paths']['analytics_folder']
-    dict1 = dict([
-        ['script', [script]],
-        ['div', [div]],
-        ['symbol', [symbol]],
-        ['expiry', [expiry]],
-        ['last_date', [last_date]],
-        ['num_days_back', [num_days_back]],
-        ['resample', [resample]],
-        ['estimator', [estimator]],
-        ['save_dttm', [save_dttm]]
-    ])
-    df = pd.DataFrame.from_dict(dict1, orient='columns')
-    df.set_index(keys=['symbol', 'last_date', 'estimator'], drop=True, inplace=True)
-    store = sqlite3.connect(path + db_file)
-    df.to_sql(name, store, if_exists='append')
-    store.close()
-
-
 def graph_coppock(symbol="SPX",period="1D"):
     client, log_analytics, globalconf = init_func()
     last_date = datetime.datetime.today().strftime("%Y%m%d")
     df = coppock(globalconf, log_analytics, last_date, symbol, period)
-    import pandas as pd
-    from bokeh.plotting import figure, output_file, show
+    from bokeh.plotting import figure
     df = df.reset_index()
     from math import pi
     mids = (df.open + df.close) / 2
@@ -265,7 +190,7 @@ def graph_coppock(symbol="SPX",period="1D"):
     last_date1  = np.max(df.date).strftime("%Y%m%d")
     save_graph_to_db(globalconf=globalconf, log=log_analytics, script=script, div=div, symbol=symbol,
                      expiry="0", last_date=last_date1, num_days_back="-1", resample="NA",
-                     estimator="COPPOCK",name="TREND")
+                     estimator="COPPOCK", name="TREND")
     end_func(client)
     return p
 
@@ -346,7 +271,7 @@ def graph_volatility(symbol):
     p.add_layout(legend, 'right')
     last_date1  = np.max(df.date).strftime("%Y%m%d")
     script, div = components(p)
-    save_graph_to_db(globalconf, log_analytics, script, div, symbol, "0", last_date1, 100, "1D", "Volatility","TREND")
+    save_graph_to_db(globalconf, log_analytics, script, div, symbol, "0", last_date1, 100, "1D", "Volatility", "TREND")
 
     end_func(client)
     return p
@@ -393,10 +318,12 @@ def graph_fast_move(symbol):
     p.line(df.date, df['al1'], y_range_name="foo")
     # Adding the second axis to the plot.
     p.add_layout(LinearAxis(y_range_name="foo"), 'right')
+    # TODO the following line breaks the code in Digital Ocean Server w Ubuntu & python 3
+    # can't have 2 layouts in the same figure ??
     # p.add_layout(legend, 'right')
     last_date1  = np.max(df.date).strftime("%Y%m%d")
     script, div = components(p)
-    save_graph_to_db(globalconf, log_analytics, script, div, symbol, "0", last_date1, 100, "1D", "FastMove","TREND")
+    save_graph_to_db(globalconf, log_analytics, script, div, symbol, "0", last_date1, 100, "1D", "FastMove", "TREND")
     print( df.iloc[-HISTORY_LIMIT:])
     end_func(client)
     return p
@@ -498,12 +425,10 @@ def graph_emas(symbol="SPX"):
     df = get_emas(last_date, log_analytics, globalconf, symbol=symbol).iloc[-50:]
     from bokeh.plotting import figure
     df = df.reset_index()
-    from bokeh.models import HoverTool, ColumnDataSource
+    from bokeh.models import ColumnDataSource
     source = ColumnDataSource(df)
     TOOLS = "hover,save,pan,box_zoom,reset,wheel_zoom"
     p = figure(x_axis_type="datetime", tools=TOOLS, plot_width=1000, toolbar_location="left",toolbar_sticky=False)
-
-
 
     from math import pi
     mids = (df.open + df.close) / 2
@@ -520,10 +445,6 @@ def graph_emas(symbol="SPX"):
     p.title = Title(text="EMA(50) (" + symbol + ")")
     p.xaxis.major_label_orientation = pi / 4
     p.grid.grid_line_alpha = 0.3
-
-
-    from bokeh.models.ranges import Range1d
-    from bokeh.models import LinearAxis
     p.line(df.date, df.EMA_50)
     p.line(df.date, df.lower_wk_iv)
     p.line(df.date, df.upper_wk_iv)
@@ -535,10 +456,100 @@ def graph_emas(symbol="SPX"):
     script, div = components(p)
     save_graph_to_db(globalconf=globalconf, log=log_analytics, script=script, div=div, symbol=symbol,
                      expiry="0", last_date=last_date1, num_days_back="500", resample="NA",
-                     estimator="EMA50",name="TREND")
+                     estimator="EMA50", name="TREND")
     end_func(client)
     return p
 
+
+def graph_volatility_cone(symbol):
+    """
+    Old version using pyplot DON't use    
+    Print valotility cone for symbol given as argument
+    """
+    client , log_analytics, globalconf = init_func()
+    last_date = datetime.datetime.today().strftime("%Y%m%d")
+    df = md.read_market_data_from_sqllite(globalconf=globalconf, log=log_analytics,
+                                          db_type="underl_ib_hist",symbol=symbol,expiry=None,
+                                          last_date=last_date, num_days_back=500, resample="1D")
+
+
+    df=df.pct_change(1).dropna().rename(columns={'close': symbol})[symbol]
+    df=df.reset_index()
+
+    # use VIX to get the mean 30d 60d 90d and so on from underlying_hist_ib h5
+    vix = md.read_market_data_from_sqllite(globalconf=globalconf, log=log_analytics,
+                                          db_type="underl_ib_hist",symbol="VIX",expiry=None,
+                                          last_date=last_date, num_days_back=500, resample="1D")
+
+    vix = vix.reset_index()
+    df['vix'] = vix.dropna().rename(columns={'close': 'vix'})['vix']
+    lst_exp = [30,60,90,120]
+    for length in lst_exp:
+        vix_ewm = pd.Series(pd.Series.ewm(df['vix'], span = length, min_periods = length,
+                         adjust=True, ignore_na=False).mean(), name = 'vix_ema' + str(length))
+        df = df.join(vix_ewm)
+    df = df.fillna(method='ffill').dropna()
+    close_data = df[symbol][-300:].values
+    imp_vol_data_30d = df['vix_ema30'][-300:].values
+    imp_vol_data_360d = df['vix_ema90'][-300:].values
+
+    days_to_expiry = [20, 60, 120]
+
+    lower = []
+    means = []
+    upper = []
+
+    for expiry in days_to_expiry:
+        print (expiry)
+        np_lower, np_mean, np_upper = calc_sigmas(expiry, close_data)
+        lower.append(np_lower)
+        means.append(np_mean)
+        upper.append(np_upper)
+
+    historical_sigma_20d = calc_daily_sigma(20, close_data)
+    historical_sigma_180d = calc_daily_sigma(180, close_data)
+
+    limit = max(days_to_expiry)
+    x = range(0, limit)
+
+    fig = figure()
+    ax1 = fig.add_subplot(3, 1, 1)
+    plot(days_to_expiry, lower, color='red', label='Lower')
+    plot(days_to_expiry, means, color='grey', label='Average')
+    plot(days_to_expiry, upper, color='blue', label='Upper')
+    axhline(lower[0], linestyle='dashed', color='red')
+    axhline(lower[-1], linestyle='dashed', color='red')
+    axhline(upper[0], linestyle='dashed', color='blue')
+    axhline(upper[-1], linestyle='dashed', color='blue')
+    ax1.set_title('Volatility Cones')
+    legend(bbox_to_anchor=(1., 1.), loc=2)
+
+    ax2 = fig.add_subplot(3, 1, 2)
+    plot(x, historical_sigma_20d[-limit:], label='Historical')
+    plot(x, imp_vol_data_30d[-limit:], label='Implied')
+    axhline(lower[0], linestyle='dashed', color='red')
+    axhline(upper[0], linestyle='dashed', color='blue')
+    ax2.set_title('20 Day Volatilities')
+    ax2.set_xlim(ax1.get_xlim())
+    ax2.set_ylim(ax1.get_ylim())
+    legend(bbox_to_anchor=(1., 1.), loc=2)
+
+    # We only want to plot implied vol. where we have a value for historical
+    #imp_vol_data_360d[np.where(np.isnan(historical_sigma_180d))] = np.nan
+
+    ax3 = fig.add_subplot(3, 1, 3)
+    plot(x, historical_sigma_180d[-limit:], label='Historical')
+    plot(x, imp_vol_data_360d[-limit:], label='Implied')
+    axhline(lower[-1], linestyle='dashed', color='red')
+    axhline(upper[-1], linestyle='dashed', color='blue')
+    ax3.set_title('180 Day Volatilities')
+    ax3.set_xlim(ax1.get_xlim())
+    ax3.set_ylim(ax1.get_ylim())
+    legend(bbox_to_anchor=(1., 1.), loc=2)
+    show()
+
+    print( df )
+    end_func(client)
 
 
 
@@ -934,95 +945,6 @@ def print_historical_option(start_dt,end_dt,symbol,lst_right_strike,expiry,type)
     print( dataframe)
     end_func(client)
 
-def print_volatility_cone(symbol):
-    """
-    Print valotility cone for symbol given as argument
-    """
-    client , log_analytics, globalconf = init_func()
-
-    df = ra.extrae_historical_underl(symbol)
-    df.index = pd.to_datetime(df.index, format="%Y%m%d  %H:%M:%S")
-    df["date"] = df.index
-    df[[u'close', u'high', u'open', u'low']]=df[[u'close', u'high',u'open',u'low']].apply(pd.to_numeric)
-    conversion = {'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last',}
-    df = df.resample('1H', how=conversion).dropna().rename(columns={'close': symbol})
-    df=df.drop(['high','open','low'], 1)
-    df=df.pct_change(1)
-
-
-    # use VIX to get the mean 30d 60d 90d and so on from underlying_hist_ib h5
-    vix = ra.extrae_historical_underl("VIX")
-    vix.index = pd.to_datetime(vix.index, format="%Y%m%d  %H:%M:%S")
-    vix["date"] = vix.index
-    vix[[u'close', u'high', u'open', u'low']]=vix[[u'close', u'high',u'open',u'low']].apply(pd.to_numeric)
-    conversion = {'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last',}
-    df['vix'] = vix.resample('1H', how=conversion).dropna().rename(columns={'close': 'vix'})['vix']
-    lst_exp = [30,60,90,120]
-    for length in lst_exp:
-        vix_ewm = pd.Series(pd.Series.ewm(df['vix'], span = length, min_periods = length,
-                         adjust=True, ignore_na=False).mean(), name = 'vix_ema' + str(length))
-        df = df.join(vix_ewm)
-    df = df.dropna()
-    close_data = df[symbol][-300:].values
-    imp_vol_data_30d = df['vix_ema30'][-300:].values
-    imp_vol_data_360d = df['vix_ema90'][-300:].values
-
-    days_to_expiry = [20, 60, 120, 180, 240]
-
-    lower = []
-    means = []
-    upper = []
-
-    for expiry in days_to_expiry:
-        np_lower, np_mean, np_upper = calc_sigmas(expiry, close_data)
-        lower.append(np_lower)
-        means.append(np_mean)
-        upper.append(np_upper)
-
-    historical_sigma_20d = calc_daily_sigma(20, close_data)
-    historical_sigma_240d = calc_daily_sigma(240, close_data)
-
-    limit = max(days_to_expiry)
-    x = range(0, limit)
-
-    fig = figure()
-    ax1 = fig.add_subplot(3, 1, 1)
-    plot(days_to_expiry, lower, color='red', label='Lower')
-    plot(days_to_expiry, means, color='grey', label='Average')
-    plot(days_to_expiry, upper, color='blue', label='Upper')
-    axhline(lower[0], linestyle='dashed', color='red')
-    axhline(lower[-1], linestyle='dashed', color='red')
-    axhline(upper[0], linestyle='dashed', color='blue')
-    axhline(upper[-1], linestyle='dashed', color='blue')
-    ax1.set_title('Volatility Cones')
-    legend(bbox_to_anchor=(1., 1.), loc=2)
-
-    ax2 = fig.add_subplot(3, 1, 2)
-    plot(x, historical_sigma_20d[-limit:], label='Historical')
-    plot(x, imp_vol_data_30d[-limit:], label='Implied')
-    axhline(lower[0], linestyle='dashed', color='red')
-    axhline(upper[0], linestyle='dashed', color='blue')
-    ax2.set_title('20 Day Volatilities')
-    ax2.set_xlim(ax1.get_xlim())
-    ax2.set_ylim(ax1.get_ylim())
-    legend(bbox_to_anchor=(1., 1.), loc=2)
-
-    # We only want to plot implied vol. where we have a value for historical
-    imp_vol_data_360d[np.where(np.isnan(historical_sigma_240d))] = np.nan
-
-    ax3 = fig.add_subplot(3, 1, 3)
-    plot(x, historical_sigma_240d[-limit:], label='Historical')
-    plot(x, imp_vol_data_360d[-limit:], label='Implied')
-    axhline(lower[-1], linestyle='dashed', color='red')
-    axhline(upper[-1], linestyle='dashed', color='blue')
-    ax3.set_title('240 Day Volatilities')
-    ax3.set_xlim(ax1.get_xlim())
-    ax3.set_ylim(ax1.get_ylim())
-    legend(bbox_to_anchor=(1., 1.), loc=2)
-    show()
-
-    print( df )
-    end_func(client)
 
 
 def calc_sigmas(N, X, period=20):
@@ -1100,7 +1022,7 @@ def print_quasi_realtime_chain(val_dt,symbol,call_d_range,put_d_range,expiry,typ
     c_range = call_d_range.split(",")
     p_range = put_d_range.split(",")
     dataframe=pd.DataFrame()
-    df = ra.extrae_options_chain(valuation_dttm, symbol, expiry, get_contract_details(symbol)["secType"])
+    df = core.market_data_methods.extrae_options_chain(valuation_dttm, symbol, expiry, get_contract_details(symbol)["secType"])
     df=df.rename(columns=lambda x: str(x)[7:]) # remove prices_
     df=df[( (df['modelDelta'] >= float(c_range[0])/100.0 ) & (df['modelDelta'] <= float(c_range[1])/100.0 ) & ( df['right'] == "C" ) )
             |
@@ -1140,7 +1062,7 @@ def print_ecalendar():
     print(end)
 
     client , log_analytics, globalconf = init_func()
-    dataframe = ra.read_biz_calendar(start_dttm=start, valuation_dttm=end)
+    dataframe = core.market_data_methods.read_biz_calendar(start_dttm=start, valuation_dttm=end)
     print (dataframe)
     end_func(client)
 
@@ -1153,12 +1075,13 @@ if __name__ == "__main__":
     #print_account_delta(valuation_dt="2017-01-31-20")
     #print_volatity("SPY")
     #print_volatility_cone(symbol="SPY")
+    pass
     today = dt.date.today()
     last_date1 = today.strftime('%Y%m%d')
     globalconf = config.GlobalConfig(level=logger.ERROR)
     log = globalconf.log
 
     div, script = read_graph_from_db(globalconf=globalconf, log=log, symbol="SPX",
-                                        last_date=last_date1, estimator="Coppock", name="TREND")
+                                     last_date=last_date1, estimator="Coppock", name="TREND")
 
     print((div, script))

@@ -1,15 +1,15 @@
-import volibutils.sync_client as ib
-from volsetup import config
 import datetime as dt
-import pickle
-import pandas as pd
+
 import numpy as np
-import swigibpy as sy
+import pandas as pd
+
+import volibutils.sync_client as ib
+from core import utils as utils
+from core.market_data_methods import write_market_data_to_sqllite
 from volibutils.RequestOptionData import RequestOptionData
 from volibutils.RequestUnderlyingData import RequestUnderlyingData
-from volsetup.logger import logger
-from volutils import utils as utils
-from operations.market_data import write_market_data_to_sqllite
+from volsetup import config
+
 
 def run_reader():
     globalconf = config.GlobalConfig()
