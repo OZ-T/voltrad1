@@ -10,7 +10,6 @@ import pandas as pd
 from pytz import timezone
 
 # import pandas_datareader.data as web
-from core.market_data_methods import extrae_options_chain
 from core.opt_pricing_methods import bsm_mcs_euro
 from volsetup import config
 from volsetup.logger import logger

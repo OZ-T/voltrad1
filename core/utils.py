@@ -10,6 +10,46 @@ from pandas.tseries.holiday import AbstractHolidayCalendar, Holiday, nearest_wor
     USMartinLutherKingJr, USPresidentsDay, GoodFriday, USMemorialDay, \
     USLaborDay, USThanksgivingDay
 
+from collections import defaultdict
+
+def make_dict():
+    """
+    returns a nested dictionary of arbitrary depth
+    Usage:
+        d=defaultdict(make_dict)
+        d["food"]["meat"]="beef"
+        d["food"]["veggie"]="corn"
+        d["food"]["sweets"]="ice cream"
+        d["animal"]["pet"]["dog"]="collie"
+        d["animal"]["pet"]["cat"]="tabby"
+        d["animal"]["farm animal"]="chicken"
+
+    """
+
+    return defaultdict(make_dict)
+
+
+def iter_all(d,depth=1):
+    """
+    Iterate through everything in NESTED DICTIONARY
+    """
+    for k,v in d.iteritems():
+        print "-"*depth,k
+        if type(v) is defaultdict:
+            iter_all(v,depth+1)
+        else:
+            print "-"*(depth+1),v
+
+def dictify(d):
+    """
+    Convert NESTED DICT to normal dict
+    """
+    for k,v in d.iteritems():
+        if isinstance(v,defaultdict):
+            d[k] = dictify(v)
+    return dict(d)
+
+
 
 def expiry_date(expiry_ident):
     """

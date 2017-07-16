@@ -47,8 +47,7 @@ import matplotlib.mlab as mlab
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt, mpld3
 import matplotlib.pyplot as pyplt
-from core.market_data_methods import read_market_data_from_sqllite
-
+from core.market_data_methods import read_market_data_from_sqllite, save_graph_to_db
 from bokeh.models.annotations import Legend
 from bokeh.embed import components
 from bokeh.layouts import layout
@@ -56,66 +55,6 @@ from bokeh.layouts import layout
 # references
 # http://stackoverflow.com/questions/4700614/how-to-put-the-legend-out-of-the-plot
 # http://www.blog.pythonlibrary.org/2010/09/04/python-101-how-to-open-a-file-or-program/
-
-
-
-def read_graph_from_db(globalconf,log,symbol, last_date, estimator):
-    """
-    return the last saved graph of that type
-    """
-    log.info("Reading Graph data from sqllite ... ")
-    name = "VOLEST"
-    import sqlite3
-    db_file = globalconf.config['sqllite']['graphs_db']
-    path = globalconf.config['paths']['analytics_folder']
-    store = sqlite3.connect(path + db_file)
-    import pandas as pd
-    df1 = pd.read_sql_query("SELECT div,script FROM " + name + " where symbol = '" + symbol + "'"
-                            + " and last_date = '" + last_date + "'"
-                            + " and estimator = '" + estimator + "' order by save_dttm desc ;"
-                            , store)
-
-    if df1.empty:
-        df2 = pd.read_sql_query("SELECT max(last_date) as max1 from " + name, store)
-        last_date = df2.iloc[0]['max1']
-        df1 = pd.read_sql_query("SELECT div,script FROM " + name + " where symbol = '" + symbol + "'"
-                                + " and last_date = '" + last_date + "'"
-                                + " and estimator = '" + estimator + "' order by save_dttm desc ;"
-                                , store)
-
-
-    store.close()
-    return df1['div'].values[0], df1['script'].values[0]
-
-
-def save_graph_to_db(globalconf,log,script, div, symbol, expiry, last_date, num_days_back, resample, estimator):
-    # Embedding bokeh plots in web pages
-    # http://bokeh.pydata.org/en/0.9.3/docs/user_guide/embed.html
-    name = "VOLEST"
-    log.info("Appending Graph data to sqllite ... ")
-    import datetime as dt
-    import pandas as pd
-    save_dttm = dt.datetime.now()
-    import sqlite3
-    db_file = globalconf.config['sqllite']['graphs_db']
-    path = globalconf.config['paths']['analytics_folder']
-    dict1 = dict([
-        ['script', [script]],
-        ['div', [div]],
-        ['symbol', [symbol]],
-        ['expiry', [expiry]],
-        ['last_date', [last_date]],
-        ['num_days_back', [num_days_back]],
-        ['resample', [resample]],
-        ['estimator', [estimator]],
-        ['save_dttm', [save_dttm]]
-    ])
-    df = pd.DataFrame.from_dict(dict1, orient='columns')
-    df.set_index(keys=['symbol', 'last_date', 'estimator'], drop=True, inplace=True)
-    store = sqlite3.connect(path + db_file)
-    df.to_sql(name, store, if_exists='append')
-    store.close()
-
 
 class VolatilityEstimator(object):
     def __init__(self, globalconf, log, db_type, symbol, expiry, last_date, num_days_back, resample, estimator, clean):
@@ -368,7 +307,7 @@ class VolatilityEstimator(object):
         layout1 = layout([[p, p2]])
         script, div = components(layout1)
         save_graph_to_db(self._globalconf, self._log , script, div, self._symbol, self._expiry, self._last_date,
-                         self._num_days_back, self._resample, self._estimator)
+                         self._num_days_back, self._resample, self._estimator, name = "VOLEST")
         return layout1
 
 
@@ -1058,5 +997,4 @@ if __name__ == "__main__":
     globalconf = config.GlobalConfig()
 
     last_date = "20170708"
-    print (read_graph_from_db(globalconf=globalconf, log=log, symbol="SPY", last_date=last_date, estimator="GarmanKlass"))
 

@@ -26,9 +26,10 @@ class MarketData_tests(unittest.TestCase):
         self.assertEqual(len(df), 100)
     def test_business_hours(self):
         import datetime as dt
+        from core.utils import BusinessHours
         dt_now = dt.datetime.now()  # - timedelta(days=4)
         last_record_stored = dt.datetime.strptime("2017-06-22 22:59:00", '%Y-%m-%d %H:%M:%S')
-        bh = utils.BusinessHours(last_record_stored, dt_now, worktiming=[15, 21], weekends=[6, 7])
+        bh = BusinessHours(last_record_stored, dt_now, worktiming=[15, 21], weekends=[6, 7])
         days = bh.getdays()
         print(days)
         self.assertEqual(100, 100)
@@ -55,17 +56,43 @@ class MarketData_tests(unittest.TestCase):
         # vol.term_sheet_to_html(window, windows, quantiles, bins, normed, bench)
         self.assertEqual(100, 100)
 
+    def test_graphs(self):
+        globalconf = config.GlobalConfig()
+        from core import analytics_methods as am, utils
+
+        # am.print_coppock_diario(symbol="SPX",period="1D")
+        # p = am.graph_coppock(symbol="SPX",period="1D")
+        # p = am.graph_emas(symbol="SPY")
+        # p = am.graph_volatility(symbol="SPY")
+        # p = am.graph_fast_move(symbol="SPY")
+
+        # show(p)
+        am.graph_volatility_cone(symbol='SPY')
+        # print (md.get_datasources(globalconf))
+        self.assertGreater(1,0)
+
+    def test_get_optchain_datasources(self):
+        from core.market_data_methods import get_optchain_datasources
+        import volsetup.config as config
+
+        globalconf = config.GlobalConfig()
+
+        dict = get_optchain_datasources(globalconf)
+
+        print (dict['optchain_ib_exp']['SPY']['expiries'])
+        print (dict['optchain_ib_exp']['IWM']['expiries'])
+
+        self.assertListEqual(dict['optchain_ib_exp']['IWM']['expiries'], ['2016-09', '2016-08'] )
+
+    def test_get_expiries(self):
+        from core.market_data_methods import get_expiries
+        import volsetup.config as config
+        globalconf = config.GlobalConfig()
+
+        list = get_expiries(globalconf=globalconf, dsId='optchain_ib_exp', symbol="SPY")
+
+        print(max(list))
+        self.assertEqual(max(list),'2017-09')
 
 if __name__ == "__main__":
-    globalconf = config.GlobalConfig()
-    from core import analytics_methods as am, utils
-
-    #am.print_coppock_diario(symbol="SPX",period="1D")
-    #p = am.graph_coppock(symbol="SPX",period="1D")
-    #p = am.graph_emas(symbol="SPY")
-    #p = am.graph_volatility(symbol="SPY")
-    #p = am.graph_fast_move(symbol="SPY")
-
-    #show(p)
-    am.graph_volatility_cone(symbol='SPY')
-    #print (md.get_datasources(globalconf))
+    unittest.main()

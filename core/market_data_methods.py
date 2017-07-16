@@ -23,27 +23,22 @@ def get_columns(name,store):
     df = pd.read_sql_query(sql, store)
     return list(df.columns)
 
-
+from collections import defaultdict
+from core.utils import make_dict, dictify
 def get_optchain_datasources(globalconf):
     dict = get_optchain_datasource_files(globalconf)
-    list1 = []
+    dict_out = defaultdict(make_dict)
     for db_type, db_files in dict.items():
-        dict_out = {}
-        dict_out['type'] = db_type
-        dict_out['expiries'] = []
-        dict_out['symbols'] = []
-        count = 0
         for db_name, db_file in db_files.items():
             store = sqlite3.connect(db_file)
-            dict_out['expiries'].append(db_name[-10:-3])
             sql = "SELECT name FROM sqlite_master WHERE type='table'"
-            dict_out['symbols'].extend(list(pd.read_sql_query(sql, store).values.flatten()))
-            if count == 0:
-                dict_out['columns'] = get_columns(dict_out['symbols'][0],store)
-            count = count + 1
-        dict_out['symbols'] = list(set(dict_out['symbols']))
-        list1.append(dict_out)
-    return list1
+            # dict_out['symbols'].extend(list(pd.read_sql_query(sql, store).values.flatten()))
+            for symbol in list(pd.read_sql_query(sql, store).values.flatten()):
+                dict_out[db_type][symbol]['columns'] = get_columns(symbol, store)
+                if not dict_out[db_type][symbol]['expiries']:
+                    dict_out[db_type][symbol]['expiries'] = []
+                dict_out[db_type][symbol]['expiries'].append(db_name[-10:-3])
+    return dictify(dict_out)
 
 def get_underlying_symbols(globalconf, db_type):
     # TODO: get this from configuration
@@ -56,9 +51,17 @@ def get_underlying_symbols(globalconf, db_type):
     return symbols[db_type]
 
 
-def get_expiries(globalconf, dsId, symbol_expiry):
-    # TODO: get available expiries for options on the given underlying
-    expiries = None
+def get_expiries(globalconf, dsId, symbol):
+    """
+    get available expiries for options on the given underlying
+    """
+
+    from core.market_data_methods import get_optchain_datasources
+    import volsetup.config as config
+    dict = get_optchain_datasources(globalconf)
+
+    expiries = dict[dsId][symbol]['expiries']
+
     return expiries
 
 
@@ -122,21 +125,14 @@ def formated_string_for_file(expiry, expiry_in_format):
     """
     return dt.datetime.strptime(expiry, expiry_in_format).strftime('%Y-%m')
 
-def read_market_data_from_sqllite(globalconf, log, db_type,symbol,expiry,last_date,num_days_back,resample):
-    path = globalconf.config['paths']['data_folder']
-    log.info("Reading market data from sqllite ... ")
-    criteria = get_partition_names(db_type)
-    first_date = (dt.datetime.strptime(last_date, '%Y%m%d') - dt.timedelta(num_days_back)).strftime(
-        criteria['formato_filtro'])
-    db_file = get_market_db_file(globalconf, db_type, "")
-    store = sqlite3.connect(path + db_file)
-    sql = "select * from " + symbol + " where 1=1 "
-    if last_date:
-        sql = sql + " and " + criteria['filtro_sqlite'] + " between '" + first_date + "' and '" + last_date +"'"
-    if expiry:
-        sql = sql + " and expiry = '" +str("/"+symbol+"/"+expiry)+ "'"
+def get_last_bars_from_rt(globalconf, log, symbol, last_date,number_days_back):
+    max_expiry_available = max( get_expiries(globalconf=globalconf, dsId='optchain_ib_exp', symbol=symbol))
+    df = read_market_data_from_sqllite(globalconf=globalconf, log=log,
+                                          db_type="optchain_ib",symbol=symbol,expiry=max_expiry_available,
+                                          last_date=last_date, num_days_back=number_days_back, resample=None)
+    return df
 
-    dataframe = pd.read_sql_query(sql, store)
+def resample_and_improve_quality(dataframe, criteria, resample):
     dataframe = dataframe.drop_duplicates(subset=[criteria["sorting_var"], criteria["expiry"]], keep='last')
     dataframe = dataframe.sort_values(by=[criteria["sorting_var"]])
 
@@ -147,6 +143,27 @@ def read_market_data_from_sqllite(globalconf, log, db_type,symbol,expiry,last_da
         dataframe = dataframe.resample(resample, how=conversion).dropna()
         dataframe['return'] = (dataframe['close'] / dataframe['close'].shift(1)) - 1
     log.info(("Resampled size ", len(dataframe)))
+    return dataframe
+
+def read_market_data_from_sqllite(globalconf, log, db_type,symbol,expiry,last_date,num_days_back,resample):
+    path = globalconf.config['paths']['data_folder']
+    log.info("Reading market data from sqllite ... ")
+    criteria = get_partition_names(db_type)
+    first_date = (dt.datetime.strptime(last_date, '%Y%m%d') - dt.timedelta(num_days_back)).strftime(
+        criteria['formato_filtro'])
+    db_file = get_market_db_file(globalconf, db_type, expiry)
+    store = sqlite3.connect(path + db_file)
+    sql = "select * from " + symbol + " where 1=1 "
+    if last_date:
+        sql = sql + " and " + criteria['filtro_sqlite'] + " between '" + first_date + "' and '" + last_date +"'"
+    #if expiry:
+    #    sql = sql + " and expiry = '" +str("/"+symbol+"/"+expiry)+ "'"
+
+    dataframe = pd.read_sql_query(sql, store)
+
+    if resample:
+        dataframe = resample_and_improve_quality(dataframe, criteria, resample)
+
     return dataframe
 
 def write_market_data_to_sqllite(globalconf, log, dataframe, db_type):
