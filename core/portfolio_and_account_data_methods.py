@@ -1,14 +1,11 @@
 """@package docstring
 """
 
-
-import time
 from datetime import datetime, timedelta
 
 import numpy as np
 import pandas as pd
 from pytz import timezone
-
 # import pandas_datareader.data as web
 from core.opt_pricing_methods import bsm_mcs_euro
 from volsetup import config
@@ -30,17 +27,6 @@ OPT_NUM_FIELDS_LST = [u'CallOI', u'PutOI', u'Volume', u'askDelta', u'askGamma',
                    u'multiplier', u'strike']
 
 
-def timefunc(f):
-    def f_timer(*args, **kwargs):
-        start = time.time()
-        result = f(*args, **kwargs)
-        end = time.time()
-        log.info( ' __TIMER__ ' + str(f.__name__) + ' took ' + str( end - start ) + ' time')
-        return result
-    return f_timer
-
-
-@timefunc
 def extrae_options_chain2(start_dttm,end_dttm,symbol,expiry,secType):
     """
         extraer de la hdf5 los datos de cotizaciones entre dos fechas
@@ -156,7 +142,6 @@ def create_opt_chain_abt(year="2016"):
 
 
 
-@timefunc
 def extrae_account_snapshot_new(valuation_dttm,accountid,scenarioMode,simulName):
     """
     Extrae los snapshots horarios de account para una fecha
@@ -190,7 +175,6 @@ def extrae_account_snapshot_new(valuation_dttm,accountid,scenarioMode,simulName)
     return df2
 
 
-@timefunc
 def extrae_historical_chain(start_dt,end_dt,symbol,strike,expiry,right):
     contract = symbol + expiry + right + strike
     log.info("extrae_historical_chain para : start_dt=%s end_dt=%s contract=%s " % (str(start_dt),str(end_dt),contract))
@@ -234,7 +218,6 @@ def extrae_historical_chain_where(start_dt,end_dt,symbol,strike,expiry,right):
     return dataframe
 
 
-@timefunc
 def extrae_account_snapshot(valuation_dttm,accountid,scenarioMode,simulName):
     log.info("extrae_account_snapshot para : [%s] " % (str(valuation_dttm)))
     dataframe = pd.DataFrame()
@@ -271,7 +254,6 @@ def extrae_account_snapshot(valuation_dttm,accountid,scenarioMode,simulName):
     return t_margin , t_prem
 
 
-@timefunc
 def extrae_account_delta_new(valuation_dttm,accountid,scenarioMode,simulName):
     """
     Extrae la delta de las variables de account dado un datetime.
@@ -325,7 +307,6 @@ def extrae_account_delta_new(valuation_dttm,accountid,scenarioMode,simulName):
     return t_margin , t_prem
 
 
-@timefunc
 def extrae_portfolio_positions(valuation_dttm=None,symbol=None,expiry=None,secType=None,
                                accountid=None,scenarioMode="N",simulName="NA"):
     """
@@ -343,6 +324,21 @@ def extrae_portfolio_positions(valuation_dttm=None,symbol=None,expiry=None,secTy
         where1 = ['symbol=='+symbol,'expiry=='+expiry,'secType=='+secType,'accountName=='+accountid]
     log.info("extrae_portfolio_positions para : [%s] " % (str(valuation_dttm)) )
     dataframe = pd.DataFrame()
+
+    path = globalconf.config['paths']['data_folder']
+    db_file = globalconf.config['sqllite']['portfolio_db']
+
+    if scenarioMode == "N":
+        store = sqlite3.connect(path + db_file)
+        sql = "select * from " + accountid + " where 1=1 "
+        sql = sql + " and symbol == '" + symbol + "'"
+        sql = sql + " and expiry == '" + expiry + "'"
+        sql = sql + " and secType == '" + secType + "'"
+        sql = sql + " and current_date == '" + secType + "'"
+        df1 = pd.read_sql_query(sql, store)
+
+
+
     if scenarioMode == "N":
         store=globalconf.portfolio_store()
         node1=store.get_node("/"+str(valuation_dttm.year)+"/"+valuation_dttm.strftime("%B")[:3]+"/"+str(valuation_dttm.day))
@@ -394,7 +390,6 @@ def extrae_portfolio_positions(valuation_dttm=None,symbol=None,expiry=None,secTy
     dataframe = dataframe.add_prefix("portfolio_")
     return dataframe
 
-@timefunc
 def extrae_fecha_inicio_estrategia(symbol,expiry,accountid,scenarioMode,simulName):
     """
 
@@ -418,7 +413,8 @@ def extrae_fecha_inicio_estrategia(symbol,expiry,accountid,scenarioMode,simulNam
         ret1 = datetime.now() + timedelta(days=99999)
     return ret1
 
-@timefunc
+import sqlite3
+
 def extrae_detalle_operaciones(valuation_dttm,symbol,expiry,secType,accountid,scenarioMode,simulName):
     """
     Extrae el detalle de todas las ordenes ejecutadas para un simbolo y expiracion
@@ -434,27 +430,20 @@ def extrae_detalle_operaciones(valuation_dttm,symbol,expiry,secType,accountid,sc
     #valuation_dttm = datetime.strptime(str(year) + str(month) + str(day) + " " + str(hour) + ":59", '%Y%m%d %H:%M')
     #valuation_dttm_txt = str(year)+str(month)+str(day)+"235959"
     dataframe = pd.DataFrame()
+    path = globalconf.config['paths']['data_folder']
+    db_file = globalconf.config['sqllite']['orders_db']
 
     if scenarioMode == "N":
-        store = globalconf.open_orders_store()
-        node=store.get_node("/" + accountid)
-        df1 = store.select(node._v_pathname,where=['symbol=='+symbol,'expiry=='+expiry])
+        store = sqlite3.connect(path + db_file)
+        sql = "select * from " + accountid + " where 1=1 "
+        sql = sql + " and symbol == '" + symbol + "'"
+        sql = sql + " and expiry == '" + expiry + "'"
+        df1 = pd.read_sql_query(sql, store)
+
         df1['load_dttm'] = df1['current_datetime'].apply(lambda x: datetime.strptime(x, '%Y%m%d%H%M%S'))
         df1 = df1[df1.load_dttm <= valuation_dttm]
         df1=df1.rename(columns={'execid':'index'})
         df1.set_index(keys=['index'], drop=True, inplace=True)
-        #for item in store.keys():
-        #    date_object = datetime.strptime(str(item), '/%Y/%b/%d/%H/%M')
-            # print("item=", str(item), date_object,valuation_dttm)
-        #    if date_object <= valuation_dttm:
-        #        df1=store.select(item,where=['symbol=='+symbol,'expiry=='+expiry])
-        #        df1['load_dttm']=datetime.strptime(item, '/%Y/%b/%d/%H/%M')
-        #        dataframe = dataframe.append(df1)
-
-        # en cada trade se toma la foto del portfolio y de la account para tener de comisiones coste base y margin por
-        # trade
-
-        #print "extrae_detalle_operaciones " , df1
         dataframe = dataframe.append(df1)
         store.close()
     elif scenarioMode == "Y":
@@ -466,8 +455,6 @@ def extrae_detalle_operaciones(valuation_dttm,symbol,expiry,secType,accountid,sc
         df1 = df1[df1.load_dttm <= valuation_dttm]
         dataframe = dataframe.append(df1)
 
-
-    #dataframe.to_excel("operaciones.xlsx")
     dataframe=dataframe[['localSymbol','avgprice','expiry','conId','current_datetime','symbol','load_dttm',
                              'multiplier','price','qty','right','side','strike','times','shares']]
     dataframe[['avgprice','multiplier','price','qty','strike','shares']]= \

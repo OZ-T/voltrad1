@@ -12,7 +12,7 @@ from pytz import timezone
 
 import volsetup.config as config
 from core import utils as utils
-from core.run_analytics import log, globalconf, timefunc, OPT_NUM_FIELDS_LST
+from core.portfolio_and_account_data_methods import log, globalconf, OPT_NUM_FIELDS_LST
 from volibutils.RequestUnderlyingData import RequestUnderlyingData
 from volibutils.sync_client import IBClient
 from volsetup.logger import logger
@@ -24,7 +24,9 @@ def get_columns(name,store):
     return list(df.columns)
 
 from collections import defaultdict
-from core.utils import make_dict, dictify
+from core.utils import make_dict, dictify, timefunc
+
+
 def get_optchain_datasources(globalconf):
     dict = get_optchain_datasource_files(globalconf)
     dict_out = defaultdict(make_dict)
@@ -158,7 +160,6 @@ def read_market_data_from_sqllite(globalconf, log, db_type,symbol,expiry,last_da
         sql = sql + " and " + criteria['filtro_sqlite'] + " between '" + first_date + "' and '" + last_date +"'"
     #if expiry:
     #    sql = sql + " and expiry = '" +str("/"+symbol+"/"+expiry)+ "'"
-
     dataframe = pd.read_sql_query(sql, store)
 
     if resample:
@@ -481,7 +482,6 @@ def get_optchain_datasource_files(globalconf):
     return dict
 
 
-@timefunc
 def extrae_options_chain(valuation_dttm,symbol,expiry,secType):
     """
         extraer de la db los datos de cotizaciones para una fecha

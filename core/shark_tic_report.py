@@ -9,9 +9,8 @@ from scipy import stats
 
 # In[50]:
 import core.market_data_methods
-import core.run_analytics as ra
+import core.portfolio_and_account_data_methods as ra
 from core import utils as utils
-from core.run_analytics import timefunc
 from volsetup import config
 from volsetup.logger import logger
 
@@ -28,7 +27,6 @@ def prev_weekday_close(adate):
     _offsets = (3, 1, 1, 1, 1, 1, 2)
     return ( adate - dt.timedelta(days=_offsets[adate.weekday()]) ).replace(hour=23,minute=59, second=59)
 
-
 datos_toxls=pd.DataFrame()
 
 # Analizar TIC activas para un subyacente y vencimiento dados para una datetime de valoracion dada
@@ -42,7 +40,6 @@ datos_toxls=pd.DataFrame()
 #   5.- se obtiene del h5 account los impactos (deltas) en Cash (comisiones, primas cobradas) y margin en cada uno de los datetimes
 #       en que se ha realizado operaciones (este historico se obtiene en el punto 4 anterior)
 #
-@timefunc
 def run_shark_analytics(i_symbol, i_date, i_expiry, i_secType, accountid, scenarioMode,
                         simulName, appendh5, appendpgsql, toxls, log2, globalconf2, ):
     log2.info(" ------------- Running [%s] [%s] for valuation date: [%s] ------------- " %
@@ -58,7 +55,8 @@ def run_shark_analytics(i_symbol, i_date, i_expiry, i_secType, accountid, scenar
     # se obtienen todas operaciones desde el inicio de la estrategia hasta el datetime de valoracion
     ###################################################################################################################
     operaciones=ra.extrae_detalle_operaciones(valuation_dttm=fecha_valoracion,
-                                              symbol=i_symbol,expiry=i_expiry,secType=i_secType,accountid=accountid,
+                                              symbol=i_symbol,expiry=i_expiry,
+                                              secType=i_secType,accountid=accountid,
                                               scenarioMode=scenarioMode, simulName=simulName)
 
     ###################################################################################################################
@@ -682,7 +680,6 @@ def get_ivol_series(date_ini,date_end):
     df1 = store.select(lvl1._v_pathname)
     return df1.ix[date_ini:date_end]
 
-@timefunc
 def get_strategy_start_date(con,meta,symbol,expiry,accountid,scenarioMode,simulName,timedelta1,
                             appendh5,appendpgsql,log,globalconf):
     if appendh5 == 1:
@@ -729,7 +726,6 @@ def get_strategy_start_date(con,meta,symbol,expiry,accountid,scenarioMode,simulN
     ret1=ret1.replace(minute=59, second=59) # el datetime de valoracion siemrpe ha ser el ultimo minuto para asegurar coger todos los trades
     return ret1
 
-@timefunc
 def run_analytics(symbol, expiry, secType,accountid,valuation_dt,scenarioMode,simulName,
                   appendh5,appendpgsql,toxls,timedelta1,log,globalconf):
     """

@@ -12,3 +12,25 @@ df = df[abs(df.strike - df.modelUndPrice) == np.min(abs(df.strike - df.modelUndP
 df = df[['modelImpliedVol','modelUndPrice','lastImpliedVol','lastUndPrice','askImpliedVol','askUndPrice','bidImpliedVol','bidUndPrice','current_datetime']]
 
 print (df)
+
+
+import core.portfolio_and_account_data_methods as ra
+import datetime as dt
+symbol = "SPY"
+expiry = "20170317"
+secType = "OPT"
+import volsetup.config as config
+globalconf = config.GlobalConfig()
+accountid = globalconf.get_accountid()
+fecha_valoracion = dt.datetime.now()  # dt.datetime(year=2017,month=2,day=2) #
+scenarioMode = "N"
+simulName = "spy0317dls"
+appendh5 = 1
+appendpgsql = 0
+toxls = 0
+timedelta1 = 1
+posiciones = ra.extrae_portfolio_positions(valuation_dttm=fecha_valoracion,
+                                           symbol=symbol, expiry=expiry, secType=secType,
+                                           accountid=accountid,
+                                           scenarioMode=scenarioMode, simulName=simulName)
+print (posiciones)

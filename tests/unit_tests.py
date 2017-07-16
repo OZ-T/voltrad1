@@ -94,5 +94,23 @@ class MarketData_tests(unittest.TestCase):
         print(max(list))
         self.assertEqual(max(list),'2017-09')
 
+    def test_extrae_detalle_operaciones(self):
+        from core.portfolio_and_account_data_methods import extrae_detalle_operaciones
+        import datetime as dt
+        symbol = "SPY"
+        expiry = "20170317"
+        secType = "OPT"
+        import volsetup.config as config
+        globalconf = config.GlobalConfig()
+        accountid = globalconf.get_accountid()
+        fecha_valoracion = dt.datetime.now()  # dt.datetime(year=2017,month=2,day=2) #
+        scenarioMode = "N"
+        simulName = "spy0317dls"
+        df1 = extrae_detalle_operaciones(valuation_dttm=fecha_valoracion, symbol=symbol, expiry=expiry,
+                                         secType=secType, accountid=accountid, scenarioMode=scenarioMode,
+                                         simulName=simulName)
+
+        print (df1)
+
 if __name__ == "__main__":
     unittest.main()

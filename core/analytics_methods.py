@@ -16,7 +16,7 @@ from numpy.lib.stride_tricks import as_strided
 from pylab import axhline, figure, legend, plot, show
 
 import core.market_data_methods
-from core import run_analytics as ra, market_data_methods as md
+from core import portfolio_and_account_data_methods as ra, market_data_methods as md
 from core.market_data_methods import get_contract_details, read_graph_from_db, save_graph_to_db
 from volsetup import config
 from volsetup.logger import logger
@@ -550,7 +550,6 @@ def graph_volatility_cone(symbol):
 
     print( df )
     end_func(client)
-
 
 
 def print_account_snapshot(valuation_dt):
