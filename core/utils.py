@@ -5,12 +5,27 @@
 import math
 import datetime
 import datetime as dt
+import time
 
 from pandas.tseries.holiday import AbstractHolidayCalendar, Holiday, nearest_workday, \
     USMartinLutherKingJr, USPresidentsDay, GoodFriday, USMemorialDay, \
     USLaborDay, USThanksgivingDay
 
 from collections import defaultdict
+
+from core.portfolio_and_account_data_methods import log
+
+
+
+
+def timefunc(f):
+    def f_timer(*args, **kwargs):
+        start = time.time()
+        result = f(*args, **kwargs)
+        end = time.time()
+        log.info( ' __TIMER__ ' + str(f.__name__) + ' took ' + str( end - start ) + ' time')
+        return result
+    return f_timer
 
 def make_dict():
     """
@@ -254,6 +269,7 @@ if __name__=="__main__kk":
     print (bh.getdays())
 
 
+
     #c= int(math.ceil(  office_time_between(a,b,start = timedelta(hours = 15),stop = timedelta(hours = 21)).total_seconds() / 60.0 / 60.0 / 7.0 ))
     #print str(a),str(b),c,"ffffff",office_time_between(a,b,start = timedelta(hours = 15),stop = timedelta(hours = 21))
 
@@ -268,4 +284,5 @@ if __name__ == '__main__':
 
     if (dt.datetime.now().date()+ dt.timedelta(days=1)) in get_trading_close_holidays(dt.datetime.now().year):
         print ("Holidayyyyy!!!!")
+
 
