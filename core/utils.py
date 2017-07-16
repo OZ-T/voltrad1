@@ -34,11 +34,11 @@ def iter_all(d,depth=1):
     Iterate through everything in NESTED DICTIONARY
     """
     for k,v in d.iteritems():
-        print "-"*depth,k
+        print (("-"*depth,k))
         if type(v) is defaultdict:
             iter_all(v,depth+1)
         else:
-            print "-"*(depth+1),v
+            print (("-"*(depth+1),v))
 
 def dictify(d):
     """
