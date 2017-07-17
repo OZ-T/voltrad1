@@ -51,6 +51,7 @@ from core.market_data_methods import read_market_data_from_sqllite, save_graph_t
 from bokeh.models.annotations import Legend
 from bokeh.embed import components
 from bokeh.layouts import layout
+from bokeh.plotting import figure
 
 # references
 # http://stackoverflow.com/questions/4700614/how-to-put-the-legend-out-of-the-plot
