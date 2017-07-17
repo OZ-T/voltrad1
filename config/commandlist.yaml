@@ -4,9 +4,9 @@ batch_acc_to_db:
 batch_orders_to_db:
   pointer:  operations.orders.store_orders_from_ib_to_db
 batch_optchain_yhoo_to_db:
-  pointer:  operations.market_data.store_optchain_yahoo_to_db
+  pointer:  core.market_data_methods.store_optchain_yahoo_to_db
 batch_underl_ib_to_db:
-  pointer:  operations.market_data.store_underlying_ib_to_db
+  pointer:  core.market_data_methods.store_underlying_ib_to_db
 # Web reporting generation
 run_dq_report_market:
   pointer: core.reporting.run_dq_report_market
@@ -16,7 +16,7 @@ run_trend_report:
   pointer: core.reporting.run_trend_report
 # H5 legacy
 migrate_h5:
-  pointer:  operations.h5_legacy_methods.migrate_h5
+  pointer:  core.h5_legacy_methods.migrate_h5
 # Operations
 print_acc_port:
   pointer:  operations.accounting.print_10_days_acc_summary_and_current_positions
