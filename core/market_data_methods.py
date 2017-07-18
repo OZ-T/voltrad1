@@ -156,7 +156,7 @@ def get_last_bars_from_rt(globalconf, log, symbol, last_date,last_record_stored)
         df1 = df1.ix[last_date]
         return df1[['high','close','open','low',]]
     else:
-        return df[['high','close','open','low',]]
+        return df
 
 def resample_and_improve_quality(dataframe, criteria, resample):
     dataframe = dataframe.drop_duplicates(subset=[criteria["sorting_var"], criteria["expiry"]], keep='last')
