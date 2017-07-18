@@ -132,7 +132,7 @@ def coppock(globalconf, log_analytics, last_date, symbol="SPX",period="1D"):
 
 
 
-    last_record_stored = np.max(df.index)
+    last_record_stored = np.max(df.index).replace(hour=23,minute=59, second=59)
     import core.utils as utils
     dt_now = dt.datetime.now()
     bh = utils.BusinessHours(last_record_stored, dt_now, worktiming=[15, 21], weekends=[6, 7])
@@ -141,8 +141,7 @@ def coppock(globalconf, log_analytics, last_date, symbol="SPX",period="1D"):
     print(("Last record stored underlying DB", last_record_stored))
     print(("Days missing in underlying DB", dias_que_faltan_en_db))
     df1 = md.get_last_bars_from_rt(globalconf=globalconf, log=log_analytics, symbol=symbol, last_date=last_date, number_days_back=dias_que_faltan_en_db)
-    print(df)
-    print(df1)
+    df1 = df1.ix[last_date]
     df = df.append(df1)
     df = COPP(df, 12, 6, 10)
     return df
