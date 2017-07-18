@@ -141,6 +141,7 @@ def coppock(globalconf, log_analytics, last_date, symbol="SPX",period="1D"):
     print(("Last record stored underlying DB", last_record_stored))
     print(("Days missing in underlying DB", dias_que_faltan_en_db))
     df1 = md.get_last_bars_from_rt(globalconf=globalconf, log=log_analytics, symbol=symbol, last_date=last_date, number_days_back=dias_que_faltan_en_db)
+    print(df1)
     df = df.append(df1)
     df = COPP(df, 12, 6, 10)
     return df
