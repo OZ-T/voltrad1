@@ -153,7 +153,7 @@ def get_last_bars_from_rt(globalconf, log, symbol, last_date,last_record_stored)
         df1.index = df1.index.to_datetime()
         df1 = df1.resample("1D").ohlc()
         df1.columns = df1.columns.droplevel(0)
-        first_date = (dt.datetime.strptime(last_date, '%Y%m%d') - dt.timedelta(number_days_back)).strftime('%Y%m%d')
+        first_date = (dt.datetime.strptime(last_date, '%Y%m%d') - dt.timedelta(number_days_back-1)).strftime('%Y%m%d')
         print(("XXXXX ",df1,first_date,last_date))
         df1 = df1.ix[first_date:]
         print(df1)
