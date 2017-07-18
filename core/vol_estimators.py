@@ -52,7 +52,7 @@ from bokeh.models.annotations import Legend
 from bokeh.embed import components
 from bokeh.layouts import layout
 from bokeh.plotting import figure
-
+import core.market_data_methods as md
 # references
 # http://stackoverflow.com/questions/4700614/how-to-put-the-legend-out-of-the-plot
 # http://www.blog.pythonlibrary.org/2010/09/04/python-101-how-to-open-a-file-or-program/
@@ -82,6 +82,11 @@ class VolatilityEstimator(object):
         self._prices = read_market_data_from_sqllite(self._globalconf, self._log, db_type=self._db_type,
                                                        symbol=self._symbol,expiry=self._expiry, last_date=self._last_date,
                                                        num_days_back=self._num_days_back, resample=self._resample)
+
+        last_record_stored = np.max(self._prices.index).replace(hour=0, minute=59, second=59)
+        df1 = md.get_last_bars_from_rt(globalconf=globalconf, log=log, symbol=symbol, last_date=last_date,
+                                       last_record_stored=last_record_stored)
+        self._prices = self._prices.append(df1)
 
         matplotlib.rc('image', origin='upper')
         matplotlib.rcParams['font.family'] = 'Times New Roman'
