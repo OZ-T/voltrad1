@@ -130,7 +130,7 @@ def coppock(globalconf, log_analytics, last_date, symbol="SPX",period="1D"):
                                           db_type="underl_ib_hist",symbol=symbol,expiry=None,
                                           last_date=last_date, num_days_back=100, resample="1D")
 
-    last_record_stored = np.max(df.index).replace(hour=23,minute=59, second=59)
+    last_record_stored = np.max(df.index).replace(hour=0,minute=59, second=59)
     df1 = md.get_last_bars_from_rt(globalconf=globalconf, log=log_analytics, symbol=symbol, last_date=last_date, last_record_stored=last_record_stored)
     df = df.append(df1)
     df = COPP(df, 12, 6, 10)
@@ -205,7 +205,7 @@ def get_volatility_for_report(symbol,client,log_analytics,globalconf,last_date):
                                           db_type="underl_ib_hist", symbol=symbol, expiry=None,
                                           last_date=last_date, num_days_back=100, resample="1D")
 
-    last_record_stored = np.max(df.index).replace(hour=23,minute=59, second=59)
+    last_record_stored = np.max(df.index).replace(hour=0,minute=59, second=59)
     df1 = md.get_last_bars_from_rt(globalconf=globalconf, log=log_analytics, symbol=symbol, last_date=last_date, last_record_stored=last_record_stored)
     df = df.append(df1)
 
@@ -217,7 +217,7 @@ def get_volatility_for_report(symbol,client,log_analytics,globalconf,last_date):
                                            db_type="underl_ib_hist", symbol="VIX", expiry=None,
                                            last_date=last_date, num_days_back=100, resample="1D")
 
-    last_record_stored = np.max(vix.index).replace(hour=23,minute=59, second=59)
+    last_record_stored = np.max(df.index).replace(hour=0,minute=59, second=59)
     df1 = md.get_last_bars_from_rt(globalconf=globalconf, log=log_analytics, symbol="VIX", last_date=last_date, last_record_stored=last_record_stored)
     vix = vix.append(df1)
 
@@ -353,10 +353,9 @@ def get_fast_move_for_report(symbol,client, log_analytics, globalconf,last_date)
                                           db_type="underl_ib_hist", symbol=symbol, expiry=None,
                                           last_date=last_date, num_days_back=250, resample="1D")
 
-    last_record_stored = np.max(df.index).replace(hour=23,minute=59, second=59)
+    last_record_stored = np.max(df.index).replace(hour=0,minute=59, second=59)
     df1 = md.get_last_bars_from_rt(globalconf=globalconf, log=log_analytics, symbol=symbol, last_date=last_date, last_record_stored=last_record_stored)
     df = df.append(df1)
-
 
     df = df.drop(['high', 'open', 'low'], 1).rename(columns={'close': symbol})
     stddev = pd.rolling_std(df[symbol],window=int(length),min_periods=int(length))
@@ -415,7 +414,7 @@ def get_emas(last_date, log_analytics, globalconf, symbol="SPX", n=50):
                                           db_type="underl_ib_hist",symbol=symbol,expiry=None,
                                           last_date=last_date, num_days_back=500, resample="1D")
 
-    last_record_stored = np.max(df.index).replace(hour=23,minute=59, second=59)
+    last_record_stored = np.max(df.index).replace(hour=0,minute=59, second=59)
     df1 = md.get_last_bars_from_rt(globalconf=globalconf, log=log_analytics, symbol=symbol, last_date=last_date, last_record_stored=last_record_stored)
     df = df.append(df1)
 
@@ -430,7 +429,7 @@ def get_emas(last_date, log_analytics, globalconf, symbol="SPX", n=50):
                                           last_date=last_date, num_days_back=100, resample="1D")
 
 
-    last_record_stored = np.max(df.index).replace(hour=23,minute=59, second=59)
+    last_record_stored = np.max(vix.index).replace(hour=0,minute=59, second=59)
     df1 = md.get_last_bars_from_rt(globalconf=globalconf, log=log_analytics, symbol="VIX", last_date=last_date, last_record_stored=last_record_stored)
     vix = vix.append(df1)
 
@@ -503,7 +502,7 @@ def graph_volatility_cone(symbol):
                                           last_date=last_date, num_days_back=500, resample="1D")
 
 
-    last_record_stored = np.max(df.index).replace(hour=23,minute=59, second=59)
+    last_record_stored = np.max(df.index).replace(hour=0,minute=59, second=59)
     df1 = md.get_last_bars_from_rt(globalconf=globalconf, log=log_analytics, symbol=symbol, last_date=last_date, last_record_stored=last_record_stored)
     df = df.append(df1)
 
