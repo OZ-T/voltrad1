@@ -398,7 +398,8 @@ def print_fast_move(symbol):
 def print_emas(symbol="SPX"):
     client, log_analytics, globalconf = init_func()
     last_date = datetime.datetime.today().strftime("%Y%m%d")
-    df = get_emas(last_date, log_analytics, globalconf, symbol=symbol)
+    n = 50
+    df = get_emas(last_date, log_analytics, globalconf, symbol=symbol, n=n)
     output = df.iloc[-HISTORY_LIMIT:].to_string(formatters={
                                     'lower_wk_iv': '{:,.2f}'.format,
                                     'upper_wk_iv': '{:,.2f}'.format,
@@ -409,7 +410,7 @@ def print_emas(symbol="SPX"):
     print(output)
     end_func(client)
 
-def get_emas(last_date, log_analytics, globalconf, symbol="SPX"):
+def get_emas(last_date, log_analytics, globalconf, symbol="SPX", n=50):
     df = md.read_market_data_from_sqllite(globalconf=globalconf, log=log_analytics,
                                           db_type="underl_ib_hist",symbol=symbol,expiry=None,
                                           last_date=last_date, num_days_back=500, resample="1D")
@@ -418,7 +419,7 @@ def get_emas(last_date, log_analytics, globalconf, symbol="SPX"):
     df1 = md.get_last_bars_from_rt(globalconf=globalconf, log=log_analytics, symbol=symbol, last_date=last_date, last_record_stored=last_record_stored)
     df = df.append(df1)
 
-    n = 50
+
     ema50 = pd.Series(pd.Series.ewm(df['close'], span = n, min_periods = n,
                      adjust=True, ignore_na=False).mean(), name = 'EMA_' + str(n))
     df = df.join(ema50)
@@ -450,8 +451,8 @@ def get_emas(last_date, log_analytics, globalconf, symbol="SPX"):
 def graph_emas(symbol="SPX"):
     client, log_analytics, globalconf = init_func()
     last_date = datetime.datetime.today().strftime("%Y%m%d")
-
-    df = get_emas(last_date, log_analytics, globalconf, symbol=symbol).iloc[-50:]
+    n = 50
+    df = get_emas(last_date, log_analytics, globalconf, symbol=symbol, n=n).iloc[-50:]
     from bokeh.plotting import figure
     df = df.reset_index()
     from bokeh.models import ColumnDataSource
