@@ -187,7 +187,7 @@ def read_market_data_from_sqllite(globalconf, log, db_type,symbol,expiry,last_da
     #if expiry:
     #    sql = sql + " and expiry = '" +str("/"+symbol+"/"+expiry)+ "'"
     dataframe = pd.read_sql_query(sql, store)
-
+    print(sql)
     if resample:
         dataframe = resample_and_improve_quality(dataframe, criteria, resample)
 
