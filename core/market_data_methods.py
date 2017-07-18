@@ -40,7 +40,7 @@ def get_optchain_datasources(globalconf):
                 if not dict_out[db_type][symbol]['expiries']:
                     dict_out[db_type][symbol]['expiries'] = []
                 dict_out[db_type][symbol]['expiries'].append(db_name[-10:-3])
-                print(("dict_out: ",dict_out))
+                #print(("dict_out: ",dict_out))
     return dictify(dict_out)
 
 def get_underlying_symbols(globalconf, db_type):
@@ -140,9 +140,9 @@ def get_last_bars_from_rt(globalconf, log, symbol, last_date,number_days_back):
         df1.index = df1.index.to_datetime()
         df1 = df1.resample("1D").ohlc()
         df1.columns = df1.columns.droplevel(0)
-        return df1
+        return df1[['high','close','open','low',]]
     else:
-        return df
+        return df[['high','close','open','low',]]
 
 def resample_and_improve_quality(dataframe, criteria, resample):
     dataframe = dataframe.drop_duplicates(subset=[criteria["sorting_var"], criteria["expiry"]], keep='last')

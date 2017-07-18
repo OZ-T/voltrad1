@@ -48,7 +48,7 @@ def iter_all(d,depth=1):
     """
     Iterate through everything in NESTED DICTIONARY
     """
-    for k,v in d.iteritems():
+    for k,v in d.items():
         print (("-"*depth,k))
         if type(v) is defaultdict:
             iter_all(v,depth+1)
@@ -59,7 +59,7 @@ def dictify(d):
     """
     Convert NESTED DICT to normal dict
     """
-    for k,v in d.iteritems():
+    for k,v in d.items():
         if isinstance(v,defaultdict):
             d[k] = dictify(v)
     return dict(d)
