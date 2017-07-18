@@ -132,7 +132,7 @@ def coppock(globalconf, log_analytics, last_date, symbol="SPX",period="1D"):
 
 
 
-    last_record_stored = dt.datetime.strptime(str(df.max()), '%Y%m%d %H:%M:%S')
+    last_record_stored = np.max(df.index)
     import core.utils as utils
     dt_now = dt.datetime.now()
     bh = utils.BusinessHours(last_record_stored, dt_now, worktiming=[15, 21], weekends=[6, 7])

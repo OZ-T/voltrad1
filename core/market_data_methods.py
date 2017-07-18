@@ -134,13 +134,14 @@ def get_last_bars_from_rt(globalconf, log, symbol, last_date,number_days_back):
                                           db_type="optchain_ib",symbol=symbol,expiry=max_expiry_available,
                                           last_date=last_date, num_days_back=number_days_back, resample=None)
 
-
-    df1 = df[['lastUndPrice','current_datetime']].groupby(['current_datetime']).agg(lambda x: stats.mode(x)[0][0])
-    df1.index = df1.index.to_datetime()
-    df1 = df1.resample("1D").ohlc()
-    df1.columns = df1.columns.droplevel(0)
-
-    return df1
+    if not df.empty:
+        df1 = df[['lastUndPrice','current_datetime']].groupby(['current_datetime']).agg(lambda x: stats.mode(x)[0][0])
+        df1.index = df1.index.to_datetime()
+        df1 = df1.resample("1D").ohlc()
+        df1.columns = df1.columns.droplevel(0)
+        return df1
+    else:
+        return df
 
 def resample_and_improve_quality(dataframe, criteria, resample):
     dataframe = dataframe.drop_duplicates(subset=[criteria["sorting_var"], criteria["expiry"]], keep='last')
