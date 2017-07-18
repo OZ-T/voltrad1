@@ -137,6 +137,11 @@ def get_last_bars_from_rt(globalconf, log, symbol, last_date,last_record_stored)
     print(("Date for the report", last_date))
     print(("Last record stored underlying DB", last_record_stored))
     print(("Days missing in underlying DB", number_days_back))
+    if symbol == "VIX":
+        field1 = 'modelImpliedVol'
+        symbol = "SPY"
+    else:
+        field1 = 'lastUndPrice'
 
     max_expiry_available = max( get_expiries(globalconf=globalconf, dsId='optchain_ib_exp', symbol=symbol))
     df = read_market_data_from_sqllite(globalconf=globalconf, log=log,
@@ -144,11 +149,6 @@ def get_last_bars_from_rt(globalconf, log, symbol, last_date,last_record_stored)
                                           last_date=last_date, num_days_back=number_days_back, resample=None)
 
     if not df.empty:
-        if symbol == "VIX":
-            field1 = 'modelImpliedVol'
-        else:
-            field1 = 'lastUndPrice'
-
         df1 = df[[field1 ,'current_datetime']].groupby(['current_datetime']).agg(lambda x: stats.mode(x)[0][0])
         df1.index = df1.index.to_datetime()
         df1 = df1.resample("1D").ohlc()
