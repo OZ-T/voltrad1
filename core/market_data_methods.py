@@ -40,6 +40,7 @@ def get_optchain_datasources(globalconf):
                 if not dict_out[db_type][symbol]['expiries']:
                     dict_out[db_type][symbol]['expiries'] = []
                 dict_out[db_type][symbol]['expiries'].append(db_name[-10:-3])
+                print(("dict_out: ",dict_out))
     return dictify(dict_out)
 
 def get_underlying_symbols(globalconf, db_type):
