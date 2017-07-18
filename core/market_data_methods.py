@@ -154,8 +154,10 @@ def get_last_bars_from_rt(globalconf, log, symbol, last_date,last_record_stored)
         df1 = df1.resample("1D").ohlc()
         df1.columns = df1.columns.droplevel(0)
         df1 = df1.ix[last_date:]
+        print(df1)
         return df1[['high','close','open','low',]]
     else:
+        print(df)
         return df
 
 def resample_and_improve_quality(dataframe, criteria, resample):
