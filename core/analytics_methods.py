@@ -382,7 +382,7 @@ def get_fast_move_for_report(symbol,client, log_analytics, globalconf,last_date)
     al2.SetDefaultColor(Color.DARK_RED);
     al2.SetPaintingStrategy(PaintingStrategy.HISTOGRAM);
     """
-    df = df.dropna()
+    df = df.dropna(subset=[symbol])
     return df
 
 
