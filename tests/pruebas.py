@@ -29,8 +29,8 @@ appendh5 = 1
 appendpgsql = 0
 toxls = 0
 timedelta1 = 1
-posiciones = ra.extrae_portfolio_positions(valuation_dttm=fecha_valoracion,
-                                           symbol=symbol, expiry=expiry, secType=secType,
-                                           accountid=accountid,
-                                           scenarioMode=scenarioMode, simulName=simulName)
-print (posiciones)
+#posiciones = ra.extrae_portfolio_positions(valuation_dttm=fecha_valoracion,
+#                                           symbol=symbol, expiry=expiry, secType=secType,
+#                                           accountid=accountid,
+#                                           scenarioMode=scenarioMode, simulName=simulName)
+#print (posiciones)
