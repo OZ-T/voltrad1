@@ -153,7 +153,7 @@ def get_last_bars_from_rt(globalconf, log, symbol, last_date,last_record_stored)
         df1.index = df1.index.to_datetime()
         df1 = df1.resample("1D").ohlc()
         df1.columns = df1.columns.droplevel(0)
-        df1 = df1.ix[last_date]
+        df1 = df1.ix[last_date:]
         return df1[['high','close','open','low',]]
     else:
         return df
