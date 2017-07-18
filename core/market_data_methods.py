@@ -127,12 +127,20 @@ def formated_string_for_file(expiry, expiry_in_format):
     """
     return dt.datetime.strptime(expiry, expiry_in_format).strftime('%Y-%m')
 
+from scipy import stats
 def get_last_bars_from_rt(globalconf, log, symbol, last_date,number_days_back):
     max_expiry_available = max( get_expiries(globalconf=globalconf, dsId='optchain_ib_exp', symbol=symbol))
     df = read_market_data_from_sqllite(globalconf=globalconf, log=log,
                                           db_type="optchain_ib",symbol=symbol,expiry=max_expiry_available,
                                           last_date=last_date, num_days_back=number_days_back, resample=None)
-    return df
+
+
+    df1 = df[['lastUndPrice','current_datetime']].groupby(['current_datetime']).agg(lambda x: stats.mode(x)[0][0])
+    df1.index = df1.index.to_datetime()
+    df1 = df1.resample("1D").ohlc()
+    df1.columns = df1.columns.droplevel(0)
+
+    return df1
 
 def resample_and_improve_quality(dataframe, criteria, resample):
     dataframe = dataframe.drop_duplicates(subset=[criteria["sorting_var"], criteria["expiry"]], keep='last')

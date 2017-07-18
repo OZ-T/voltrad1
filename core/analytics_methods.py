@@ -130,6 +130,16 @@ def coppock(globalconf, log_analytics, last_date, symbol="SPX",period="1D"):
                                           db_type="underl_ib_hist",symbol=symbol,expiry=None,
                                           last_date=last_date, num_days_back=100, resample="1D")
 
+
+
+    last_record_stored = datetime.strptime(str(df.max()), '%Y%m%d %H:%M:%S')
+    import core.utils as utils
+    dt_now = datetime.now()
+    bh = utils.BusinessHours(last_record_stored, dt_now, worktiming=[15, 21], weekends=[6, 7])
+    dias_que_faltan_en_db = bh.getdays()
+
+    df1 = md.get_last_bars_from_rt(globalconf=globalconf, log=log_analytics, symbol=symbol, last_date=last_date, number_days_back=dias_que_faltan_en_db)
+    df = df.append(df1)
     df = COPP(df, 12, 6, 10)
     return df
 
