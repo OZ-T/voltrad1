@@ -129,17 +129,31 @@ def formated_string_for_file(expiry, expiry_in_format):
     return dt.datetime.strptime(expiry, expiry_in_format).strftime('%Y-%m')
 
 from scipy import stats
-def get_last_bars_from_rt(globalconf, log, symbol, last_date,number_days_back):
+def get_last_bars_from_rt(globalconf, log, symbol, last_date,last_record_stored):
+    import core.utils as utils
+    dt_now = dt.datetime.now()
+    bh = utils.BusinessHours(last_record_stored, dt_now, worktiming=[15, 21], weekends=[6, 7])
+    number_days_back = bh.getdays()
+    print(("Date for the report", last_date))
+    print(("Last record stored underlying DB", last_record_stored))
+    print(("Days missing in underlying DB", number_days_back))
+
     max_expiry_available = max( get_expiries(globalconf=globalconf, dsId='optchain_ib_exp', symbol=symbol))
     df = read_market_data_from_sqllite(globalconf=globalconf, log=log,
                                           db_type="optchain_ib",symbol=symbol,expiry=max_expiry_available,
                                           last_date=last_date, num_days_back=number_days_back, resample=None)
 
     if not df.empty:
-        df1 = df[['lastUndPrice','current_datetime']].groupby(['current_datetime']).agg(lambda x: stats.mode(x)[0][0])
+        if symbol == "VIX":
+            field1 = 'modelImpliedVol'
+        else:
+            field1 = 'lastUndPrice'
+
+        df1 = df[[field1 ,'current_datetime']].groupby(['current_datetime']).agg(lambda x: stats.mode(x)[0][0])
         df1.index = df1.index.to_datetime()
         df1 = df1.resample("1D").ohlc()
         df1.columns = df1.columns.droplevel(0)
+        df1 = df1.ix[last_date]
         return df1[['high','close','open','low',]]
     else:
         return df[['high','close','open','low',]]

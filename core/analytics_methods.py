@@ -130,18 +130,8 @@ def coppock(globalconf, log_analytics, last_date, symbol="SPX",period="1D"):
                                           db_type="underl_ib_hist",symbol=symbol,expiry=None,
                                           last_date=last_date, num_days_back=100, resample="1D")
 
-
-
     last_record_stored = np.max(df.index).replace(hour=23,minute=59, second=59)
-    import core.utils as utils
-    dt_now = dt.datetime.now()
-    bh = utils.BusinessHours(last_record_stored, dt_now, worktiming=[15, 21], weekends=[6, 7])
-    dias_que_faltan_en_db = bh.getdays()
-    print(("Date for the report", last_date))
-    print(("Last record stored underlying DB", last_record_stored))
-    print(("Days missing in underlying DB", dias_que_faltan_en_db))
-    df1 = md.get_last_bars_from_rt(globalconf=globalconf, log=log_analytics, symbol=symbol, last_date=last_date, number_days_back=dias_que_faltan_en_db)
-    df1 = df1.ix[last_date]
+    df1 = md.get_last_bars_from_rt(globalconf=globalconf, log=log_analytics, symbol=symbol, last_date=last_date, last_record_stored=last_record_stored)
     df = df.append(df1)
     df = COPP(df, 12, 6, 10)
     return df
@@ -214,6 +204,11 @@ def get_volatility_for_report(symbol,client,log_analytics,globalconf,last_date):
     df = md.read_market_data_from_sqllite(globalconf=globalconf, log=log_analytics,
                                           db_type="underl_ib_hist", symbol=symbol, expiry=None,
                                           last_date=last_date, num_days_back=100, resample="1D")
+
+    last_record_stored = np.max(df.index).replace(hour=23,minute=59, second=59)
+    df1 = md.get_last_bars_from_rt(globalconf=globalconf, log=log_analytics, symbol=symbol, last_date=last_date, last_record_stored=last_record_stored)
+    df = df.append(df1)
+
     df = df.rename(columns={'close': symbol})
     df['HV'] = pd.rolling_std(df[symbol], window=int(window), min_periods=int(window)) * np.sqrt(window / year_days)
     df = df.drop(['high', 'open', 'low'], 1)
@@ -221,6 +216,12 @@ def get_volatility_for_report(symbol,client,log_analytics,globalconf,last_date):
     vix = md.read_market_data_from_sqllite(globalconf=globalconf, log=log_analytics,
                                            db_type="underl_ib_hist", symbol="VIX", expiry=None,
                                            last_date=last_date, num_days_back=100, resample="1D")
+
+    last_record_stored = np.max(vix.index).replace(hour=23,minute=59, second=59)
+    df1 = md.get_last_bars_from_rt(globalconf=globalconf, log=log_analytics, symbol="VIX", last_date=last_date, last_record_stored=last_record_stored)
+    vix = vix.append(df1)
+
+
     vix = vix.rename(columns={'close': 'vix'})['vix']
     vix_ewm = pd.Series(pd.Series.ewm(vix, span=length, min_periods=length,
                                       adjust=True, ignore_na=False).mean(), name='vix_ema' + str(length))
@@ -351,6 +352,12 @@ def get_fast_move_for_report(symbol,client, log_analytics, globalconf,last_date)
     df = md.read_market_data_from_sqllite(globalconf=globalconf, log=log_analytics,
                                           db_type="underl_ib_hist", symbol=symbol, expiry=None,
                                           last_date=last_date, num_days_back=250, resample="1D")
+
+    last_record_stored = np.max(df.index).replace(hour=23,minute=59, second=59)
+    df1 = md.get_last_bars_from_rt(globalconf=globalconf, log=log_analytics, symbol=symbol, last_date=last_date, last_record_stored=last_record_stored)
+    df = df.append(df1)
+
+
     df = df.drop(['high', 'open', 'low'], 1).rename(columns={'close': symbol})
     stddev = pd.rolling_std(df[symbol],window=int(length),min_periods=int(length))
     midline = pd.Series(pd.Series.ewm(df[symbol], span = int(length), min_periods = int(length),
@@ -406,6 +413,11 @@ def get_emas(last_date, log_analytics, globalconf, symbol="SPX"):
     df = md.read_market_data_from_sqllite(globalconf=globalconf, log=log_analytics,
                                           db_type="underl_ib_hist",symbol=symbol,expiry=None,
                                           last_date=last_date, num_days_back=500, resample="1D")
+
+    last_record_stored = np.max(df.index).replace(hour=23,minute=59, second=59)
+    df1 = md.get_last_bars_from_rt(globalconf=globalconf, log=log_analytics, symbol=symbol, last_date=last_date, last_record_stored=last_record_stored)
+    df = df.append(df1)
+
     n = 50
     ema50 = pd.Series(pd.Series.ewm(df['close'], span = n, min_periods = n,
                      adjust=True, ignore_na=False).mean(), name = 'EMA_' + str(n))
@@ -417,7 +429,11 @@ def get_emas(last_date, log_analytics, globalconf, symbol="SPX"):
                                           last_date=last_date, num_days_back=100, resample="1D")
 
 
-    vix = vix.dropna().rename(columns={'close': 'vix'})['vix']
+    last_record_stored = np.max(df.index).replace(hour=23,minute=59, second=59)
+    df1 = md.get_last_bars_from_rt(globalconf=globalconf, log=log_analytics, symbol="VIX", last_date=last_date, last_record_stored=last_record_stored)
+    vix = vix.append(df1)
+
+    vix = vix.rename(columns={'close': 'vix'})['vix'].dropna()
     df = df.join(vix)
     df['lower_wk_iv']=df['close'].shift(5) * (1 - (df['vix'].shift(5)*0.01 / np.sqrt(252/5)) )
     df['upper_wk_iv'] = df['close'].shift(5) * (1 + (df['vix'].shift(5)*0.01 / np.sqrt(252/5)))
@@ -486,7 +502,12 @@ def graph_volatility_cone(symbol):
                                           last_date=last_date, num_days_back=500, resample="1D")
 
 
-    df=df.pct_change(1).dropna().rename(columns={'close': symbol})[symbol]
+    last_record_stored = np.max(df.index).replace(hour=23,minute=59, second=59)
+    df1 = md.get_last_bars_from_rt(globalconf=globalconf, log=log_analytics, symbol=symbol, last_date=last_date, last_record_stored=last_record_stored)
+    df = df.append(df1)
+
+
+    df=df.pct_change(1).rename(columns={'close': symbol})[symbol].dropna()
     df=df.reset_index()
 
     # use VIX to get the mean 30d 60d 90d and so on from underlying_hist_ib h5
