@@ -150,6 +150,7 @@ def graph_coppock(symbol="SPX",period="1D"):
     last_date = datetime.datetime.today().strftime("%Y%m%d")
     df = coppock(globalconf, log_analytics, last_date, symbol, period)
     from bokeh.plotting import figure
+    df['date'] = df.index
     df = df.reset_index()
     from math import pi
     mids = (df.open + df.close) / 2
@@ -259,6 +260,7 @@ def graph_volatility(symbol):
     client, log_analytics, globalconf = init_func()
     last_date = datetime.datetime.today().strftime("%Y%m%d")
     df = get_volatility_for_report(symbol,client,log_analytics,globalconf,last_date)
+    df['date'] = df.index
     df = df.reset_index()
     colors_list = ['orange', 'blue', 'pink', 'black', 'red', 'green']
     methods_list = ['x', 'diamond', 'x', 'square', 'inverted_triangle', 'inverted_triangle']
@@ -294,6 +296,7 @@ def graph_fast_move(symbol):
     client, log_analytics, globalconf = init_func()
     last_date = datetime.datetime.today().strftime("%Y%m%d")
     df = get_fast_move_for_report(symbol,client, log_analytics, globalconf,last_date)
+    df['date'] = df.index
     df = df.reset_index()
     colors_list = ['black', 'blue', 'green']
     methods_list = ['x', 'diamond', 'square']
@@ -453,6 +456,7 @@ def graph_emas(symbol="SPX"):
     n = 50
     df = get_emas(last_date, log_analytics, globalconf, symbol=symbol, n=n).iloc[-50:]
     from bokeh.plotting import figure
+    df['date'] = df.index
     df = df.reset_index()
     from bokeh.models import ColumnDataSource
     source = ColumnDataSource(df)
