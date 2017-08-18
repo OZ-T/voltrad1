@@ -918,12 +918,17 @@ def print_historical_underl(start_dt, end_dt, symbol):
 
 def print_summary_underl(symbol):
     client, log_analytics, globalconf = init_func()
-    df = ra.extrae_historical_underl(symbol)
-    df.index = pd.to_datetime(df.index, format="%Y%m%d  %H:%M:%S")
-    df["date"] = df.index
-    df[[u'close', u'high', u'open', u'low']]=df[[u'close', u'high',u'open',u'low']].apply(pd.to_numeric)
-    conversion = {'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last',}
-    df = df.resample('1D', how=conversion).dropna()
+    last_date = datetime.datetime.today().strftime("%Y%m%d")
+
+    df = md.read_market_data_from_sqllite(globalconf=globalconf, log=log_analytics,
+                                          db_type="underl_ib_hist",symbol=symbol,expiry=None,
+                                          last_date=last_date, num_days_back=500, resample="1D")
+
+    last_record_stored = np.max(df.index).replace(hour=0,minute=59, second=59)
+    df1 = md.get_last_bars_from_rt(globalconf=globalconf, log=log_analytics, symbol=symbol, last_date=last_date, last_record_stored=last_record_stored)
+    df = df.append(df1)
+
+
     df=df.drop(['high','open','low'], 1)
     GroupedYear = df.groupby(pd.TimeGrouper('A'))
     df["YTD"] = GroupedYear['close'].transform(lambda x: ( x / x.iloc[0] - 1.0))
