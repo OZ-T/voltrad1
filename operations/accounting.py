@@ -108,20 +108,22 @@ def print_10_days_acc_summary_and_current_positions():
         dataframe = pd.DataFrame.from_dict(acclist).transpose()
         dataframe['current_date'] = dt.datetime.now().strftime('%Y%m%d')
         dataframe['current_datetime'] = dt.datetime.now().strftime('%Y%m%d%H%M%S')
-        rpt_columns1 = {u'averageCost':dataframe.averageCost,
-                        u'conId':dataframe.conId,
-                        u'expiry':dataframe.expiry,
-                        u'localSymbol':dataframe.localSymbol,
-                        u'right':dataframe.right,
-                        u'marketPrice':dataframe.marketPrice,
-                        u'marketValue':dataframe.marketValue,
-                        u'multiplier':dataframe.multiplier,
-                        u'position':dataframe.position,
-                        u'strike':dataframe.strike,
-                        u'symbol':dataframe.symbol,
-                        u'unrealizedPNL':dataframe.unrealizedPNL}
+        dataframe = dataframe[[
+                    u'averageCost',
+                    u'conId',
+                    u'expiry',
+                    u'localSymbol',
+                    u'right',
+                    u'marketPrice',
+                    u'marketValue',
+                    u'multiplier',
+                    u'position',
+                    u'strike',
+                    u'symbol',
+                    u'unrealizedPNL'
+                    ]]
         print("Portfolio = ")
-        print(rpt_columns1)
+        print(dataframe.transpose())
     if summarylist:
         dataframe2 = pd.DataFrame.from_dict(summarylist).transpose()
         dataframe2['current_date'] = dt.datetime.now().strftime('%Y%m%d')
@@ -137,7 +139,7 @@ def print_10_days_acc_summary_and_current_positions():
                                  u'TotalCashBalance_BASE', u'UnrealizedPnL_BASE']]
         print("____________________________________________________________________________________________")
         print("Summary = ")
-        print(dataframe2)
+        print(dataframe2.transpose())
     client.disconnect()
 
     print("____________________________________________________________________________________________")
