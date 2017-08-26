@@ -123,7 +123,7 @@ def print_10_days_acc_summary_and_current_positions():
                     u'unrealizedPNL'
                     ]]
         print("Portfolio = ")
-        print(dataframe.transpose())
+        print(dataframe)
     if summarylist:
         dataframe2 = pd.DataFrame.from_dict(summarylist).transpose()
         dataframe2['current_date'] = dt.datetime.now().strftime('%Y%m%d')

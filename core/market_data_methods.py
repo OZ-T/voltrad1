@@ -149,13 +149,13 @@ def get_last_bars_from_rt(globalconf, log, symbol, last_date,last_record_stored)
                                           last_date=last_date, num_days_back=number_days_back, resample=None)
 
     if not df.empty:
-        print(("XXXXX1 ", df))
+        #print(("XXXXX1 ", df))
         df1 = df[[field1 ,'current_datetime']].groupby(['current_datetime']).agg(lambda x: stats.mode(x)[0][0])
         df1.index = df1.index.to_datetime()
         df1 = df1.resample("1D").ohlc()
         df1.columns = df1.columns.droplevel(0)
         first_date = (dt.datetime.strptime(last_date, '%Y%m%d') - dt.timedelta(number_days_back-1)).strftime('%Y%m%d')
-        print(("XXXXX2 ",first_date,last_date))
+        #print(("XXXXX2 ",first_date,last_date))
         df1 = df1.ix[first_date:]
         print(df1)
         return df1[['high','close','open','low',]]
