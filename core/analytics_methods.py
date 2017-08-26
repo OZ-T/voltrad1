@@ -925,8 +925,8 @@ def print_summary_underl(symbol):
                                           last_date=last_date, num_days_back=500, resample="1D")
 
     last_record_stored = np.max(df.index).replace(hour=0,minute=59, second=59)
-    df1 = md.get_last_bars_from_rt(globalconf=globalconf, log=log_analytics, symbol=symbol, last_date=last_date, last_record_stored=last_record_stored)
-    df = df.append(df1)
+    #df1 = md.get_last_bars_from_rt(globalconf=globalconf, log=log_analytics, symbol=symbol, last_date=last_date, last_record_stored=last_record_stored)
+    #df = df.append(df1)
 
 
     df=df.drop(['high','open','low'], 1)
@@ -943,7 +943,7 @@ def print_summary_underl(symbol):
     df2 = pd.concat([s, rolling_dd], axis=1)
     df2.columns = ['s', 'rol_dd_%d' % window_length]
     my_rmdd = rolling_max_dd(s.values, window_length, min_periods=1)
-    df = pd.concat([df,rolling_dd],axis=1)
+    df = pd.concat([df,df2],axis=1)
     df.columns = ['close', 'YTD', 'MTD', 'WTD', 'rol_dd_%d' % window_length]
     #lastDayPrevMonth = dt.date.today().replace(day=1) - dt.timedelta(days=1)
     output = df.iloc[-HISTORY_LIMIT:].to_string(formatters={
