@@ -944,7 +944,7 @@ def print_summary_underl(symbol):
     df2.columns = ['s', 'rol_dd_%d' % window_length]
     my_rmdd = rolling_max_dd(s.values, window_length, min_periods=1)
     df = pd.concat([df,df2],axis=1)
-    df.columns = ['close', 'YTD', 'MTD', 'WTD', 'rol_dd_%d' % window_length]
+    df = df[['close', 'YTD', 'MTD', 'WTD', 'rol_dd_%d' % window_length]]
     #lastDayPrevMonth = dt.date.today().replace(day=1) - dt.timedelta(days=1)
     output = df.iloc[-HISTORY_LIMIT:].to_string(formatters={
                                     'YTD': '{:,.2%}'.format,
