@@ -146,10 +146,13 @@ def print_10_days_acc_summary_and_current_positions():
     print("Summary Account Last %d days valuation:" % (days))
     accountid = globalconf.get_accountid()
     df1 = read_historical_acc_summary_from_sqllite(globalconf, log, accountid)
-    df1 = df1[[u'FullInitMarginReq_USD',
+    df1 = df1[[u'current_date',
+               u'current_datetime_txt', u'FullInitMarginReq_USD',
                u'FullMaintMarginReq_USD', u'GrossPositionValue_USD',
                u'RegTMargin_USD',
                u'TotalCashBalance_BASE', u'UnrealizedPnL_BASE']]
+
+    df1 = df1.groupby('current_date').last()
     df1 = df1.ix[-10:]
     print(df1)
 
