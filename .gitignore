@@ -10,5 +10,5 @@ volibutils/__pycache__/
 /docs/html/
 /docs/latex/
 /docs/sphinx/_build/
-ipython/.ipynb_checkpoints
+ipython/.ipynb_checkpoints/*.ipynb
 /docs/_build/
