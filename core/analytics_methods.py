@@ -1057,7 +1057,7 @@ def print_chain(val_dt,symbol,call_d_range,put_d_range,expiry,type):
     Type should be bid, ask or trades
     Call delta _range 10,15 Put delta_range -15,-10
     """
-    client , log_analytics, globalconf = init_func()
+    client , log, globalconf = init_func()
     start_dt1 = val_dt +" 23:59:59"
     valuation_dttm=dt.datetime.strptime(start_dt1, '%Y%m%d %H:%M:%S')
     end_dt1 = "20991231" +" 23:59:59"
