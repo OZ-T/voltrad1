@@ -29,18 +29,18 @@ vol:
   pointer: core.analytics_methods.print_volatity
 fastmove:
   pointer: core.analytics_methods.print_fast_move
-
-
-
-##### NEED TO REVIEW
 summary:
   pointer: core.analytics_methods.print_summary_underl
 
 # pretrade analysis commands
 lstprc:
    pointer: volibutils.orders_methods.list_prices_before_trade
+
+
+##### NEED TO REVIEW
+
 lstchain:
-  pointer: core.analytics_methods.print_quasi_realtime_chain
+  pointer: core.analytics_methods.print_chain
 lstspreadprc:
    pointer: volibutils.orders_methods.list_spread_prices_before_trade
 chainprc:

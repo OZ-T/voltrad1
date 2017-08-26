@@ -1050,9 +1050,9 @@ def lag(data):
 
 
 
+from core.market_data_methods import get_expiries, read_market_data_from_sqllite
 
-
-def print_quasi_realtime_chain(val_dt,symbol,call_d_range,put_d_range,expiry,type):
+def print_chain(val_dt,symbol,call_d_range,put_d_range,expiry,type):
     """
     Type should be bid, ask or trades
     Call delta _range 10,15 Put delta_range -15,-10
@@ -1064,8 +1064,14 @@ def print_quasi_realtime_chain(val_dt,symbol,call_d_range,put_d_range,expiry,typ
     c_range = call_d_range.split(",")
     p_range = put_d_range.split(",")
     dataframe=pd.DataFrame()
-    df = core.market_data_methods.extrae_options_chain(valuation_dttm, symbol, expiry, get_contract_details(symbol)["secType"])
-    df=df.rename(columns=lambda x: str(x)[7:]) # remove prices_
+    number_days_back = 10
+    max_expiry_available = max( get_expiries(globalconf=globalconf, dsId='optchain_ib_exp', symbol=symbol))
+    df = read_market_data_from_sqllite(globalconf=globalconf, log=log,
+                                          db_type="optchain_ib",symbol=symbol,expiry=max_expiry_available,
+                                          last_date=val_dt, num_days_back=number_days_back, resample=None)
+
+
+    #df = core.market_data_methods.extrae_options_chain(valuation_dttm, symbol, expiry, get_contract_details(symbol)["secType"])
     df=df[( (df['modelDelta'] >= float(c_range[0])/100.0 ) & (df['modelDelta'] <= float(c_range[1])/100.0 ) & ( df['right'] == "C" ) )
             |
           ((df['modelDelta'] >= float(p_range[0])/100.0) & (df['modelDelta'] <= float(p_range[1])/100.0 ) & (df['right'] == "P"))
