@@ -44,5 +44,5 @@ symbol = "SPY"
 expiry = "20170915"
 call_d_range = "10,15"
 put_d_range = "-15,-10"
-type = "trades"
+type = "bid"
 print_chain(val_dt,symbol,call_d_range,put_d_range,expiry,type)

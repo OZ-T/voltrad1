@@ -183,6 +183,7 @@ def read_market_data_from_sqllite(globalconf, log, db_type,symbol,expiry,last_da
     first_date = (dt.datetime.strptime(last_date, '%Y%m%d') - dt.timedelta(num_days_back)).strftime(
         criteria['formato_filtro'])
     db_file = get_market_db_file(globalconf, db_type, expiry)
+    log.info( ( "dbfile is  ... " , db_file ) )
     store = sqlite3.connect(path + db_file)
     sql = "select * from " + symbol + " where 1=1 "
     if last_date:
