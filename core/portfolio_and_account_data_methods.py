@@ -11,8 +11,6 @@ from core.opt_pricing_methods import bsm_mcs_euro
 from volsetup import config
 from volsetup.logger import logger
 
-globalconf = config.GlobalConfig()
-log = logger("Data Access module")
 
 OPT_NUM_FIELDS_LST = [u'CallOI', u'PutOI', u'Volume', u'askDelta', u'askGamma', 
                    u'askImpliedVol', u'askOptPrice', u'askPrice', u'askPvDividend',
@@ -253,8 +251,8 @@ def extrae_account_snapshot(valuation_dttm,accountid,scenarioMode,simulName):
         store.close()
     return t_margin , t_prem
 
-
-def extrae_account_delta_new(valuation_dttm,accountid,scenarioMode,simulName):
+from operations.accounting  import read_historical_acc_summary_from_sqllite
+def extrae_account_delta(globalconf, log, valuation_dttm, accountid, scenarioMode,simulName):
     """
     Extrae la delta de las variables de account dado un datetime.
     Se trata que el inicio y fin de la delta este lo mas cerca posible de la datetime que se recibe como input
@@ -265,10 +263,7 @@ def extrae_account_delta_new(valuation_dttm,accountid,scenarioMode,simulName):
     log.info("extrae_account_delta_new para : [%s] " % (str(valuation_dttm)))
     dataframe = pd.DataFrame()
     if scenarioMode == "N":
-        store = globalconf.account_store_new()
-        #accountid = globalconf.get_accountid()
-        node=store.get_node("/" + accountid)
-        df1 = store.select(node._v_pathname)
+        df1 = read_historical_acc_summary_from_sqllite( globalconf, log, accountid )
     elif scenarioMode == "Y":
         df1 = globalconf.account_dataframe_simulation(simulName=simulName)
         df1['current_date'] = df1['current_date'].apply(lambda x: str(x))
@@ -302,8 +297,6 @@ def extrae_account_delta_new(valuation_dttm,accountid,scenarioMode,simulName):
     t_prem = t_prem.set_index('load_dttm')
     t_prem['fecha_operacion'] = str(valuation_dttm)
 
-    if scenarioMode == "N":
-        store.close()
     return t_margin , t_prem
 
 
@@ -415,7 +408,7 @@ def extrae_fecha_inicio_estrategia(symbol,expiry,accountid,scenarioMode,simulNam
 
 import sqlite3
 
-def extrae_detalle_operaciones(valuation_dttm,symbol,expiry,secType,accountid,scenarioMode,simulName):
+def extrae_detalle_operaciones(valuation_dttm,globalconf, log, symbol,expiry,secType,accountid,scenarioMode,simulName):
     """
     Extrae el detalle de todas las ordenes ejecutadas para un simbolo y expiracion
     desde una fecha hacia atras

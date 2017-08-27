@@ -683,7 +683,7 @@ def print_account_snapshot(valuation_dt):
         print( output3)
     end_func(client)
 
-
+import sqlite3
 def print_account_delta(valuation_dt):
     """
     valuation dt = YYYY-MM-DD-HH
@@ -694,8 +694,8 @@ def print_account_delta(valuation_dt):
     client, log_analytics, globalconf = init_func()
     accountid = globalconf.get_accountid()
     x  = dt.datetime(year=int(date1[0]),month=int(date1[1]),day=int(date1[2]),hour=int(date1[3]),minute=0,second=0)
-    t_margin, t_prem = ra.extrae_account_delta_new(valuation_dttm=x, accountid=accountid,
-                                                   scenarioMode="N", simulName="NA")
+    t_margin, t_prem = ra.extrae_account_delta(globalconf=globalconf, log=log, valuation_dttm=x,
+                                                   accountid=accountid, scenarioMode="N", simulName="NA")
     t_margin = t_margin.rename(columns={    'RegTMargin_USD':'RegTM',
                                             'MaintMarginReq_USD':'MaintM',
                                             'InitMarginReq_USD':'IniM',
@@ -741,13 +741,19 @@ def print_account_delta(valuation_dt):
     print(output2)
     print("__ORDERS___________________________________________________")
     store = globalconf.open_orders_store()
-    node = store.get_node("/" + accountid)
+
+    path = globalconf.config['paths']['data_folder']
+    db_file = globalconf.config['sqllite']['orders_db']
+    store = sqlite3.connect(path + db_file)
+    sql = "select * from " + accountid + " where 1=1 "
+    df1 = pd.read_sql_query(sql, store)
+
+
     start_dt=x.replace(minute=0, second=0)
     end_dt=x.replace(minute=59, second=59)
     #coord1 = "times < " + end_dt + " & times > " + start_dt
     #c = store.select_as_coordinates(node._v_pathname,coord1)
     #df1 = store.select(node._v_pathname,where=c)
-    df1 = store.select(node._v_pathname)
     df1['times'] = df1['times'].apply(lambda x: dt.datetime.strptime(x, '%Y%m%d %H:%M:%S'))
     df1 = df1[(df1.times <= end_dt) & (df1.times >=start_dt)].drop_duplicates(subset=['execid','times'])
     df1.sort_index(inplace=True,ascending=[True])
