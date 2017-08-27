@@ -39,14 +39,14 @@ lstchain:
   pointer: core.analytics_methods.print_chain
 lstspreadprc:
    pointer: volibutils.orders_methods.list_spread_prices_before_trade
-
-
-##### NEED TO REVIEW
-
 chainprc:
    pointer: volibutils.orders_methods.list_option_chain
 hist_opt:
    pointer: core.analytics_methods.print_historical_option
+
+
+##### NEED TO REVIEW
+
 ecocal:
    pointer: core.analytics_methods.print_ecalendar
 
