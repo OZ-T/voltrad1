@@ -10,5 +10,9 @@ volibutils/__pycache__/
 /docs/html/
 /docs/latex/
 /docs/sphinx/_build/
-ipython/.ipynb_checkpoints/*.ipynb
 /docs/_build/
+docs/_static/
+docs/_templates/
+ipython/.ipynb_checkpoints/
+operations/__pycache__/
+volsetup/__pycache__/

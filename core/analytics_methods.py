@@ -1076,16 +1076,24 @@ def print_chain(val_dt,symbol,call_d_range,put_d_range,expiry,type):
             |
           ((df['modelDelta'] >= float(p_range[0])/100.0) & (df['modelDelta'] <= float(p_range[1])/100.0 ) & (df['right'] == "P"))
          ]
+    columns=[u'current_datetime',u'current_date',u'strike',u'bidPrice',u'expiry',u'right',u'symbol',
+             u'bidSize',u'askPrice',u'askSize',u'modelDelta',u'modelImpliedVol',u'lastUndPrice']
+
+    df = df[columns]
+    # g = df.groupby(['symbol','expiry','right'])['current_datetime'].max()
+    g = df.groupby(['symbol','expiry','right','current_date'])[df['current_datetime'] == df['current_datetime'].max()]
+
+    df = df.iloc[df.groupby(['symbol','expiry','right','current_date'])['current_datetime'].agg(pd.Series.idxmax)]
+
+    df = df[g]
     #for x in range(int(c_range[0]),int(c_range[1])):
         #df=ra.extrae_historical_chain(start_dt1,end_dt1,symbol,str(x),expiry,"C")
         #df['right']="C"
         #df['strike']=x
         #dataframe=dataframe.append(df[:1])
-    df = df.ix[np.max(df.index)]
+    #df = df.idxmax()
     df = df.set_index(['symbol','expiry','right'],append=True)
     dataframe=dataframe.append(df)
-    columns=[u'strike',u'bidPrice',
-             u'bidSize',u'askPrice',u'askSize',u'modelDelta',u'modelImpliedVol',u'lastUndPrice']
     """
     [u'WAP_trades', u'close_trades', u'count_trades', u'currency', u'expiry', u'hasGaps_trades', u'high_trades',
      u'load_dttm', u'low_trades', u'multiplier', u'open_trades', u'reqId_trades', u'right', u'secType', u'strike',
@@ -1096,7 +1104,7 @@ def print_chain(val_dt,symbol,call_d_range,put_d_range,expiry,type):
     dte = (dt.datetime.strptime(expiry, '%Y%m%d') -  dt.datetime.now())
     print ("DTE = %d " % (dte.days) )
     print ("____________________________________________________________________________________________________")
-    print (dataframe[columns])
+    print (dataframe)
     end_func(client)
 
 def print_ecalendar():

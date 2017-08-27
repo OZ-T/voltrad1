@@ -36,4 +36,13 @@ timedelta1 = 1
 
 
 import core.analytics_methods as am
-am.print_summary_underl(symbol="SPY")
+#am.print_summary_underl(symbol="SPY")
+
+from core.analytics_methods import print_chain
+val_dt = "20170824"
+symbol = "SPY"
+expiry = "20170915"
+call_d_range = "10,15"
+put_d_range = "-15,-10"
+type = "trades"
+print_chain(val_dt,symbol,call_d_range,put_d_range,expiry,type)
