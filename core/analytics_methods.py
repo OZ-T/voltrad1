@@ -1057,7 +1057,7 @@ def print_chain(val_dt,symbol,call_d_range,put_d_range,expiry,type):
     Type should be bid, ask or trades
     Call delta _range 10,15 Put delta_range -15,-10
     Example 
-    "20170824" "SPY" "20170915" "10,15" "-15,-10" "bid"
+    "20170824" "SPY" "10,15" "-15,-10" "20170915"  "bid"
     """
     client , log, globalconf = init_func()
     start_dt1 = val_dt +" 23:59:59"
@@ -1072,23 +1072,34 @@ def print_chain(val_dt,symbol,call_d_range,put_d_range,expiry,type):
                                           db_type="optchain_ib",symbol=symbol,expiry=expiry_file,
                                           last_date=val_dt, num_days_back=number_days_back, resample=None)
 
-
-    #df = core.market_data_methods.extrae_options_chain(valuation_dttm, symbol, expiry, get_contract_details(symbol)["secType"])
-    df=df[( (df['modelDelta'] >= float(c_range[0])/100.0 ) & (df['modelDelta'] <= float(c_range[1])/100.0 ) & ( df['right'] == "C" ) )
+    # filtrar las opciones que tengan la delta dentro del rango seleccionado en la ultima cotización disponible
+    # me quedo con la ultima cotizacion para cada option chain member
+    filtro_df = df.loc[
+        df.groupby(['symbol', 'strike', 'expiry', 'right'])['current_datetime'].agg(pd.Series.idxmax)]
+    filtro_df=filtro_df[( (df['modelDelta'] >= float(c_range[0])/100.0 ) & (df['modelDelta'] <= float(c_range[1])/100.0 ) & ( df['right'] == "C" ) )
             |
           ((df['modelDelta'] >= float(p_range[0])/100.0) & (df['modelDelta'] <= float(p_range[1])/100.0 ) & (df['right'] == "P"))
          ]
     columns=[u'current_datetime',u'current_date',u'strike',u'bidPrice',u'expiry',u'right',u'symbol',
              u'bidSize',u'askPrice',u'askSize',u'modelDelta',u'modelImpliedVol',u'lastUndPrice']
 
+    filtro_df = filtro_df[columns]
     df = df[columns]
     # g = df.groupby(['symbol','expiry','right'])['current_datetime'].max()
     # g = df.groupby(['symbol','expiry','right','current_date'])[df['current_datetime'] == df['current_datetime'].max()]
     # print(g)
     #df['current_datetime'] = df['current_datetime'].astype(float) # .apply(pd.to_numeric)
 
+    keys = ['symbol', 'strike', 'expiry', 'right']
+    i1 = df.set_index(keys).index
+    i2 = filtro_df.set_index(keys).index
+    df = df[i1.isin(i2)]
+
+
     # Get the latest quote per group
     df = df.loc[df.groupby(['symbol','strike','expiry','right','current_date'])['current_datetime'].agg(pd.Series.idxmax)]
+
+
     #for x in range(int(c_range[0]),int(c_range[1])):
         #df=ra.extrae_historical_chain(start_dt1,end_dt1,symbol,str(x),expiry,"C")
         #df['right']="C"
@@ -1097,6 +1108,8 @@ def print_chain(val_dt,symbol,call_d_range,put_d_range,expiry,type):
     #df = df.idxmax()
     df = df.sort_values(axis=0,by=['symbol','expiry','right','strike','current_date'], ascending=[True,True,True,True,True])
     df = df.set_index(['symbol','expiry','right','strike','current_date'],append=False) # .drop(['current_datetime'], 1)
+
+
     df['current_datetime']=pd.to_datetime(df['current_datetime'],format="%Y%m%d%H%M%S")
     """
     [u'WAP_trades', u'close_trades', u'count_trades', u'currency', u'expiry', u'hasGaps_trades', u'high_trades',

@@ -39,9 +39,9 @@ import core.analytics_methods as am
 #am.print_summary_underl(symbol="SPY")
 
 from core.analytics_methods import print_chain
-val_dt = "20170824"
+val_dt = "20170827"
 symbol = "SPY"
-expiry = "20170915"
+expiry = "20171020"
 call_d_range = "10,15"
 put_d_range = "-15,-10"
 type = "bid"
