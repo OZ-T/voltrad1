@@ -11,8 +11,8 @@ from pandas_datareader._utils import RemoteDataError
 from pytz import timezone
 
 import volsetup.config as config
-from core import utils as utils
-from core.portfolio_and_account_data_methods import log, globalconf, OPT_NUM_FIELDS_LST
+from core import misc_utilities as utils
+from core.portfolio_and_account_data_methods import OPT_NUM_FIELDS_LST
 from volibutils.RequestUnderlyingData import RequestUnderlyingData
 from volibutils.sync_client import IBClient
 from volsetup.logger import logger
@@ -24,7 +24,7 @@ def get_columns(name,store):
     return list(df.columns)
 
 from collections import defaultdict
-from core.utils import make_dict, dictify, timefunc
+from core.misc_utilities import make_dict, dictify, timefunc
 
 
 def get_optchain_datasources(globalconf):
@@ -130,7 +130,7 @@ def formated_string_for_file(expiry, expiry_in_format):
 
 from scipy import stats
 def get_last_bars_from_rt(globalconf, log, symbol, last_date,last_record_stored):
-    import core.utils as utils
+    import core.misc_utilities as utils
     dt_now = dt.datetime.now()
     bh = utils.BusinessHours(last_record_stored, dt_now, worktiming=[15, 21], weekends=[6, 7])
     number_days_back = bh.getdays()

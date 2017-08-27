@@ -10,7 +10,7 @@ from scipy import stats
 # In[50]:
 import core.market_data_methods
 import core.portfolio_and_account_data_methods as ra
-from core import utils as utils
+from core import misc_utilities as utils
 from volsetup import config
 from volsetup.logger import logger
 
@@ -81,7 +81,8 @@ def run_shark_analytics(i_symbol, i_date, i_expiry, i_secType, accountid, scenar
     ###################################################################################################################
     if scenarioMode != "Y":
         # base cse
-        posiciones = ra.extrae_portfolio_positions(valuation_dttm=fecha_valoracion,
+        posiciones = ra.extrae_portfolio_positions(log=log2, globalconf=globalconf2,
+                                                   valuation_dttm=fecha_valoracion,
                                                    symbol=i_symbol, expiry=i_expiry, secType=i_secType,
                                                    accountid=accountid,
                                                    scenarioMode=scenarioMode, simulName=simulName)
@@ -89,7 +90,8 @@ def run_shark_analytics(i_symbol, i_date, i_expiry, i_secType, accountid, scenar
         # scenario case
         x=max(lista_dttm_con_trades)
         #log2.info("Extraer posiciones para fecha trade: [%s] " % (str(x)))
-        posiciones = ra.extrae_portfolio_positions(valuation_dttm=x,
+        posiciones = ra.extrae_portfolio_positions(log=log2, globalconf=globalconf2,
+                                                   valuation_dttm=x,
                                                    symbol=i_symbol, expiry=i_expiry, secType=i_secType,
                                                    accountid=accountid,
                                                    scenarioMode=scenarioMode, simulName=simulName)
@@ -105,7 +107,9 @@ def run_shark_analytics(i_symbol, i_date, i_expiry, i_secType, accountid, scenar
     posiciones_trades_dates = pd.DataFrame()
     for x in lista_dttm_con_trades:
         log2.info("Extraer posiciones para fecha trade: [%s] " % (str(x)))
-        temp_portfolio =ra.extrae_portfolio_positions(valuation_dttm=x ,
+        temp_portfolio =ra.extrae_portfolio_positions(
+                                           log=log2, globalconf=globalconf2,
+                                           valuation_dttm=x ,
                                            symbol=i_symbol,expiry=i_expiry,secType=i_secType,
                                            accountid = accountid,
                                            scenarioMode = scenarioMode, simulName = simulName)

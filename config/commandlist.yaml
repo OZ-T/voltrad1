@@ -47,6 +47,8 @@ hist_opt:
 
 accdelta:
   pointer: core.analytics_methods.print_account_delta
+accsnap:
+  pointer: core.analytics_methods.print_account_snapshot
 
 
 ##### NEED TO REVIEW
@@ -83,8 +85,6 @@ ticrpt:
    pointer: core.analytics_methods.print_tic_report
 #portfolio:
 #   pointer: operations.vol_grab_accounting.print_portfolio_from_ib
-accsnap:
-  pointer: core.analytics_methods.print_account_snapshot
 # general market analysis
 hist_under:
    pointer: core.analytics_methods.print_historical_underl

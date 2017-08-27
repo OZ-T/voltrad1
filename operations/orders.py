@@ -8,7 +8,7 @@ import pandas as pd
 
 import volibutils.sync_client as ib
 import volsetup.config as config
-from core import utils as utils
+from core import misc_utilities as utils
 from volsetup.logger import logger
 
 

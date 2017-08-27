@@ -26,7 +26,7 @@ class MarketData_tests(unittest.TestCase):
         self.assertEqual(len(df), 100)
     def test_business_hours(self):
         import datetime as dt
-        from core.utils import BusinessHours
+        from core.misc_utilities import BusinessHours
         dt_now = dt.datetime.now()  # - timedelta(days=4)
         last_record_stored = dt.datetime.strptime("2017-06-22 22:59:00", '%Y-%m-%d %H:%M:%S')
         bh = BusinessHours(last_record_stored, dt_now, worktiming=[15, 21], weekends=[6, 7])
@@ -58,7 +58,7 @@ class MarketData_tests(unittest.TestCase):
 
     def test_graphs(self):
         globalconf = config.GlobalConfig()
-        from core import analytics_methods as am, utils
+        from core import analytics_methods as am, misc_utilities
 
         # am.print_coppock_diario(symbol="SPX",period="1D")
         # p = am.graph_coppock(symbol="SPX",period="1D")

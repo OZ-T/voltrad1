@@ -12,7 +12,7 @@ import core.market_data_methods as mkt
 import operations.accounting as acc
 import operations.orders as orde
 import volibutils.sync_client as ib
-from core import utils
+from core import misc_utilities
 from volibutils.RequestUnderlyingData import RequestUnderlyingData
 from volibutils.sync_client import IBClient
 from volsetup import config
@@ -525,7 +525,7 @@ def store_orders_from_ib_to_h5():
     Method to retrieve orders -everything from the last business day-, intended for batch usage     
     """
     log=logger("store_orders_from_ib_to_h5")
-    if dt.datetime.now().date() in utils.get_trading_close_holidays(dt.datetime.now().year):
+    if dt.datetime.now().date() in misc_utilities.get_trading_close_holidays(dt.datetime.now().year):
         log.info("This is a US Calendar holiday. Ending process ... ")
         return
 
@@ -628,7 +628,7 @@ def historical_data_loader():
             #days= int(round( (dt_now - last_record_stored).total_seconds() / 60 / 60 / 24  ,0))
             # lo anterior no sirve porque debe considerarse la diferencia en business days
             #days = np.busday_count(last_record_stored.date(), dt_now.date())
-            bh= utils.BusinessHours(last_record_stored, dt_now, worktiming=[15, 21], weekends=[6, 7])
+            bh= misc_utilities.BusinessHours(last_record_stored, dt_now, worktiming=[15, 21], weekends=[6, 7])
             days = bh.getdays()
             durationStr = str( days ) + " D"
         else:

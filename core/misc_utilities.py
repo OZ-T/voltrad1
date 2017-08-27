@@ -13,12 +13,7 @@ from pandas.tseries.holiday import AbstractHolidayCalendar, Holiday, nearest_wor
 
 from collections import defaultdict
 
-from core.portfolio_and_account_data_methods import log
-
-
-
-
-def timefunc(f):
+def timefunc(f,log):
     def f_timer(*args, **kwargs):
         start = time.time()
         result = f(*args, **kwargs)
