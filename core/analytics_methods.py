@@ -1057,7 +1057,7 @@ def print_chain(val_dt,symbol,call_d_range,put_d_range,expiry,type):
     Type should be bid, ask or trades
     Call delta _range 10,15 Put delta_range -15,-10
     Example 
-    "20170824" "SPY" "10,15" "-15,-10" "20170915"  "bid"
+    "20170827" "SPY" "10,15" "-15,-10" "20170915"  "bid"
     """
     client , log, globalconf = init_func()
     start_dt1 = val_dt +" 23:59:59"
