@@ -2,7 +2,7 @@
 """
 
 from datetime import datetime, timedelta
-
+from operations.accounting  import read_historical_acc_summary_from_sqllite
 import numpy as np
 import pandas as pd
 from pytz import timezone
@@ -11,8 +11,6 @@ from core.opt_pricing_methods import bsm_mcs_euro
 from volsetup import config
 from volsetup.logger import logger
 
-globalconf = config.GlobalConfig()
-log = logger("Data Access module")
 
 OPT_NUM_FIELDS_LST = [u'CallOI', u'PutOI', u'Volume', u'askDelta', u'askGamma', 
                    u'askImpliedVol', u'askOptPrice', u'askPrice', u'askPvDividend',
@@ -140,41 +138,6 @@ def create_opt_chain_abt(year="2016"):
         store_new.append("/" + name, joe, data_columns=True)
     store_new.close()
 
-
-
-def extrae_account_snapshot_new(valuation_dttm,accountid,scenarioMode,simulName):
-    """
-    Extrae los snapshots horarios de account para una fecha
-    :param year:
-    :param month:
-    :param day:
-    :return:
-    """
-    log.info("extrae_account_snapshot_new para : [%s] " % (str(valuation_dttm)))
-    df2 = pd.DataFrame()
-    if scenarioMode == "N":
-        #accountid = globalconf.get_accountid()
-        store = globalconf.account_store_new()
-        node=store.get_node("/" + accountid)
-        df1 = store.select(node._v_pathname)
-        #df2 = df1[df1['current_date'] == str(year)+str(month).zfill(2)+str(day).zfill(2)]
-        df2 = df1[(df1.index <= valuation_dttm) & (df1['current_date'] == str(valuation_dttm.year)
-                                                   + str(valuation_dttm.month).zfill(2) + str(valuation_dttm.day).zfill(2))]
-        store.close()
-    elif scenarioMode == "Y":
-        df1 = globalconf.account_dataframe_simulation(simulName=simulName)
-        df1['current_date'] = df1['current_date'].apply(lambda x: str(x))
-        df1 = df1.set_index("current_datetime",drop=1)
-        df2 = df1[(df1.index <= valuation_dttm) & (df1['current_date'] == str(valuation_dttm.year)
-                                                   + str(valuation_dttm.month).zfill(2) + str(valuation_dttm.day).zfill(2))]
-
-    # se queda con la ultima foto cargada del dia (la h5 accounts se actualiza cada hora RTH)
-    df2 = df2.reset_index().drop_duplicates(subset='current_date', keep='last').set_index('current_datetime',drop=0)
-    df2['load_dttm'] = df2.index
-    df2 = df2.add_prefix("account_")
-    return df2
-
-
 def extrae_historical_chain(start_dt,end_dt,symbol,strike,expiry,right):
     contract = symbol + expiry + right + strike
     log.info("extrae_historical_chain para : start_dt=%s end_dt=%s contract=%s " % (str(start_dt),str(end_dt),contract))
@@ -218,14 +181,14 @@ def extrae_historical_chain_where(start_dt,end_dt,symbol,strike,expiry,right):
     return dataframe
 
 
-def extrae_account_snapshot(valuation_dttm,accountid,scenarioMode,simulName):
+def extrae_account_snapshot(valuation_dttm,log, globalconf,accountid,scenarioMode,simulName):
     log.info("extrae_account_snapshot para : [%s] " % (str(valuation_dttm)))
     dataframe = pd.DataFrame()
     if scenarioMode == "N":
-        store = globalconf.account_store_new()
-        #accountid = globalconf.get_accountid()
-        node=store.get_node("/" + accountid)
-        df1 = store.select(node._v_pathname)
+        df1 = read_historical_acc_summary_from_sqllite( globalconf, log, accountid )
+        df1['current_datetime'] = pd.to_datetime(df1['current_datetime'], format="%Y-%m-%d %H:%M:%S")
+        df1 = df1.set_index("current_datetime", drop=0)
+
     elif scenarioMode == "Y":
         df1 = globalconf.account_dataframe_simulation(simulName=simulName)
         df1['current_date'] = df1['current_date'].apply(lambda x: str(x))
@@ -249,12 +212,10 @@ def extrae_account_snapshot(valuation_dttm,accountid,scenarioMode,simulName):
                         'CashBalance_BASE',
                         'ExchangeRate_EUR']].apply(pd.to_numeric).dropna(subset=['TotalCashValue_USD'])
 
-    if scenarioMode == "N":
-        store.close()
     return t_margin , t_prem
 
 
-def extrae_account_delta_new(valuation_dttm,accountid,scenarioMode,simulName):
+def extrae_account_delta(globalconf, log, valuation_dttm, accountid, scenarioMode,simulName):
     """
     Extrae la delta de las variables de account dado un datetime.
     Se trata que el inicio y fin de la delta este lo mas cerca posible de la datetime que se recibe como input
@@ -265,10 +226,9 @@ def extrae_account_delta_new(valuation_dttm,accountid,scenarioMode,simulName):
     log.info("extrae_account_delta_new para : [%s] " % (str(valuation_dttm)))
     dataframe = pd.DataFrame()
     if scenarioMode == "N":
-        store = globalconf.account_store_new()
-        #accountid = globalconf.get_accountid()
-        node=store.get_node("/" + accountid)
-        df1 = store.select(node._v_pathname)
+        df1 = read_historical_acc_summary_from_sqllite( globalconf, log, accountid )
+        df1['current_datetime'] = pd.to_datetime(df1['current_datetime'], format="%Y-%m-%d %H:%M:%S")
+        df1 = df1.set_index("current_datetime", drop=0)
     elif scenarioMode == "Y":
         df1 = globalconf.account_dataframe_simulation(simulName=simulName)
         df1['current_date'] = df1['current_date'].apply(lambda x: str(x))
@@ -302,12 +262,10 @@ def extrae_account_delta_new(valuation_dttm,accountid,scenarioMode,simulName):
     t_prem = t_prem.set_index('load_dttm')
     t_prem['fecha_operacion'] = str(valuation_dttm)
 
-    if scenarioMode == "N":
-        store.close()
     return t_margin , t_prem
 
 
-def extrae_portfolio_positions(valuation_dttm=None,symbol=None,expiry=None,secType=None,
+def extrae_portfolio_positions(log, globalconf, valuation_dttm=None,symbol=None,expiry=None,secType=None,
                                accountid=None,scenarioMode="N",simulName="NA"):
     """
     Saca la foto del subportfolio tic (para un instrumento y expiracion) a una fecha dada
@@ -331,40 +289,15 @@ def extrae_portfolio_positions(valuation_dttm=None,symbol=None,expiry=None,secTy
     if scenarioMode == "N":
         store = sqlite3.connect(path + db_file)
         sql = "select * from " + accountid + " where 1=1 "
-        sql = sql + " and symbol == '" + symbol + "'"
-        sql = sql + " and expiry == '" + expiry + "'"
-        sql = sql + " and secType == '" + secType + "'"
-        sql = sql + " and current_date == '" + secType + "'"
         df1 = pd.read_sql_query(sql, store)
-
-
-
-    if scenarioMode == "N":
-        store=globalconf.portfolio_store()
-        node1=store.get_node("/"+str(valuation_dttm.year)+"/"+valuation_dttm.strftime("%B")[:3]+"/"+str(valuation_dttm.day))
-        try:
-            for hora in node1:
-                #print datetime.strptime(hora._v_pathname, '/%Y/%b/%d/%H').hour , hour
-                if int(datetime.strptime(hora._v_pathname, '/%Y/%b/%d/%H').hour) <= valuation_dttm.hour:
-                    for minuto in store.get_node(hora._v_pathname):
-                        if where1 is None:
-                            df1=store.select(minuto._v_pathname)
-                        else:
-                            df1 = store.select(minuto._v_pathname, where=where1)
-                        df1['load_dttm']=datetime.strptime(minuto._v_pathname, '/%Y/%b/%d/%H/%M')
-                        dataframe = dataframe.append(df1)
-        except TypeError:
-            log.info("No option data to analyze (t). Exiting ...")
-            store.close()
-            return
-        store.close()
     elif scenarioMode == "Y":
         df1 = globalconf.portfolio_dataframe_simulation(simulName=simulName)
-        df1['current_date'] = df1['current_date'].apply(lambda x: str(x))
-        df1['expiry'] = df1['expiry'].apply(lambda x: str(x))
-        df1['current_datetime'] = df1['current_datetime'].apply(lambda x: datetime.strptime(str(x), '%Y%m%d%H%M%S'))
-        df1=df1.loc[ (df1.current_datetime <= valuation_dttm) & ( df1.current_date == valuation_dttm.strftime("%Y%m%d") ) ]
-        dataframe = dataframe.append(df1)
+
+    df1['current_date'] = df1['current_date'].apply(lambda x: str(x))
+    df1['expiry'] = df1['expiry'].apply(lambda x: str(x))
+    df1['current_datetime'] = df1['current_datetime'].apply(lambda x: datetime.strptime(str(x), '%Y%m%d%H%M%S'))
+    df1=df1.loc[ (df1.current_datetime <= valuation_dttm) & ( df1.current_date == valuation_dttm.strftime("%Y%m%d") ) ]
+    dataframe = dataframe.append(df1)
 
     #dataframe = dataframe[[u'averageCost', u'conId', u'expiry', u'localSymbol', u'marketPrice', u'marketValue',
     #                       u'multiplier', u'position', u'realizedPNL',
@@ -375,12 +308,12 @@ def extrae_portfolio_positions(valuation_dttm=None,symbol=None,expiry=None,secTy
         return
 
     dataframe = dataframe[[u'averageCost', u'expiry', u'marketValue',u'multiplier', u'position', u'right',
-                           u'strike', u'symbol', u'unrealizedPNL', u'current_datetime',u'load_dttm']]
+                           u'strike', u'symbol', u'unrealizedPNL', u'current_datetime',u'current_date']]
     #   unrealizedPNL = marketValue - (position * averageCost)
     #   marketValue = marketPrice * multiplier * position
     # se queda con la ultima foto cargada del dia (la h5 accounts se actualiza cada hora RTH)
     dataframe = dataframe.reset_index().drop_duplicates(subset='index', keep='last').set_index('index')
-    dataframe['load_dttm'] = dataframe['load_dttm'].apply(pd.to_datetime)
+    dataframe['current_datetime'] = dataframe['current_datetime'].apply(pd.to_datetime)
     dataframe[[u'averageCost', u'marketValue', u'multiplier', u'position',
                u'strike', u'unrealizedPNL']] = dataframe[[u'averageCost', u'marketValue',
                                                           u'multiplier',  u'position',
@@ -415,7 +348,7 @@ def extrae_fecha_inicio_estrategia(symbol,expiry,accountid,scenarioMode,simulNam
 
 import sqlite3
 
-def extrae_detalle_operaciones(valuation_dttm,symbol,expiry,secType,accountid,scenarioMode,simulName):
+def extrae_detalle_operaciones(valuation_dttm,globalconf, log, symbol,expiry,secType,accountid,scenarioMode,simulName):
     """
     Extrae el detalle de todas las ordenes ejecutadas para un simbolo y expiracion
     desde una fecha hacia atras

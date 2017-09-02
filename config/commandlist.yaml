@@ -39,14 +39,20 @@ lstchain:
   pointer: core.analytics_methods.print_chain
 lstspreadprc:
    pointer: volibutils.orders_methods.list_spread_prices_before_trade
-
-
-##### NEED TO REVIEW
-
 chainprc:
    pointer: volibutils.orders_methods.list_option_chain
 hist_opt:
    pointer: core.analytics_methods.print_historical_option
+
+
+accdelta:
+  pointer: core.analytics_methods.print_account_delta
+accsnap:
+  pointer: core.analytics_methods.print_account_snapshot
+
+
+##### NEED TO REVIEW
+
 ecocal:
    pointer: core.analytics_methods.print_ecalendar
 
@@ -79,10 +85,6 @@ ticrpt:
    pointer: core.analytics_methods.print_tic_report
 #portfolio:
 #   pointer: operations.vol_grab_accounting.print_portfolio_from_ib
-accdelta:
-  pointer: core.analytics_methods.print_account_delta
-accsnap:
-  pointer: core.analytics_methods.print_account_snapshot
 # general market analysis
 hist_under:
    pointer: core.analytics_methods.print_historical_underl

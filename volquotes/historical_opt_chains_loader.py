@@ -4,7 +4,7 @@ from time import sleep
 
 import pandas as pd
 
-from core import utils
+from core import misc_utilities
 from volibutils.RequestOptionData import RequestOptionData
 from volibutils.RequestUnderlyingData import RequestUnderlyingData
 from volibutils.sync_client import IBClient
@@ -104,7 +104,7 @@ def run_reader():
                         #days = np.busday_count(last_record_stored.date(), dt_now.date())
                         #days= int(math.ceil( utils.office_time_between(last_record_stored,dt_now).total_seconds() / 60.0 / 60.0 / 7.0 ))
 
-                        bh = utils.BusinessHours(last_record_stored, dt_now, worktiming=[15, 21], weekends=[6, 7])
+                        bh = misc_utilities.BusinessHours(last_record_stored, dt_now, worktiming=[15, 21], weekends=[6, 7])
                         days = bh.getdays()
                         barSizeSetting =   "5 mins" #"30 mins"
                         durationStr = str( days ) + " D"

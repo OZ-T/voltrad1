@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 import volibutils.sync_client as ib
-from core import utils as utils
+from core import misc_utilities as utils
 from core.market_data_methods import write_market_data_to_sqllite
 from volibutils.RequestOptionData import RequestOptionData
 from volibutils.RequestUnderlyingData import RequestUnderlyingData

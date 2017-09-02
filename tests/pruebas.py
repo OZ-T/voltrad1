@@ -45,4 +45,11 @@ expiry = "20171020"
 call_d_range = "10,15"
 put_d_range = "-15,-10"
 type = "bid"
-print_chain(val_dt,symbol,call_d_range,put_d_range,expiry,type)
+#print_chain(val_dt,symbol,call_d_range,put_d_range,expiry,type)
+
+from core.analytics_methods import print_account_delta
+valuation_dt = "2017-08-25-17"
+# print_account_delta(valuation_dt=valuation_dt)
+
+from core.analytics_methods import print_account_snapshot
+print_account_snapshot(valuation_dt=valuation_dt)

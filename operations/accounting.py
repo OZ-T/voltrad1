@@ -7,7 +7,7 @@ import sqlite3
 import pandas as pd
 
 import volibutils.sync_client as ib
-from core import utils as utils
+from core.misc_utilities import get_trading_close_holidays
 from volsetup import config
 from volsetup.logger import logger
 
@@ -159,7 +159,7 @@ def print_10_days_acc_summary_and_current_positions():
 def store_acc_summary_and_portfolio_from_ib_to_db():
     """ Stores Snapshot Summary information about account and portfolio from IB into db """
     log=logger("store_acc_summary_and_portfolio_from_ib_to_h5")
-    if dt.datetime.now().date() in utils.get_trading_close_holidays(dt.datetime.now().year):
+    if dt.datetime.now().date() in get_trading_close_holidays(dt.datetime.now().year):
         log.info("This is a US Calendar holiday. Ending process ... ")
         return
     globalconf = config.GlobalConfig()
