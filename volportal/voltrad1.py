@@ -103,7 +103,7 @@ class VolLinePoints(Resource):
         last_date1 = today.strftime('%Y%m%d')
 
         dict = core.market_data_methods.read_lineplot_data_from_db(globalconf=globalconf, log=log, symbol=symbol,
-                                                           last_date=last_date1, estimator=estimator, name=name)
+                                                           last_date=last_date1, estimator=estimator)
         JSONP_data = jsonify(dict)
         return JSONP_data
 
