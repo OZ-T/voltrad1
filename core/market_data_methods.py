@@ -163,7 +163,7 @@ def get_last_bars_from_rt(globalconf, log, symbol, last_date,last_record_stored)
         print(df)
         return df
 
-def resample_and_improve_quality(dataframe, criteria, resample):
+def resample_and_improve_quality(dataframe, criteria, resample, log):
     dataframe = dataframe.drop_duplicates(subset=[criteria["sorting_var"], criteria["expiry"]], keep='last')
     dataframe = dataframe.sort_values(by=[criteria["sorting_var"]])
 
@@ -193,7 +193,7 @@ def read_market_data_from_sqllite(globalconf, log, db_type,symbol,expiry,last_da
     dataframe = pd.read_sql_query(sql, store)
     print((sql,len(dataframe)))
     if resample:
-        dataframe = resample_and_improve_quality(dataframe, criteria, resample)
+        dataframe = resample_and_improve_quality(dataframe, criteria, resample, log)
 
     return dataframe
 
@@ -420,6 +420,56 @@ def read_graph_from_db(globalconf,log,symbol, last_date, estimator,name):
     return df1['div'].values[0], df1['script'].values[0]
 
 
+def read_lineplot_data_from_db(globalconf,log,symbol, last_date, estimator):
+    """
+    return the last saved graph of that type
+    """
+    log.info("Reading lineplot data from mongo ... ")
+    import pymongo
+    client = pymongo.MongoClient()
+    db_name = globalconf.config['mongo']['graphs_datapoints_db']
+    db = client[db_name]
+    collection = db.collection
+    from pprint import pprint
+    # dict1 = list(collection.find({u'symbol': symbol, u'estimator': estimator}))
+    dict1 = db.collection.find_one(filter={u'symbol': symbol, u'estimator': estimator},
+                                   sort=[("last_date", pymongo.DESCENDING),("save_dttm", pymongo.DESCENDING)])
+    dict1['save_dttm'] = dict1['save_dttm'].strftime("%Y-%m-%d %H:%M:%S")
+    pprint(dict1)
+    #import pandas as pd
+    #df = pd.DataFrame.from_dict(dict1, orient='columns')
+    return dict1 #['div'].values[0], df1['script'].values[0]
+
+
+def save_lineplot_data_to_db(globalconf, log, xs, ys, ys_labels, title, symbol,
+                         expiry, last_date, num_days_back, resample, estimator, name):
+    log.info("Appending data for graph to mongo ... ")
+    import datetime as dt
+    import pandas as pd
+    save_dttm = dt.datetime.now()
+    import pymongo
+    client = pymongo.MongoClient()
+    db_name = globalconf.config['mongo']['graphs_datapoints_db']
+    db = client[db_name]
+    collection = db.collection
+
+    dict1 = dict([
+        ['xs', [xs]],
+        ['ys', [ys]],
+        ['ys_labels', [ys_labels]],
+        ['title', [title]],
+        ['symbol', [symbol]],
+        ['expiry', [expiry]],
+        ['last_date', [last_date]],
+        ['num_days_back', [num_days_back]],
+        ['resample', [resample]],
+        ['estimator', [estimator]],
+        ['save_dttm', [ save_dttm ]]
+    ])
+    df = pd.DataFrame.from_dict(dict1, orient='columns')
+    #df.set_index(keys=['symbol', 'last_date', 'estimator'], drop=True, inplace=True) don't insert the index in mongo
+    collection.insert_many(df.to_dict('records'))
+
 def save_graph_to_db(globalconf,log,script, div, symbol, expiry, last_date, num_days_back, resample, estimator,name):
     # Embedding bokeh plots in web pages
     # http://bokeh.pydata.org/en/0.9.3/docs/user_guide/embed.html
@@ -448,7 +498,7 @@ def save_graph_to_db(globalconf,log,script, div, symbol, expiry, last_date, num_
     store.close()
 
 
-def read_biz_calendar(start_dttm, valuation_dttm):
+def read_biz_calendar(start_dttm, valuation_dttm,log,globalconf):
     # leer del h5 del yahoo biz calendar
     log.info("read_biz_calendar: [%s] " % (str(valuation_dttm)))
     year= str(valuation_dttm.year)     # "2016"

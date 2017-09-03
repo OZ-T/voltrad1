@@ -97,6 +97,27 @@ class VolGraph(Resource):
         JSONP_data = jsonify({"div":div,"script":script})
         return JSONP_data
 
+class VolGraph(Resource):
+    def get(self,symbol, last_date, estimator,name):
+        today = dt.date.today()
+        last_date1 = today.strftime('%Y%m%d')
+
+        div,script = core.market_data_methods.read_graph_from_db(globalconf=globalconf, log=log, symbol=symbol,
+                                                                 last_date=last_date1, estimator=estimator, name=name)
+        JSONP_data = jsonify({"div":div,"script":script})
+        return JSONP_data
+
+class VolLinePoints(Resource):
+    def get(self,symbol, last_date, estimator,name):
+        today = dt.date.today()
+        last_date1 = today.strftime('%Y%m%d')
+
+        dict = core.read_lineplot_data_from_db(globalconf=globalconf, log=log, symbol=symbol,
+                                               last_date=last_date1, estimator=estimator, name=name)
+        JSONP_data = jsonify(dict)
+        return JSONP_data
+
+
 
 class H5Gekko(Resource):
     def get(self):
@@ -115,7 +136,8 @@ api.add_resource(OptChainMarketDataInfo, '/tic/optchain_data/')
 api.add_resource(OptChainMarketData, '/tic/optchain_data/<underlySymbol>')
 
 api.add_resource(VolGraph, '/tic/graph/<symbol>/<last_date>/<name>/<estimator>')
+api.add_resource(VolLinePoints, '/tic/linpoints/<symbol>/<last_date>/<name>/<estimator>')
+
 
 if __name__ == '__main__':
-
     app.run(host="0.0.0.0", port=9001,debug=True)

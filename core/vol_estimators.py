@@ -47,7 +47,7 @@ import matplotlib.mlab as mlab
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt, mpld3
 import matplotlib.pyplot as pyplt
-from core.market_data_methods import read_market_data_from_sqllite, save_graph_to_db
+from core.market_data_methods import read_market_data_from_sqllite, save_graph_to_db, save_lineplot_data_to_db
 from bokeh.models.annotations import Legend
 from bokeh.embed import components
 from bokeh.layouts import layout
@@ -267,6 +267,20 @@ class VolatilityEstimator(object):
             f = lambda x: "%i%%" % round(x * 100, 0)
 
         return top_q, median, bottom_q, realized, min, max, f, data
+
+    def cones_data(self, windows=[30, 60, 90, 120], quantiles=[0.25, 0.75]):
+        top_q, median, bottom_q, realized, min, max, f, data = self.cones_prepare_data(windows, quantiles)
+        xs = [windows, windows, windows, windows, windows, windows]
+        ys = [top_q, median, bottom_q, realized, min, max]
+        ys_labels = ["top_q", "median", "bottom_q", "realized", "min", "max"]
+        title = self._estimator + ' (' + self._symbol + ', daily from ' + self._last_date + ' days back ' + str(
+            self._num_days_back) + ')'
+        save_lineplot_data_to_db(globalconf=self._globalconf, log=self._log , xs=xs,
+                                 ys=ys, ys_labels=ys_labels, title=title, symbol=self._symbol,
+                                 expiry=self._expiry, last_date=self._last_date,
+                                 num_days_back=self._num_days_back, resample=self._resample,
+                                 estimator=self._estimator, name = "VOLEST")
+
 
     def cones_bokeh(self, windows=[30, 60, 90, 120], quantiles=[0.25, 0.75]):
         """Plots volatility cones

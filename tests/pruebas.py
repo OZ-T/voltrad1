@@ -52,4 +52,23 @@ valuation_dt = "2017-08-25-17"
 # print_account_delta(valuation_dt=valuation_dt)
 
 from core.analytics_methods import print_account_snapshot
-print_account_snapshot(valuation_dt=valuation_dt)
+#print_account_snapshot(valuation_dt=valuation_dt)
+
+
+from core.vol_estimators import VolatilityEstimator
+from volsetup import config
+from volsetup.logger import logger
+log = logger("some testing ...")
+globalconf = config.GlobalConfig()
+last_date = "20170706"
+vol = VolatilityEstimator(globalconf=globalconf, log=log, db_type="underl_ib_hist", symbol="SPY", expiry=None,
+                          last_date=last_date, num_days_back=200, resample="1D", estimator="GarmanKlass", clean=True)
+window = 30
+windows = [30, 60, 90, 120]
+quantiles = [0.25, 0.75]
+bins = 100
+normed = True
+vol.cones_data(windows=windows, quantiles=quantiles)
+from core.market_data_methods import read_lineplot_data_from_db
+estimator="GarmanKlass"
+read_lineplot_data_from_db(globalconf,log,symbol, last_date, estimator)
