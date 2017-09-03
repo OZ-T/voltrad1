@@ -68,7 +68,7 @@ windows = [30, 60, 90, 120]
 quantiles = [0.25, 0.75]
 bins = 100
 normed = True
-# vol.cones_data(windows=windows, quantiles=quantiles)
+vol.cones_data(windows=windows, quantiles=quantiles)
 from core.market_data_methods import read_lineplot_data_from_db
 estimator="GarmanKlass"
 dict = read_lineplot_data_from_db(globalconf,log,symbol, last_date, estimator)
