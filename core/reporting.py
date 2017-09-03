@@ -182,7 +182,8 @@ def run_volest_report(today_txt):
     # vol.term_sheet_to_html(window, windows, quantiles, bins, normed)
     #vol.term_sheet_to_db(window, windows, quantiles, bins, normed)
 
-    p = vol.cones_bokeh(windows=windows, quantiles=quantiles)
+    # p = vol.cones_bokeh(windows=windows, quantiles=quantiles)
+    vol.cones_data(windows=windows, quantiles=quantiles)
 
 
 if __name__ == "__main__":

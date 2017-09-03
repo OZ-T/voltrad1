@@ -35,7 +35,6 @@
 import datetime
 import math
 import os
-
 import matplotlib
 import numpy as np
 import pandas
