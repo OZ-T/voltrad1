@@ -435,7 +435,8 @@ def read_lineplot_data_from_db(globalconf,log,symbol, last_date, estimator):
     dict1 = db.collection.find_one(filter={u'symbol': symbol, u'estimator': estimator},
                                    sort=[("last_date", pymongo.DESCENDING),("save_dttm", pymongo.DESCENDING)])
     dict1['save_dttm'] = dict1['save_dttm'].strftime("%Y-%m-%d %H:%M:%S")
-    pprint(dict1)
+    # pprint(dict1)
+    del dict1['_id']
     #import pandas as pd
     #df = pd.DataFrame.from_dict(dict1, orient='columns')
     return dict1 #['div'].values[0], df1['script'].values[0]
