@@ -108,7 +108,6 @@ class VolLinePoints(Resource):
         return JSONP_data
 
 
-
 class H5Gekko(Resource):
     def get(self):
         dir = os.path.abspath(DATA_DIR)
