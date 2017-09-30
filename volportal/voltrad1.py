@@ -13,6 +13,10 @@ from volsetup import config
 from volsetup.logger import logger
 
 
+from graphene import ObjectType, String, Schema
+from flask_graphql import GraphQLView
+
+
 class MiniJSONEncoder(JSONEncoder):
     """Minify JSON output."""
     item_separator = ','
@@ -128,5 +132,24 @@ api.add_resource(VolGraph, '/tic/graph/<symbol>/<last_date>/<name>/<estimator>')
 api.add_resource(VolLinePoints, '/tic/linpoints/<symbol>/<last_date>/<name>/<estimator>')
 
 
+
+class Query(ObjectType):
+    hello = String(description='Hello')
+    def resolve_hello(self, args, context, info):
+        return 'World'
+
+view_func = GraphQLView.as_view('graphql', schema=Schema(query=Query))
+app.add_url_rule('/tic/graphql', view_func=view_func)
+
+
+
+
+
+
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=9001,debug=True)
+
+
+
+
+
