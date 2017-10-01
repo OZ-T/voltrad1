@@ -141,6 +141,92 @@ view_func = GraphQLView.as_view('graphql', schema=graphene.Schema(query=Query))
 app.add_url_rule('/tic/graphql', view_func=view_func)
 
 
+from accesscontroldecorator import *
+
+class Timers(Resource):
+    @crossdomain(origin='*')
+    def get(self):
+        dir = os.path.abspath(DATA_DIR)
+        results = {
+            'results':
+            [
+                {
+                    "title": "Mow the lawn",
+                    "project": "House Chores",
+                    "elapsed": 5457932,
+                    "id": "0a4a79cb-b06d-4cb1-883d-549a1e3b66d7",
+                    "runningSince": 1506856328557
+                },
+                {
+                    "title": "Clear paper jam",
+                    "project": "Office Chores",
+                    "elapsed": 1273998,
+                    "id": "a73c1d19-f32d-4aff-b470-cea4e792406a",
+                    "runningSince": 1506856327951
+                },
+                {
+                    "title": "Ponder origins of universe",
+                    "project": "Life Chores",
+                    "id": "2c43306e-5b44-4ff8-8753-33c35adbd06f",
+                    "elapsed": 11750,
+                    "runningSince": 1456225941911
+                },
+                {
+                    "title": "kakota",
+                    "project": "teto",
+                    "id": "e719d707-181f-4572-a3fd-d95356303964",
+                    "elapsed": 11327,
+                    "runningSince": 1506856325907
+                }
+            ]
+        }
+        JSONP_data = jsonify( results )
+        return JSONP_data
+
+class TimersAction(Resource):
+    @crossdomain(origin='*')
+    def get(self,action):
+        dir = os.path.abspath(DATA_DIR)
+        results = {
+            'results':
+            [
+                {
+                    "title": "Mow the lawn",
+                    "project": "House Chores",
+                    "elapsed": 5457932,
+                    "id": "0a4a79cb-b06d-4cb1-883d-549a1e3b66d7",
+                    "runningSince": 1506856328557
+                },
+                {
+                    "title": "Clear paper jam",
+                    "project": "Office Chores",
+                    "elapsed": 1273998,
+                    "id": "a73c1d19-f32d-4aff-b470-cea4e792406a",
+                    "runningSince": 1506856327951
+                },
+                {
+                    "title": "Ponder origins of universe",
+                    "project": "Life Chores",
+                    "id": "2c43306e-5b44-4ff8-8753-33c35adbd06f",
+                    "elapsed": 11750,
+                    "runningSince": 1456225941911
+                },
+                {
+                    "title": "kakota",
+                    "project": "teto",
+                    "id": "e719d707-181f-4572-a3fd-d95356303964",
+                    "elapsed": 11327,
+                    "runningSince": 1506856325907
+                }
+            ]
+        }
+        JSONP_data = jsonify( results )
+        return JSONP_data
+
+api.add_resource(Timers, '/api/timers')
+api.add_resource(TimersAction, '/api/timers/<action>')
+
+
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=9001,debug=True)
 
