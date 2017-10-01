@@ -12,8 +12,7 @@ from core import market_data_methods as md
 from volsetup import config
 from volsetup.logger import logger
 
-
-from graphene import ObjectType, String, Schema
+import graphene
 from flask_graphql import GraphQLView
 
 
@@ -133,17 +132,13 @@ api.add_resource(VolLinePoints, '/tic/linpoints/<symbol>/<last_date>/<name>/<est
 
 
 
-class Query(ObjectType):
-    hello = String(description='Hello')
+class Query(graphene.ObjectType):
+    hello = graphene.String(description='Hello')
     def resolve_hello(self, args, context, info):
         return 'World'
 
-view_func = GraphQLView.as_view('graphql', schema=Schema(query=Query))
+view_func = GraphQLView.as_view('graphql', schema=graphene.Schema(query=Query))
 app.add_url_rule('/tic/graphql', view_func=view_func)
-
-
-
-
 
 
 if __name__ == '__main__':
