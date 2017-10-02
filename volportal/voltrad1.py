@@ -140,92 +140,57 @@ class Query(graphene.ObjectType):
 view_func = GraphQLView.as_view('graphql', schema=graphene.Schema(query=Query))
 app.add_url_rule('/tic/graphql', view_func=view_func)
 
-
 from accesscontroldecorator import *
+import microisv.data_access as da
+dir = os.path.abspath(DATA_DIR)
 
 class Timers(Resource):
-    @crossdomain(origin='*')
+    #@crossdomain(origin='*')
+    def post(self):
+        json = request.json
+        newTimer = {
+            'title': json['title'],
+            'project': json['project'],
+            'id': json['id'],
+            'elapsed': 0,
+            'runningSince': None,
+        }
+        return1 = da.save_timers_to_db(globalconf, log,newTimer)
+        return {'inserted_ids':return1}
+
+    def put(self):
+        # update timers
+        timer = request.json
+        return1 = da.update_timers_to_db(globalconf, log,timer,action=None)
+        return {'updated_ids':return1}
+
+
+    def delete(self):
+        # delete timers
+        timer = request.json
+        return1 = da.delete_timers_to_db(globalconf, log,timer)
+        return {'deleted_ids':return1}
+
+
+    #@crossdomain(origin='*')
     def get(self):
-        dir = os.path.abspath(DATA_DIR)
+        results1 = da.read_timers_from_db(globalconf,log)
         results = {
-            'results':
-            [
-                {
-                    "title": "Mow the lawn",
-                    "project": "House Chores",
-                    "elapsed": 5457932,
-                    "id": "0a4a79cb-b06d-4cb1-883d-549a1e3b66d7",
-                    "runningSince": 1506856328557
-                },
-                {
-                    "title": "Clear paper jam",
-                    "project": "Office Chores",
-                    "elapsed": 1273998,
-                    "id": "a73c1d19-f32d-4aff-b470-cea4e792406a",
-                    "runningSince": 1506856327951
-                },
-                {
-                    "title": "Ponder origins of universe",
-                    "project": "Life Chores",
-                    "id": "2c43306e-5b44-4ff8-8753-33c35adbd06f",
-                    "elapsed": 11750,
-                    "runningSince": 1456225941911
-                },
-                {
-                    "title": "kakota",
-                    "project": "teto",
-                    "id": "e719d707-181f-4572-a3fd-d95356303964",
-                    "elapsed": 11327,
-                    "runningSince": 1506856325907
-                }
-            ]
+            'results':results1
         }
         JSONP_data = jsonify( results )
         return JSONP_data
 
 class TimersAction(Resource):
-    @crossdomain(origin='*')
-    def get(self,action):
-        dir = os.path.abspath(DATA_DIR)
-        results = {
-            'results':
-            [
-                {
-                    "title": "Mow the lawn",
-                    "project": "House Chores",
-                    "elapsed": 5457932,
-                    "id": "0a4a79cb-b06d-4cb1-883d-549a1e3b66d7",
-                    "runningSince": 1506856328557
-                },
-                {
-                    "title": "Clear paper jam",
-                    "project": "Office Chores",
-                    "elapsed": 1273998,
-                    "id": "a73c1d19-f32d-4aff-b470-cea4e792406a",
-                    "runningSince": 1506856327951
-                },
-                {
-                    "title": "Ponder origins of universe",
-                    "project": "Life Chores",
-                    "id": "2c43306e-5b44-4ff8-8753-33c35adbd06f",
-                    "elapsed": 11750,
-                    "runningSince": 1456225941911
-                },
-                {
-                    "title": "kakota",
-                    "project": "teto",
-                    "id": "e719d707-181f-4572-a3fd-d95356303964",
-                    "elapsed": 11327,
-                    "runningSince": 1506856325907
-                }
-            ]
-        }
-        JSONP_data = jsonify( results )
-        return JSONP_data
+    def post(self, action):
+        timer = request.json
+        #print(action)
+        return1 = da.update_timers_to_db(globalconf, log,timer,action)
+        return {'updated_ids':return1}
+
 
 api.add_resource(Timers, '/api/timers')
 api.add_resource(TimersAction, '/api/timers/<action>')
-
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=9001,debug=True)
