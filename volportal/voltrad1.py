@@ -193,8 +193,8 @@ class TimersAction(Resource):
         return {'updated_ids':return1}
 
 
-api.add_resource(Timers, '/api/timers')
-api.add_resource(TimersAction, '/api/timers/<action>')
+api.add_resource(Timers, '/tic/api/timers')
+api.add_resource(TimersAction, '/tic/api/timers/<action>')
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=9001,debug=True)
