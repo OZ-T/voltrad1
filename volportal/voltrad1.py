@@ -181,6 +181,10 @@ class Timers(Resource):
         JSONP_data = jsonify( results )
         return JSONP_data
 
+     #### TODO get distinct timers associated   with a project
+     ###  https://stackoverflow.com/questions/28155857/mongodb-find-query-return-only-unique-values-no-duplicates
+     ### https://docs.mongodb.com/manual/reference/method/db.collection.distinct/
+        
 class TimersAction(Resource):
     def post(self, action):
         timer = request.json
