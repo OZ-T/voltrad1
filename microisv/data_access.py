@@ -16,7 +16,8 @@ def read_timers_from_db(globalconf,log):
         list1.append(doc)
     return list1 #['div'].values[0], df1['script'].values[0]
 
-def delete_timers_to_db(globalconf, log,timer):
+
+def delete_timers_to_db(globalconf, log, timer):
     log.info("Delete data for timers in mongo ... ")
     import datetime as dt
     import pandas as pd
