@@ -155,26 +155,26 @@ class Timers(Resource):
             'elapsed': 0,
             'runningSince': None,
         }
-        return1 = da.save_timers_to_db(globalconf, log,newTimer)
+        return1 = da.save_docs_to_db(globalconf, log,newTimer,collection_name="timers")
         return {'inserted_ids':return1}
 
     def put(self):
         # update timers
         timer = request.json
-        return1 = da.update_timers_to_db(globalconf, log,timer,action=None)
+        return1 = da.update_timers_to_db(globalconf, log,timer,action=None,collection_name="timers")
         return {'updated_ids':return1}
 
 
     def delete(self):
         # delete timers
         timer = request.json
-        return1 = da.delete_timers_to_db(globalconf, log,timer)
+        return1 = da.delete_doc_to_db(globalconf, log,timer,collection_name="timers")
         return {'deleted_ids':return1}
 
 
     #@crossdomain(origin='*')
     def get(self):
-        results1 = da.read_timers_from_db(globalconf,log)
+        results1 = da.read_docs_from_db(globalconf,log,collection_name="timers")
         results = {
             'results':results1
         }
@@ -189,7 +189,7 @@ class TimersAction(Resource):
     def post(self, action):
         timer = request.json
         #print(action)
-        return1 = da.update_timers_to_db(globalconf, log,timer,action)
+        return1 = da.update_timers_to_db(globalconf, log,timer,action,collection_name="timers")
         return {'updated_ids':return1}
 
 
