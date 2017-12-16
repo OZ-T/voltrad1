@@ -7,6 +7,8 @@ batch_optchain_yhoo_to_db:
   pointer:  core.market_data_methods.store_optchain_yahoo_to_db
 batch_underl_ib_to_db:
   pointer:  core.market_data_methods.store_underlying_ib_to_db
+batch_itrm_wraps:
+  pointer:  webscrape.market_wrap_reader.run_reader
 # Web reporting generation
 run_dq_report_market:
   pointer: core.reporting.run_dq_report_market
