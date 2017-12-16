@@ -30,7 +30,7 @@ class H5Dir(Resource):
             for name in files:
                 filename=os.path.join(root,name)
                 if filename.lower().endswith(exts):
-                    print "filename" , filename
+                    print ("filename" , filename)
                     list.append(name)
         return json.dumps(list)
 
