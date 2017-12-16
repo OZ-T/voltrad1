@@ -48,8 +48,10 @@ PARAM_DATE=date +%Y%m%d
 # store orders executed during the day and portfolio snapshot
 36 23 * * 1-5 nohup /home/david/shell/p batch_orders_to_db  >> /var/log/voltrad1/ib_orders_$($DATE).log 2>&1 &
 38 23 * * 1-5 nohup /home/david/shell/p batch_acc_to_db  >> /var/log/voltrad1/ib_accounting_$($DATE).log 2>&1 &
+55 23 * * 1-5 nohup /home/david/shell/p batch_itrm_wraps  >> /var/log/voltrad1/itrm_wraps_$($DATE).log 2>&1 &
 
 59 0 * * 6 /home/david/shell/run_backup.sh
+5 0 * * 6 /home/david/shell/gw.sh stop sim
 
 # FIXME 55 22 * * 1-5 /home/david/shell/run_ivol_opt.sh 
 # economic calendar from biz yahoo. start of week and end of week to get the resulting number of the economic events
