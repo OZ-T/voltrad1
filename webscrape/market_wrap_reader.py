@@ -1,7 +1,6 @@
 from urllib.request import Request, urlopen
 import urllib.error
 from bs4 import BeautifulSoup
-import h5py as h5
 from volsetup import config
 import datetime as dt
 import numpy as np
@@ -9,6 +8,8 @@ import pandas as pd
 from volsetup.logger import logger
 import persist.data_access as da
 from core import misc_utilities as utils
+from textblob import TextBlob
+import locale
 
 def download(url,log, user_agent='wswp',  num_retries=2):
     try:
@@ -26,12 +27,13 @@ def download(url,log, user_agent='wswp',  num_retries=2):
 
 def run_reader():
     log = logger("wrap download")
-    now = dt.datetime.now()
+    locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
+    now = dt.datetime.now() #+ dt.timedelta(days=-4)
     weekday = now.strftime("%A").lower()
 
     if (  weekday in ("saturday","sunday")  or
           now.date() in utils.get_trading_close_holidays(dt.datetime.now().year)):
-        log.info("This is a US Calendar holiday. Ending process ... ")
+        log.info("This is a US Calendar holiday or weekend. Ending process ... ")
         return
 
     log.info("Getting data from www.itpm.com ... ")
@@ -65,14 +67,19 @@ def run_reader():
             #print((str(i.text),n))
             if "European Equity Markets" in str(i.text):
                 wrap.update({"euro_equity_comment" : str(i.text)})
+                wrap.update({"euro_equity_sentiment": get_sentiment(str(i.text)) })
             elif "Currency Markets" in str(i.text):
                 wrap.update({"fx_comment" : str(i.text)})
+                wrap.update({"fx_comment_sentiment": get_sentiment(str(i.text))})
             elif "Commodities Markets" in str(i.text):
                 wrap.update({"commodities_comment" : str(i.text)})
+                wrap.update({"commodities_sentiment": get_sentiment(str(i.text))})
             elif "US Equity Markets" in str(i.text):
                 wrap.update({"us_equity_comment" : str(i.text)})
+                wrap.update({"us_equity_sentiment": get_sentiment(str(i.text))})
             elif "Bond Markets" in str(i.text):
                 wrap.update({"bonds_comment" : str(i.text)})
+                wrap.update({"bonds_sentiment": get_sentiment(str(i.text))})
             #n=n+1
         #print(wrap)
         da.save_docs_to_db(globalconf, log, wrap, collection_name="itrm-wraps")
@@ -83,6 +90,9 @@ def run_reader():
         # HV_10d_52wk_hi = (ul[10].text)
         # HV_10d_52wk_lo = (ul[11].text)
 
+def get_sentiment(statement):
+    sentiment = TextBlob(statement)
+    return { "polarity": sentiment.sentiment.polarity , "subjectivity": sentiment.sentiment.subjectivity }
 
 if __name__=="__main__":
     run_reader()
