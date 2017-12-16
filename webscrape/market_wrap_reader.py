@@ -92,7 +92,10 @@ def run_reader():
 
 def get_sentiment(statement):
     sentiment = TextBlob(statement)
-    return { "polarity": sentiment.sentiment.polarity , "subjectivity": sentiment.sentiment.subjectivity }
+    return { "polarity": sentiment.sentiment.polarity ,
+             "subjectivity": sentiment.sentiment.subjectivity,
+             "assessments": sentiment.sentiment_assessments
+    }
 
 if __name__=="__main__":
     run_reader()

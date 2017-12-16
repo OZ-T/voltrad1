@@ -22,7 +22,7 @@ import pandas as pd
 import os
 from volsetup import config
 import sys
-from BeautifulSoup import BeautifulSoup
+from bs4 import BeautifulSoup
 import re
 from datetime import datetime
 from time import sleep
@@ -68,7 +68,7 @@ def run_reader():
         for tr in soup.findAll("tr"):
             if len(tr.contents) > 3:
                 if str(tr.contents[0]).strip():
-                    if str(tr.contents[0].text) <> 'Date':
+                    if str(tr.contents[0].text) != 'Date':
                         temp = {'Date':tr.contents[0].text, 'Time_ET':tr.contents[1].text, 'Statistic':tr.contents[2].text ,
                                 'For':tr.contents[3].text,  'Actual':tr.contents[4].text, 'Briefing_Forecast': tr.contents[5].text,
                                 'Market_Expects':tr.contents[6].text, 'Prior':tr.contents[7].text , 'Revised_From':tr.contents[8].text }
