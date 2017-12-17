@@ -9,6 +9,12 @@ batch_underl_ib_to_db:
   pointer:  core.market_data_methods.store_underlying_ib_to_db
 batch_itrm_wraps:
   pointer:  webscrape.market_wrap_reader.run_reader
+
+# One shot jobs for initial loading
+init_itrm_wraps:
+  pointer:  webscrape.market_wrap_reader.first_run
+
+
 # Web reporting generation
 run_dq_report_market:
   pointer: core.reporting.run_dq_report_market

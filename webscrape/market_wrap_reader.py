@@ -25,10 +25,20 @@ def download(url,log, user_agent='wswp',  num_retries=2):
                 return download(url, log, user_agent, num_retries-1)
     return html
 
-def run_reader():
+def first_run():
+    date1 = dt.datetime(year=2017,month=1,day=1,hour=23,minute=55)
+    end = dt.datetime.now()
+    while date1 < end:
+        run_reader(now1=date1)
+        date1 = date1 + dt.timedelta(days=1)
+
+def run_reader(now1 = None):
     log = logger("wrap download")
     locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
-    now = dt.datetime.now() #+ dt.timedelta(days=-4)
+    now = dt.datetime.now()  # + dt.timedelta(days=-4)
+    if now1:
+        now = now1
+
     weekday = now.strftime("%A").lower()
 
     if (  weekday in ("saturday","sunday")  or
