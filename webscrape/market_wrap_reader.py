@@ -25,10 +25,12 @@ def download(url,log, user_agent='wswp',  num_retries=2):
             if hasattr(e, 'code') and 500 <= e.code < 600:
                 # retry 5XX HTTP errors
                 return download(url, log, user_agent, num_retries-1)
+        else:
+            return None
     return html
 
 def first_run():
-    date1 = dt.datetime(year=2017,month=1,day=1,hour=23,minute=55)
+    date1 = dt.datetime(year=2017,month=3,day=22,hour=23,minute=55)
     end = dt.datetime.now()
     while date1 < end:
         run_reader(now1=date1)
@@ -48,7 +50,7 @@ def run_reader(now1 = None):
 
     base = "https://www.itpm.com/wraps_post/"
     month = now.strftime("%b").lower()
-    daymonth = now.strftime("%d")
+    daymonth = now.strftime("%d").zfill(2)
     year = now.strftime("%Y")
     wrapTypes = ("opening","closing")
     globalconf = config.GlobalConfig()
@@ -59,7 +61,8 @@ def run_reader(now1 = None):
         b_html=download(url=url,log=log,
                         user_agent="Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36"
                         )
-
+        if b_html is None:
+            continue
         soup = BeautifulSoup(b_html, 'html.parser')
         fixed_html = soup.prettify()
         #print(fixed_html)
