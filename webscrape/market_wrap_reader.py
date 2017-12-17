@@ -36,6 +36,9 @@ def first_run():
         run_reader(now1=date1)
         date1 = date1 + dt.timedelta(days=1)
 
+def batch_run_reader():
+    run_reader(now1=None)
+
 def run_reader(now1 = None):
     locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
     now = dt.datetime.now()  # + dt.timedelta(days=-4)
@@ -109,8 +112,8 @@ def get_sentiment(statement):
     }
 
 if __name__=="__main__":
-    #run_reader()
-    first_run()
+    run_reader()
+    #first_run()
 
 
 

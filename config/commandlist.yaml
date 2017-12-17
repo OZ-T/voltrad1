@@ -8,7 +8,7 @@ batch_optchain_yhoo_to_db:
 batch_underl_ib_to_db:
   pointer:  core.market_data_methods.store_underlying_ib_to_db
 batch_itrm_wraps:
-  pointer:  webscrape.market_wrap_reader.run_reader
+  pointer:  webscrape.market_wrap_reader.batch_run_reader
 
 # One shot jobs for initial loading
 init_itrm_wraps:
