@@ -11,6 +11,8 @@ from core import misc_utilities as utils
 from textblob import TextBlob
 import locale
 
+log = logger("wrap download")
+
 def download(url,log, user_agent='wswp',  num_retries=2):
     try:
         q = Request(url)
@@ -33,22 +35,18 @@ def first_run():
         date1 = date1 + dt.timedelta(days=1)
 
 def run_reader(now1 = None):
-    log = logger("wrap download")
     locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
     now = dt.datetime.now()  # + dt.timedelta(days=-4)
     if now1:
         now = now1
-
     weekday = now.strftime("%A").lower()
-
+    log.info(("Getting data from www.itpm.com ... ",now))
     if (  weekday in ("saturday","sunday")  or
           now.date() in utils.get_trading_close_holidays(dt.datetime.now().year)):
         log.info("This is a US Calendar holiday or weekend. Ending process ... ")
         return
 
-    log.info("Getting data from www.itpm.com ... ")
     base = "https://www.itpm.com/wraps_post/"
-
     month = now.strftime("%b").lower()
     daymonth = now.strftime("%d")
     year = now.strftime("%Y")
@@ -108,7 +106,8 @@ def get_sentiment(statement):
     }
 
 if __name__=="__main__":
-    run_reader()
+    #run_reader()
+    first_run()
 
 
 
