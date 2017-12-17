@@ -10,6 +10,7 @@ import persist.data_access as da
 from core import misc_utilities as utils
 from textblob import TextBlob
 import locale
+from time import sleep
 
 log = logger("wrap download")
 
@@ -35,6 +36,7 @@ def first_run():
     while date1 < end:
         run_reader(now1=date1)
         date1 = date1 + dt.timedelta(days=1)
+        sleep(3)
 
 def batch_run_reader():
     run_reader(now1=None)
