@@ -85,7 +85,6 @@ def write_acc_summary_to_sqllite(globalconf, log, dataframe):
     names=dataframe['AccountCode_'].unique().tolist()
     for name in names:
         joe = dataframe.loc[dataframe['AccountCode_']==name]
-        del joe.Guarantee_C_USD
         joe.to_sql(name, store, if_exists='append')
         store.close()
 
@@ -159,7 +158,7 @@ def print_10_days_acc_summary_and_current_positions():
 
 def store_acc_summary_and_portfolio_from_ib_to_db():
     """ Stores Snapshot Summary information about account and portfolio from IB into db """
-    log=logger("store_acc_summary_and_portfolio_from_ib_to_h5")
+    log=logger("store_acc_summary_and_portfolio_from_ib_to_db")
     if dt.datetime.now().date() in get_trading_close_holidays(dt.datetime.now().year):
         log.info("This is a US Calendar holiday. Ending process ... ")
         return
@@ -182,7 +181,7 @@ def store_acc_summary_and_portfolio_from_ib_to_db():
         dataframe.drop('multiplier', axis=1, inplace=True)
         write_portfolio_to_sqllite(globalconf, log, dataframe)
     else:
-        log.info("Nothing to append to HDF5 ... ")
+        log.info("Nothing to append to sqlite ... ")
 
     if summarylist:
         dataframe2 = pd.DataFrame.from_dict(summarylist).transpose()
@@ -193,6 +192,8 @@ def store_acc_summary_and_portfolio_from_ib_to_db():
         dataframe2.index=pd.to_datetime(dataframe2['current_datetime'], format="%Y%m%d%H%M%S")
         dataframe2.drop('current_datetime',axis=1,inplace=True)
         dataframe2['current_datetime_txt'] = dataframe2.index.strftime("%Y-%m-%d %H:%M:%S")
+        dataframe2.drop('Guarantee_C_USD', axis=1, inplace=True)
+        log.info(("XXXXXXXXXX"))
         write_acc_summary_to_sqllite(globalconf, log, dataframe2)
     else:
         log.info("Nothing to append to HDF5 ... ")
