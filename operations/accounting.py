@@ -85,6 +85,7 @@ def write_acc_summary_to_sqllite(globalconf, log, dataframe):
     names=dataframe['AccountCode_'].unique().tolist()
     for name in names:
         joe = dataframe.loc[dataframe['AccountCode_']==name]
+        del joe.Guarantee_C_USD
         joe.to_sql(name, store, if_exists='append')
         store.close()
 
