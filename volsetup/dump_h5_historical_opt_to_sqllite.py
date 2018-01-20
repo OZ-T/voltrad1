@@ -19,10 +19,10 @@ def run():
     store_out = globalconf.connect_sqllite(path + optchain_out)
 
     root = store_in.root
-    print root._v_pathname
+    print (root._v_pathname)
     #dataframe = pd.DataFrame()
     for lvl1 in root:
-        print lvl1._v_pathname
+        print (lvl1._v_pathname)
         if lvl1:
             df1 = store_in.select(lvl1._v_pathname)
             symbols = df1['symbol'].unique().tolist()

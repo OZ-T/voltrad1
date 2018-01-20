@@ -140,7 +140,7 @@ class Query(graphene.ObjectType):
 view_func = GraphQLView.as_view('graphql', schema=graphene.Schema(query=Query))
 app.add_url_rule('/tic/graphql', view_func=view_func)
 
-from accesscontroldecorator import *
+from portal.accesscontroldecorator import *
 import persist.data_access as da
 dir = os.path.abspath(DATA_DIR)
 
