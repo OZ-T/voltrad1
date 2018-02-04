@@ -4,19 +4,14 @@ File to run automatically by cron each day to gather options data
 entry:
 50 23 * * 1,2,3,4,5 python /home/david/python/vol_tradblotter/vol_grab_optchain_pandas_yhoo1.py
 """
-import platform
 import datetime as dt
 import pandas as pd
-import numpy as np
-import h5py as h5
 import pandas_datareader.data as web
 from pandas_datareader._utils import RemoteDataError
 #import pandas.io as web
-import os
-from datetime import datetime, timedelta
-from volsetup import config
+from core import config
 import sys
-from volsetup.logger import logger
+from core.logger import logger
 
 def clean_cols_for_hdf2(df):
     types = df.apply(lambda x: pd.lib.infer_dtype(x.values))

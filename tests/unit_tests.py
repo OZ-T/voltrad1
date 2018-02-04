@@ -1,10 +1,10 @@
 import datetime as dt
 import unittest
 
-import volsetup.config as config
-from core.market_data_methods import get_market_db_file
-from core.market_data_methods import read_market_data_from_sqllite
-from volsetup.logger import logger
+import core.config as config
+from persist.sqlite_methods import get_market_db_file
+from persist.sqlite_methods import read_market_data_from_sqllite
+from core.logger import logger
 
 
 # http://python-guide-pt-br.readthedocs.io/en/latest/writing/tests/
@@ -58,7 +58,7 @@ class MarketData_tests(unittest.TestCase):
 
     def test_graphs(self):
         globalconf = config.GlobalConfig()
-        from core import analytics_methods as am, misc_utilities
+        from core import analytics_methods as am
 
         # am.print_coppock_diario(symbol="SPX",period="1D")
         # p = am.graph_coppock(symbol="SPX",period="1D")
@@ -72,8 +72,8 @@ class MarketData_tests(unittest.TestCase):
         self.assertGreater(1,0)
 
     def test_get_optchain_datasources(self):
-        from core.market_data_methods import get_optchain_datasources
-        import volsetup.config as config
+        from persist.sqlite_methods import get_optchain_datasources
+        import core.config as config
 
         globalconf = config.GlobalConfig()
 
@@ -85,8 +85,8 @@ class MarketData_tests(unittest.TestCase):
         self.assertListEqual(dict['optchain_ib_exp']['IWM']['expiries'], ['2016-09', '2016-08'] )
 
     def test_get_expiries(self):
-        from core.market_data_methods import get_expiries
-        import volsetup.config as config
+        from persist.sqlite_methods import get_expiries
+        import core.config as config
         globalconf = config.GlobalConfig()
 
         list = get_expiries(globalconf=globalconf, dsId='optchain_ib_exp', symbol="SPY")
@@ -95,12 +95,12 @@ class MarketData_tests(unittest.TestCase):
         self.assertEqual(max(list),'2017-09')
 
     def test_extrae_detalle_operaciones(self):
-        from core.portfolio_and_account_data_methods import extrae_detalle_operaciones
+        from persist.portfolio_and_account_data_methods import extrae_detalle_operaciones
         import datetime as dt
         symbol = "SPY"
         expiry = "20170317"
         secType = "OPT"
-        import volsetup.config as config
+        import core.config as config
         globalconf = config.GlobalConfig()
         accountid = globalconf.get_accountid()
         fecha_valoracion = dt.datetime.now()  # dt.datetime(year=2017,month=2,day=2) #

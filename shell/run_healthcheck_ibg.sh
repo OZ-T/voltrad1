@@ -2,9 +2,9 @@
 cd /tmp
 export PYTHONPATH=/home/david/voltrad1
 DATE=`date +%d-%m-%y` 
-#/home/david/anaconda3/bin/python /home/david/voltrad1/volibutils/run_ib_healthcheck.py
+#/home/david/anaconda3/bin/python /home/david/voltrad1/ibutils/run_ib_healthcheck.py
 NOW1=`date +%d-%m-%y\ %H:%M:%S`
-if [[ $(( /home/david/anaconda3/bin/python /home/david/voltrad1/volibutils/run_ib_healthcheck.py ) 2>&1 | grep "Error" ) ]]; then
+if [[ $(( /home/david/anaconda3/bin/python /home/david/voltrad1/ibutils/run_ib_healthcheck.py ) 2>&1 | grep "Error" ) ]]; then
     echo $NOW1 " Something wrong with IBG. Restarting the service ..."
     /home/david/shell/gw.sh stop sim 
     /home/david/shell/gw.sh stop sim 

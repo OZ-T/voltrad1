@@ -1,9 +1,12 @@
+import pymongo
+import datetime as dt
+import pandas as pd
+
 
 def read_docs_from_db(globalconf,log,collection_name):
     """
     """
     log.info("Reading collection " + collection_name  + " from mongo ... ")
-    import pymongo
     client = pymongo.MongoClient()
     db_name = globalconf.config['mongo']['microisv_db']
     db = client[db_name]
@@ -18,9 +21,6 @@ def read_docs_from_db(globalconf,log,collection_name):
 
 def delete_doc_to_db(globalconf, log,doc,collection_name):
     log.info("Delete data for collection " + collection_name  + "  in mongo ... ")
-    import datetime as dt
-    import pandas as pd
-    import pymongo
     client = pymongo.MongoClient()
     db_name = globalconf.config['mongo']['microisv_db']
     db = client[db_name]
@@ -29,11 +29,22 @@ def delete_doc_to_db(globalconf, log,doc,collection_name):
     return str(return1)
 
 
+def save_docs_to_db(globalconf, log,docs,collection_name):
+    log.info("Appending data for collection  " + collection_name  + " to mongo ... ")
+    client = pymongo.MongoClient()
+    db_name = globalconf.config['mongo']['microisv_db']
+    db = client[db_name]
+    collection = db[collection_name]
+    ret1 = collection.insert_many([docs])
+    return1 = ret1.inserted_ids
+    # put the json inside a list to allow the insert and avoid the following error:
+    #   TypeError: document must be an instance of dict, bson.son.SON, bson.raw_bson.RawBSONDocument,
+    #   or a type that inherits from collections.MutableMapping
+    return str(return1)
+
+
 def update_timers_to_db(globalconf, log,timer, action,collection_name):
     log.info("Updating data for collection  " + collection_name  + " in mongo ... ")
-    import datetime as dt
-    import pandas as pd
-    import pymongo
     client = pymongo.MongoClient()
     db_name = globalconf.config['mongo']['microisv_db']
     db = client[db_name]
@@ -53,19 +64,3 @@ def update_timers_to_db(globalconf, log,timer, action,collection_name):
     return1 = ret1
     return str(return1)
 
-
-def save_docs_to_db(globalconf, log,docs,collection_name):
-    log.info("Appending data for collection  " + collection_name  + " to mongo ... ")
-    import datetime as dt
-    import pandas as pd
-    import pymongo
-    client = pymongo.MongoClient()
-    db_name = globalconf.config['mongo']['microisv_db']
-    db = client[db_name]
-    collection = db[collection_name]
-    ret1 = collection.insert_many([docs])
-    return1 = ret1.inserted_ids
-    # put the json inside a list to allow the insert and avoid the following error:
-    #   TypeError: document must be an instance of dict, bson.son.SON, bson.raw_bson.RawBSONDocument,
-    #   or a type that inherits from collections.MutableMapping
-    return str(return1)

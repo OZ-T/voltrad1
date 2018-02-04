@@ -1,13 +1,10 @@
 from urllib.request import Request, urlopen
 import urllib.error
 from bs4 import BeautifulSoup
-from volsetup import config
 import datetime as dt
-import numpy as np
-import pandas as pd
-from volsetup.logger import logger
-import persist.data_access as da
-from core import misc_utilities as utils
+from core.logger import logger
+import persist.document_methods as da
+from core import misc_utilities as utils, config
 from textblob import TextBlob
 import locale
 from time import sleep

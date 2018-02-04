@@ -4,12 +4,11 @@ from time import sleep
 
 import pandas as pd
 
-from core import misc_utilities
-from volibutils.RequestOptionData import RequestOptionData
-from volibutils.RequestUnderlyingData import RequestUnderlyingData
-from volibutils.sync_client import IBClient
-from volsetup import config
-from volsetup.logger import logger
+from core import misc_utilities, config
+from ibutils.RequestOptionData import RequestOptionData
+from ibutils.RequestUnderlyingData import RequestUnderlyingData
+from ibutils.sync_client import IBClient
+from core.logger import logger
 
 
 def run_reader():

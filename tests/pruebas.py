@@ -1,8 +1,7 @@
-from core.market_data_methods import get_last_bars_from_rt
-import volsetup.config as config
-from volsetup.logger import logger
+import core.config as config
+from core.logger import logger
 import datetime
-import numpy as np
+
 globalconf = config.GlobalConfig()
 log = logger("Testing ...")
 last_date = datetime.datetime.today().strftime("%Y%m%d")
@@ -13,12 +12,11 @@ last_date = datetime.datetime.today().strftime("%Y%m%d")
 #print (df)
 
 
-import core.portfolio_and_account_data_methods as ra
 import datetime as dt
 symbol = "SPY"
 expiry = "20170317"
 secType = "OPT"
-import volsetup.config as config
+import core.config as config
 globalconf = config.GlobalConfig()
 accountid = globalconf.get_accountid()
 fecha_valoracion = dt.datetime.now()  # dt.datetime(year=2017,month=2,day=2) #
@@ -35,10 +33,8 @@ timedelta1 = 1
 #print (posiciones)
 
 
-import core.analytics_methods as am
 #am.print_summary_underl(symbol="SPY")
 
-from core.analytics_methods import print_chain
 val_dt = "20170827"
 symbol = "SPY"
 expiry = "20171020"
@@ -47,17 +43,15 @@ put_d_range = "-15,-10"
 type = "bid"
 #print_chain(val_dt,symbol,call_d_range,put_d_range,expiry,type)
 
-from core.analytics_methods import print_account_delta
 valuation_dt = "2017-08-25-17"
 # print_account_delta(valuation_dt=valuation_dt)
 
-from core.analytics_methods import print_account_snapshot
 #print_account_snapshot(valuation_dt=valuation_dt)
 
 
 from core.vol_estimators import VolatilityEstimator
-from volsetup import config
-from volsetup.logger import logger
+from core import config
+from core.logger import logger
 log = logger("some testing ...")
 globalconf = config.GlobalConfig()
 last_date = "20170706"
@@ -69,6 +63,6 @@ quantiles = [0.25, 0.75]
 bins = 100
 normed = True
 vol.cones_data(windows=windows, quantiles=quantiles)
-from core.market_data_methods import read_lineplot_data_from_db
+from persist.sqlite_methods import read_lineplot_data_from_db
 estimator="GarmanKlass"
 dict = read_lineplot_data_from_db(globalconf,log,symbol, last_date, estimator)

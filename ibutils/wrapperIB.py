@@ -1,7 +1,7 @@
 from swigibpy import EWrapper
 import time
 from swigibpy import EPosixClientSocket, ExecutionFilter
-from volibutils.IButils import bs_resolve, action_ib_fill
+from ibutils.IButils import bs_resolve, action_ib_fill
 import ConfigParser
 
 FILL_CODE = 1234

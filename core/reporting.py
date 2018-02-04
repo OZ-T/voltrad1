@@ -3,8 +3,8 @@ import matplotlib
 matplotlib.use('Agg') # Must be before importing matplotlib.pyplot or pylab!
 import pandas as pd
 import sqlite3
-from volsetup.logger import logger
-from volsetup import config
+from core.logger import logger
+from core import config
 import os
 from matplotlib.pyplot import *
 import datetime as dt

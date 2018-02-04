@@ -8,14 +8,8 @@ entry:
 50 23 * * 1,2,3,4,5 python /home/david/python/vol_tradblotter/vol_grab_optchain_pandas_yhoo1.py
 
 """
-import platform
 import datetime as dt
-import pandas as pd
-import numpy as np
-import h5py as h5
-import os
-import datetime
-from volsetup import config
+from core import config
 from google_fix import *
 
 if __name__ == "__main__":

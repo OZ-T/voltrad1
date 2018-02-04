@@ -1,16 +1,11 @@
 # -*- coding: UTF-8 -*-
-import core.market_data_methods
-from volsetup import config
+import persist.sqlite_methods
+from core import config
 from datetime import datetime, timedelta
-from pytz import timezone
 import portfolio_and_account_data_methods as ra
-import time
 import pandas as pd
-import numpy as np
 #import pandas_datareader.data as web
-from opt_pricing_methods import bsm_mcs_euro
-import sys
-from volsetup.logger import logger
+from core.logger import logger
 import matplotlib.pyplot as plt
 import statsmodels.api as sm
 from scipy.stats import ttest_ind
@@ -23,7 +18,7 @@ PCT_UP_CHAIN = 0.06
 DAY_BEFORE_EXPIRY_ROLL = 10
 
 def read_h5_source_data(start1,end1):
-    df1= core.market_data_methods.read_biz_calendar(start_dttm=start1, valuation_dttm=end1)
+    df1= persist.sqlite_methods.read_biz_calendar(start_dttm=start1, valuation_dttm=end1)
     # sacar del historical options chain P y C ATM y OTM volumenes y precios bid ask
     df2=ra.extrae_options_chain2(start_dttm=start1, end_dttm=end1, symbol="ES", expiry="", secType="FOP")
     return df1,df2
@@ -199,7 +194,7 @@ def ttest_mean_stat_signif():
                 df1=pd.DataFrame({'event':x,'result':y,'ttest':ttest.statistic,
                                   'p_value':ttest.pvalue},[0])
                 df_out=df_out.append(df1)
-    print df_out
+    print (df_out)
     # TODO: hacer el ttest por cada variable pero elimiar antes los registros con optionrollover == 1
     # y los registros que son de apertura del mercado (hora 16:00)
     #hacer el t-test en un bucle para todas las variables que no sean atm_ y otm_
@@ -207,7 +202,7 @@ def ttest_mean_stat_signif():
     # la variable objetivo que sean las que son otm_ y/o atm_ (bucle anidado
 
     if ttest.pvalue <= 0.05:
-        print x,y,ttest
+        print ((x,y,ttest))
 
     # para aquellas que el p-valor salga significativo calcular la media y eso es la "predicción" de la modifición
     # del movimiento del subyacente, del movimiento de la IV , del movimiento del precio de las opciones OTM, etc.

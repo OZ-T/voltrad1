@@ -6,10 +6,10 @@
 
 import glob
 import os
-import volsetup.config as config
+import mainteinance.config as config
 import pandas as pd
 from datetime import datetime
-from volsetup.logger import logger
+from core.logger import logger
 
 
 def run():

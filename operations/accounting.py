@@ -2,14 +2,13 @@
 """
 
 import datetime as dt
-import sqlite3
-
 import pandas as pd
-
-import volibutils.sync_client as ib
+import ibutils.sync_client as ib
 from core.misc_utilities import get_trading_close_holidays
-from volsetup import config
-from volsetup.logger import logger
+from core import config
+from core.logger import logger
+from persist.sqlite_methods import read_historical_acc_summary_from_sqllite, write_portfolio_to_sqllite, \
+    write_acc_summary_to_sqllite
 
 
 def read_acc_summary_and_portfolio_from_ib(client, globalconf, log):
@@ -22,71 +21,6 @@ def read_acc_summary_and_portfolio_from_ib(client, globalconf, log):
     log.info("acclist length [%d] " % (len(acclist)))
     log.info("summarylist length [%d]" % (len(summarylist)))
     return acclist, summarylist
-
-
-def read_historical_acc_summary_from_sqllite(globalconf, log, accountid):
-    """
-    Read from sqllite the complete history of the account summary and returns as dataframe
-    """
-    globalconf = config.GlobalConfig()
-    db_file = globalconf.config['sqllite']['account_db']
-    path = globalconf.config['paths']['data_folder']
-    store = sqlite3.connect(path + db_file)
-    df1 = pd.read_sql_query("SELECT * FROM " + accountid, store)
-    store.close()
-    return df1
-
-def read_historical_portfolio_from_sqllite(globalconf, log, accountid):
-    """
-    Read from sqllite the complete history of the portfolio and returns as dataframe
-    """
-    globalconf = config.GlobalConfig()
-    db_file = globalconf.config['sqllite']['portfolio_db']
-    path = globalconf.config['paths']['data_folder']
-    store = sqlite3.connect(path + db_file)
-    df1 = pd.read_sql_query("SELECT * FROM " + accountid, store)
-    df1['date1']=df1.index.map(lambda x: x.date())
-    df1= df1.drop_duplicates(subset=['date1'],keep='last')
-    store.close()
-    return df1
-
-
-def write_portfolio_to_sqllite(globalconf, log, dataframe):
-    """
-    Write to sqllite the portfolio snapshot passed as argument
-    """
-    log.info("Appending portfolio data to sqllite ... ")
-    globalconf = config.GlobalConfig()
-    db_file = globalconf.config['sqllite']['portfolio_db']
-    path = globalconf.config['paths']['data_folder']
-    store = sqlite3.connect(path + db_file)
-
-    names=dataframe['accountName'].unique().tolist()
-    for name in names:
-        joe = dataframe.loc[dataframe['accountName']==name]
-        # include this field which is sometimes used (options) to be used
-        if 'multiplier' not in joe.columns:
-            joe['multiplier'] = ""
-        joe.to_sql(name, store, if_exists='append')
-        store.close()
-
-
-def write_acc_summary_to_sqllite(globalconf, log, dataframe):
-    """
-    Write to sqllite the portfolio snapshot passed as argument
-    """
-    log.info("Appending account summary data to sqllite ... ")
-    globalconf = config.GlobalConfig()
-    db_file = globalconf.config['sqllite']['account_db']
-    path = globalconf.config['paths']['data_folder']
-    store = sqlite3.connect(path + db_file)
-
-    # get a list of names
-    names=dataframe['AccountCode_'].unique().tolist()
-    for name in names:
-        joe = dataframe.loc[dataframe['AccountCode_']==name]
-        joe.to_sql(name, store, if_exists='append')
-        store.close()
 
 
 def print_10_days_acc_summary_and_current_positions():
@@ -193,7 +127,6 @@ def store_acc_summary_and_portfolio_from_ib_to_db():
         dataframe2.drop('current_datetime',axis=1,inplace=True)
         dataframe2['current_datetime_txt'] = dataframe2.index.strftime("%Y-%m-%d %H:%M:%S")
         dataframe2.drop('Guarantee_C_USD', axis=1, inplace=True)
-        log.info(("XXXXXXXXXX"))
         write_acc_summary_to_sqllite(globalconf, log, dataframe2)
     else:
         log.info("Nothing to append to HDF5 ... ")

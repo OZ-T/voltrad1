@@ -42,13 +42,13 @@ summary:
 
 # pretrade analysis commands
 lstprc:
-   pointer: volibutils.orders_methods.list_prices_before_trade
+   pointer: ibutils.orders_methods.list_prices_before_trade
 lstchain:
   pointer: core.analytics_methods.print_chain
 lstspreadprc:
-   pointer: volibutils.orders_methods.list_spread_prices_before_trade
+   pointer: ibutils.orders_methods.list_spread_prices_before_trade
 chainprc:
-   pointer: volibutils.orders_methods.list_option_chain
+   pointer: ibutils.orders_methods.list_option_chain
 hist_opt:
    pointer: core.analytics_methods.print_historical_option
 
@@ -66,14 +66,14 @@ ecocal:
 
 # Order commands
 fill1opt:
-   pointer: volibutils.orders_methods.place_plain_order
+   pointer: ibutils.orders_methods.place_plain_order
    typecast:
       strike: float
       quantity: int
       lmtPrice: float
       orderId: int
 fill1spread:
-   pointer: volibutils.orders_methods.place_or_modif_spread_order
+   pointer: ibutils.orders_methods.place_or_modif_spread_order
    typecast:
       strike_l: float
       strike_s: float
@@ -81,13 +81,13 @@ fill1spread:
       lmtPrice: float
       orderId: int
 lstorders:
-   pointer: volibutils.orders_methods.list_open_orders
+   pointer: ibutils.orders_methods.list_open_orders
 cancel:
-   pointer: volibutils.orders_methods.cancel_open_order
+   pointer: ibutils.orders_methods.cancel_open_order
    typecast:
       orderId: int
 cancelall:
-   pointer: volibutils.orders_methods.cancel_all_open_orders
+   pointer: ibutils.orders_methods.cancel_all_open_orders
 # TIC portfolio management
 ticrpt:
    pointer: core.analytics_methods.print_tic_report
@@ -100,4 +100,4 @@ hist_under:
 batch_tic_rpt:
    pointer: core.shark_tic_report.run_report
 batch_hist_options:
-  pointer:  volquotes.historical_opt_chains_loader.run_reader
+  pointer:  quotes.historical_opt_chains_loader.run_reader

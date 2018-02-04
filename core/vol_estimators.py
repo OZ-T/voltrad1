@@ -46,12 +46,11 @@ import matplotlib.mlab as mlab
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt, mpld3
 import matplotlib.pyplot as pyplt
-from core.market_data_methods import read_market_data_from_sqllite, save_graph_to_db, save_lineplot_data_to_db
+from persist.sqlite_methods import read_market_data_from_sqllite, save_graph_to_db, save_lineplot_data_to_db
 from bokeh.models.annotations import Legend
 from bokeh.embed import components
 from bokeh.layouts import layout
-from bokeh.plotting import figure
-import core.market_data_methods as md
+import persist.sqlite_methods as md
 # references
 # http://stackoverflow.com/questions/4700614/how-to-put-the-legend-out-of-the-plot
 # http://www.blog.pythonlibrary.org/2010/09/04/python-101-how-to-open-a-file-or-program/
@@ -991,8 +990,8 @@ class VolatilityEstimator(object):
 
 
 if __name__ =="__mainKK__":
-    from volsetup import config
-    from volsetup.logger import logger
+    from core import config
+    from core.logger import logger
     log = logger("some testing ...")
     globalconf = config.GlobalConfig()
 
@@ -1010,8 +1009,8 @@ if __name__ =="__mainKK__":
     from bokeh.plotting import figure, show
 
 if __name__ == "__main__":
-    from volsetup import config
-    from volsetup.logger import logger
+    from mainteinance import config
+    from core.logger import logger
     log = logger("some testing ...")
     globalconf = config.GlobalConfig()
 

@@ -8,11 +8,10 @@ import pandas as pd
 from scipy import stats
 
 # In[50]:
-import core.market_data_methods
-import core.portfolio_and_account_data_methods as ra
-from core import misc_utilities as utils
-from volsetup import config
-from volsetup.logger import logger
+import persist.sqlite_methods
+import persist.portfolio_and_account_data_methods as ra
+from core import misc_utilities as utils, config
+from core.logger import logger
 
 # Regular trading hours in US (CEST time)
 # TODO: need to consider change saving time CEST vs CET
@@ -120,12 +119,12 @@ def run_shark_analytics(i_symbol, i_date, i_expiry, i_secType, accountid, scenar
     # precios de la cadena de opciones lo mas cerca posible de la fecha de valoracion
     # realmente saca todos los precios del dia anteriores a dicha fecha
     ###################################################################################################################
-    cadena_opcs= core.market_data_methods.extrae_options_chain(valuation_dttm=fecha_valoracion, symbol=i_symbol, expiry=i_expiry, secType=i_secType)
+    cadena_opcs= persist.sqlite_methods.extrae_options_chain(valuation_dttm=fecha_valoracion, symbol=i_symbol, expiry=i_expiry, secType=i_secType)
 
     # cadena de opciones en el cierre del dia anterior a la fecha de valoracion
     # realmente saca todos los precios del dia anteriores a dicha fecha
-    cadena_opcs_tminus1= core.market_data_methods.extrae_options_chain(valuation_dttm=fecha_val_tminus1,  #cierre del dia anterior
-                                                symbol=i_symbol, expiry=i_expiry, secType=i_secType)
+    cadena_opcs_tminus1= persist.sqlite_methods.extrae_options_chain(valuation_dttm=fecha_val_tminus1,  #cierre del dia anterior
+                                                                     symbol=i_symbol, expiry=i_expiry, secType=i_secType)
 
     if cadena_opcs.empty or cadena_opcs_tminus1.empty:
         log2.info("No data to analyze cadena_opcs.empty=%s cadena_opcs_tminus1.empty=%s. Exiting ..."
@@ -198,8 +197,8 @@ def run_shark_analytics(i_symbol, i_date, i_expiry, i_secType, accountid, scenar
     cadena_opcs_orders= pd.DataFrame()
     for x in lista_dttm_con_trades:
         log2.info("Extraer options chain para fecha trade: [%s] " % (str(x)))
-        temporal1 = core.market_data_methods.extrae_options_chain(valuation_dttm=x,
-                                                                  symbol=i_symbol, expiry=i_expiry, secType=i_secType)
+        temporal1 = persist.sqlite_methods.extrae_options_chain(valuation_dttm=x,
+                                                                symbol=i_symbol, expiry=i_expiry, secType=i_secType)
         cadena_opcs_orders=cadena_opcs_orders.append(temporal1)
 
     if cadena_opcs_orders.empty:
