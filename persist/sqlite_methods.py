@@ -667,3 +667,17 @@ def write_acc_summary_to_sqllite(globalconf, log, dataframe):
         joe = dataframe.loc[dataframe['AccountCode_']==name]
         joe.to_sql(name, store, if_exists='append')
         store.close()
+
+
+def write_economic_to_sqllite(globalconf, log, dataframe):
+    """
+    Write to sqllite the economic calendar data passed as argument
+    """
+    log.info("Appending economic event data to sqllite ... ")
+    globalconf = config.GlobalConfig()
+    db_file = globalconf.config['sqllite']['economic_db']
+    path = globalconf.config['paths']['data_folder']
+    store = sqlite3.connect(path + db_file)
+
+    dataframe.to_sql(name, store, if_exists='append')
+    store.close()
