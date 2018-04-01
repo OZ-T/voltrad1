@@ -4,27 +4,25 @@ import sqlite3
 import sys
 from datetime import datetime
 from time import sleep
-
+from collections import defaultdict
+from core.misc_utilities import make_dict, dictify
 import pandas as pd
 import pandas_datareader.data as web
 from pandas_datareader._utils import RemoteDataError
 from pytz import timezone
-
-import volsetup.config as config
-from core import misc_utilities as utils
-from core.portfolio_and_account_data_methods import OPT_NUM_FIELDS_LST
-from volibutils.RequestUnderlyingData import RequestUnderlyingData
-from volibutils.sync_client import IBClient
-from volsetup.logger import logger
-
+import core.config as config
+from core import misc_utilities as utils, config
+from persist.portfolio_and_account_data_methods import OPT_NUM_FIELDS_LST
+from ibutils.RequestUnderlyingData import RequestUnderlyingData
+from ibutils.sync_client import IBClient
+from core.logger import logger
+from persist.sqlite_methods import get_optchain_datasources
+from scipy import stats
 
 def get_columns(name,store):
     sql = "SELECT * FROM "+name +" WHERE 0=1"
     df = pd.read_sql_query(sql, store)
     return list(df.columns)
-
-from collections import defaultdict
-from core.misc_utilities import make_dict, dictify, timefunc
 
 
 def get_optchain_datasources(globalconf):
@@ -43,6 +41,7 @@ def get_optchain_datasources(globalconf):
                 #print(("dict_out: ",dict_out))
     return dictify(dict_out)
 
+
 def get_underlying_symbols(globalconf, db_type):
     # TODO: get this from configuration
     symbols = {
@@ -58,13 +57,8 @@ def get_expiries(globalconf, dsId, symbol):
     """
     get available expiries for options on the given underlying
     """
-
-    from core.market_data_methods import get_optchain_datasources
-    import volsetup.config as config
     dict = get_optchain_datasources(globalconf)
-
     expiries = dict[dsId][symbol]['expiries']
-
     return expiries
 
 
@@ -77,7 +71,6 @@ def get_market_db_file(globalconf,db_type,expiry):
         return1 = globalconf.config['sqllite']['optchain_ib_hist_db'].format(expiry)
     elif db_type == "underl_ib_hist":
         return1 = globalconf.config['sqllite']['underl_ib_hist_db']
-
     return return1
 
 
@@ -128,7 +121,7 @@ def formated_string_for_file(expiry, expiry_in_format):
     """
     return dt.datetime.strptime(expiry, expiry_in_format).strftime('%Y-%m')
 
-from scipy import stats
+
 def get_last_bars_from_rt(globalconf, log, symbol, last_date,last_record_stored):
     import core.misc_utilities as utils
     dt_now = dt.datetime.now()
@@ -142,7 +135,6 @@ def get_last_bars_from_rt(globalconf, log, symbol, last_date,last_record_stored)
         symbol = "SPY"
     else:
         field1 = 'lastUndPrice'
-
     max_expiry_available = max( get_expiries(globalconf=globalconf, dsId='optchain_ib_exp', symbol=symbol))
     df = read_market_data_from_sqllite(globalconf=globalconf, log=log,
                                           db_type="optchain_ib",symbol=symbol,expiry=max_expiry_available,
@@ -430,7 +422,6 @@ def read_lineplot_data_from_db(globalconf,log,symbol, last_date, estimator):
     db_name = globalconf.config['mongo']['graphs_datapoints_db']
     db = client[db_name]
     collection = db.collection
-    from pprint import pprint
     # dict1 = list(collection.find({u'symbol': symbol, u'estimator': estimator}))
     dict1 = db.collection.find_one(filter={u'symbol': symbol, u'estimator': estimator},
                                    sort=[("last_date", pymongo.DESCENDING),("save_dttm", pymongo.DESCENDING)])
@@ -610,3 +601,69 @@ def extrae_options_chain(valuation_dttm,symbol,expiry,secType):
     dataframe= dataframe.replace([-1],[0])
     dataframe = dataframe.add_prefix("prices_")
     return dataframe
+
+
+def read_historical_acc_summary_from_sqllite(globalconf, log, accountid):
+    """
+    Read from sqllite the complete history of the account summary and returns as dataframe
+    """
+    globalconf = config.GlobalConfig()
+    db_file = globalconf.config['sqllite']['account_db']
+    path = globalconf.config['paths']['data_folder']
+    store = sqlite3.connect(path + db_file)
+    df1 = pd.read_sql_query("SELECT * FROM " + accountid, store)
+    store.close()
+    return df1
+
+
+def read_historical_portfolio_from_sqllite(globalconf, log, accountid):
+    """
+    Read from sqllite the complete history of the portfolio and returns as dataframe
+    """
+    globalconf = config.GlobalConfig()
+    db_file = globalconf.config['sqllite']['portfolio_db']
+    path = globalconf.config['paths']['data_folder']
+    store = sqlite3.connect(path + db_file)
+    df1 = pd.read_sql_query("SELECT * FROM " + accountid, store)
+    df1['date1']=df1.index.map(lambda x: x.date())
+    df1= df1.drop_duplicates(subset=['date1'],keep='last')
+    store.close()
+    return df1
+
+
+def write_portfolio_to_sqllite(globalconf, log, dataframe):
+    """
+    Write to sqllite the portfolio snapshot passed as argument
+    """
+    log.info("Appending portfolio data to sqllite ... ")
+    globalconf = config.GlobalConfig()
+    db_file = globalconf.config['sqllite']['portfolio_db']
+    path = globalconf.config['paths']['data_folder']
+    store = sqlite3.connect(path + db_file)
+
+    names=dataframe['accountName'].unique().tolist()
+    for name in names:
+        joe = dataframe.loc[dataframe['accountName']==name]
+        # include this field which is sometimes used (options) to be used
+        if 'multiplier' not in joe.columns:
+            joe['multiplier'] = ""
+        joe.to_sql(name, store, if_exists='append')
+        store.close()
+
+
+def write_acc_summary_to_sqllite(globalconf, log, dataframe):
+    """
+    Write to sqllite the portfolio snapshot passed as argument
+    """
+    log.info("Appending account summary data to sqllite ... ")
+    globalconf = config.GlobalConfig()
+    db_file = globalconf.config['sqllite']['account_db']
+    path = globalconf.config['paths']['data_folder']
+    store = sqlite3.connect(path + db_file)
+
+    # get a list of names
+    names=dataframe['AccountCode_'].unique().tolist()
+    for name in names:
+        joe = dataframe.loc[dataframe['AccountCode_']==name]
+        joe.to_sql(name, store, if_exists='append')
+        store.close()

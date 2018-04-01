@@ -8,19 +8,12 @@ entry:
 50 23 * * 1,2,3,4,5 python /home/david/python/voltrad1/volquotes/yahoo_option_chains_reader_fix_beautifulsoup.py
 
 """
-import platform
 import datetime as dt
-import numpy as np
 import urllib
-import time
 import pandas as pd
-import os
-from volsetup import config
-import sys
+from core import config
 from BeautifulSoup import BeautifulSoup
-import re
-from datetime import datetime
-from volsetup.logger import logger
+from core.logger import logger
 
 if __name__ == "__main__":
 

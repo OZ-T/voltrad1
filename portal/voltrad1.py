@@ -1,17 +1,14 @@
 import datetime as dt
 import os
-
 import pandas as pd
-from flask import Flask, request
+from flask import Flask
 from flask import jsonify
 from flask.json import JSONEncoder
 from flask_restful import reqparse, Api, Resource
-
-import core.market_data_methods
-from core import market_data_methods as md
-from volsetup import config
-from volsetup.logger import logger
-
+import persist.sqlite_methods
+from core import config
+from persist import sqlite_methods as md
+from core.logger import logger
 import graphene
 from flask_graphql import GraphQLView
 
@@ -21,43 +18,16 @@ class MiniJSONEncoder(JSONEncoder):
     item_separator = ','
     key_separator = ':'
 
-
 globalconf = config.GlobalConfig()
 log = logger("Flask REST API ...")
 DATA_DIR = globalconf.config['paths']['nginx_static_folder']
-exts = (".png")
 parser = reqparse.RequestParser()
 parser.add_argument('task')
+
 app = Flask(__name__)
 app.json_encoder = MiniJSONEncoder
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
 api = Api(app)
-
-
-class Test(Resource):
-    def get(self):
-        return "Hello!"
-
-
-class WebDirectory(Resource):
-    def get(self, name):
-        dir = os.path.abspath(DATA_DIR + "/" + name)
-        # print (dir)
-        # walk through data directory
-        list = []
-        for root, dirs, files in os.walk(dir):
-            for name in files:
-                filename = os.path.join(root,name)
-                if filename.lower().endswith(exts):
-                    # print ("filename" , filename)
-                    list.append(name)
-        data = jsonify(result=list)
-        # js = json.dumps({"result":list})
-        # print("js: " + js)
-        # print("data: " + str(data))
-        # resp = Response(js, status=200, mimetype='application/json')
-        return data
-        # return resp
 
 
 class OptChainMarketDataInfo(Resource):
@@ -95,8 +65,8 @@ class VolGraph(Resource):
         today = dt.date.today()
         last_date1 = today.strftime('%Y%m%d')
 
-        div,script = core.market_data_methods.read_graph_from_db(globalconf=globalconf, log=log, symbol=symbol,
-                                                                 last_date=last_date1, estimator=estimator, name=name)
+        div,script = persist.sqlite_methods.read_graph_from_db(globalconf=globalconf, log=log, symbol=symbol,
+                                                               last_date=last_date1, estimator=estimator, name=name)
         JSONP_data = jsonify({"div":div,"script":script})
         return JSONP_data
 
@@ -105,8 +75,8 @@ class VolLinePoints(Resource):
         today = dt.date.today()
         last_date1 = today.strftime('%Y%m%d')
 
-        dict = core.market_data_methods.read_lineplot_data_from_db(globalconf=globalconf, log=log, symbol=symbol,
-                                                           last_date=last_date1, estimator=estimator)
+        dict = persist.sqlite_methods.read_lineplot_data_from_db(globalconf=globalconf, log=log, symbol=symbol,
+                                                                 last_date=last_date1, estimator=estimator)
         JSONP_data = jsonify(dict)
         return JSONP_data
 
@@ -141,7 +111,7 @@ view_func = GraphQLView.as_view('graphql', schema=graphene.Schema(query=Query))
 app.add_url_rule('/tic/graphql', view_func=view_func)
 
 from portal.accesscontroldecorator import *
-import persist.data_access as da
+import persist.document_methods as da
 dir = os.path.abspath(DATA_DIR)
 
 class Timers(Resource):

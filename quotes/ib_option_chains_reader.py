@@ -3,12 +3,11 @@ import datetime as dt
 import numpy as np
 import pandas as pd
 
-import volibutils.sync_client as ib
-from core import misc_utilities as utils
-from core.market_data_methods import write_market_data_to_sqllite
-from volibutils.RequestOptionData import RequestOptionData
-from volibutils.RequestUnderlyingData import RequestUnderlyingData
-from volsetup import config
+import ibutils.sync_client as ib
+from core import misc_utilities as utils, config
+from persist.sqlite_methods import write_market_data_to_sqllite
+from ibutils.RequestOptionData import RequestOptionData
+from ibutils.RequestUnderlyingData import RequestUnderlyingData
 
 
 def run_reader():

@@ -2,11 +2,9 @@
 #20-oct-2016 Fix error: 
 #  ValueError: Trying to store a string with len [3] in [multiplier] column but
 #  this column has a limit of [2]!
-import sys
-import volsetup.config as config
+import core.config as config
 import pandas as pd
-import datetime as dt
-import numpy as np
+
 #sys.path.append('/home/david/python/voltrad1')
 
 globalconf = config.GlobalConfig()

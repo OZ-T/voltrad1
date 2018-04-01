@@ -13,20 +13,12 @@ La existencia de estos valores duplicados debe manejarse en los programas analit
 50 23 * * 1,2,3,4,5 python /home/david/python/voltrad1/volquotes/yahoo_biz_economic_calendar_us.py
 
 """
-import platform
 import datetime as dt
-import numpy as np
-import urllib
-import time
 import pandas as pd
-import os
-from volsetup import config
-import sys
-from bs4 import BeautifulSoup
-import re
+from core import config
 from datetime import datetime
 from time import sleep
-from volsetup.logger import logger
+from core.logger import logger
 import requests
 import bs4
 

@@ -5,13 +5,9 @@
 #  this column has a limit of [XXX]!
 
 import glob
-import fnmatch
 import os
-import sys
-import volsetup.config as config
+import core.config as config
 import pandas as pd
-import datetime as dt
-import numpy as np
 
 # path = 'C:/Users/David/data/'
 # path = '/home/david/data/'

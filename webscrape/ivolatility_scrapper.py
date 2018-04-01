@@ -1,11 +1,10 @@
 import urllib2
 from bs4 import BeautifulSoup
-import h5py as h5
-from volsetup import config
+from core import config
 import datetime as dt
 import numpy as np
 import pandas as pd
-from volsetup.logger import logger
+from core.logger import logger
 
 
 #   Han modificado la WEB, cmbiar el codigo

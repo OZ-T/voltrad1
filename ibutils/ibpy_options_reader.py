@@ -4,12 +4,12 @@ en lugar de la utilizada antes swigibpy
 
 """
 
-from ib.opt import ibConnection, message
+from ib.opt import ibConnection
 from ib.ext.Contract import Contract
 import pandas as pd
 from time import sleep
 from collections import defaultdict
-from volsetup import config
+from core import config
 import sys
 from datetime import datetime
 

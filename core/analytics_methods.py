@@ -15,11 +15,11 @@ from numpy import log, sqrt
 from numpy.lib.stride_tricks import as_strided
 from pylab import axhline, figure, legend, plot, show
 
-import core.market_data_methods
-from core import portfolio_and_account_data_methods as ra, market_data_methods as md
-from core.market_data_methods import get_contract_details, read_graph_from_db, save_graph_to_db
-from volsetup import config
-from volsetup.logger import logger
+import persist.sqlite_methods
+from core import config
+from persist import sqlite_methods as md, portfolio_and_account_data_methods as ra
+from persist.sqlite_methods import read_graph_from_db, save_graph_to_db
+from core.logger import logger
 
 warnings.filterwarnings("ignore")
 HISTORY_LIMIT = 20
@@ -1055,7 +1055,7 @@ def lag(data):
 
 
 
-from core.market_data_methods import get_expiries, read_market_data_from_sqllite
+from persist.sqlite_methods import read_market_data_from_sqllite
 
 def print_chain(val_dt,symbol,call_d_range,put_d_range,expiry,type):
     """
@@ -1140,7 +1140,7 @@ def print_ecalendar():
     print(end)
 
     client , log_analytics, globalconf = init_func()
-    dataframe = core.market_data_methods.read_biz_calendar(start_dttm=start, valuation_dttm=end)
+    dataframe = persist.sqlite_methods.read_biz_calendar(start_dttm=start, valuation_dttm=end)
     print (dataframe)
     end_func(client)
 

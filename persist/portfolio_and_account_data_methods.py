@@ -2,17 +2,15 @@
 """
 
 from datetime import datetime, timedelta
-from operations.accounting  import read_historical_acc_summary_from_sqllite
+from persist.sqlite_methods import read_historical_acc_summary_from_sqllite
 import numpy as np
 import pandas as pd
-from pytz import timezone
 # import pandas_datareader.data as web
-from core.opt_pricing_methods import bsm_mcs_euro
-from volsetup import config
-from volsetup.logger import logger
+from valuations.opt_pricing_methods import bsm_mcs_euro
+import core.config as config
+globalconf = config.GlobalConfig()
 
-
-OPT_NUM_FIELDS_LST = [u'CallOI', u'PutOI', u'Volume', u'askDelta', u'askGamma', 
+OPT_NUM_FIELDS_LST = [u'CallOI', u'PutOI', u'Volume', u'askDelta', u'askGamma',
                    u'askImpliedVol', u'askOptPrice', u'askPrice', u'askPvDividend',
                    u'askSize', u'askTheta', u'askUndPrice', u'askVega', u'bidDelta',
                    u'bidGamma', u'bidImpliedVol', u'bidOptPrice', u'bidPrice',
@@ -23,54 +21,6 @@ OPT_NUM_FIELDS_LST = [u'CallOI', u'PutOI', u'Volume', u'askDelta', u'askGamma',
                    u'modelDelta', u'modelGamma', u'modelImpliedVol', u'modelOptPrice',
                    u'modelPvDividend', u'modelTheta', u'modelUndPrice', u'modelVega',
                    u'multiplier', u'strike']
-
-
-def extrae_options_chain2(start_dttm,end_dttm,symbol,expiry,secType):
-    """
-        extraer de la hdf5 los datos de cotizaciones entre dos fechas
-        imputa valores ausente con el metodo ffill de pandas dataframe dentro del dia
-    """
-    store = globalconf.open_ib_h5_store()
-    store_txt = store.filename
-    log.info("extrae_options_chain2 [%s]: start [%s] end [%s] " % (str(store_txt), str(start_dttm), str(end_dttm)))
-    dataframe = pd.DataFrame()
-    sym1= store.get_node("/"+symbol)
-    where1=['symbol==' + symbol,
-            'secType==' + secType,
-            'current_date>'     + str(start_dttm.year)
-                                 + str(start_dttm.month).zfill(2)
-                                 + str(start_dttm.day).zfill(2),
-            'current_date<=' + str(end_dttm.year)
-                                 + str(end_dttm.month).zfill(2)
-                                 + str(end_dttm.day).zfill(2)
-            ]
-    df1 = store.select(sym1._v_pathname, where=where1)
-    log.info("Number of rows loaded from h5 option chain file: [%d] where=[%s]" % ( len(df1) , str(where1)))
-    df1['load_dttm'] = pd.to_datetime(df1['current_datetime'], errors='coerce')  # DEPRECATED remove warning coerce=True)
-    df1['current_datetime_txt'] = df1.index.strftime("%Y-%m-%d %H:%M:%S")
-    log.info("append data frame ... ")
-    dataframe = dataframe.append(df1)
-    log.info("close store h5 ... ")
-    store.close()
-
-    dataframe[OPT_NUM_FIELDS_LST] = dataframe[OPT_NUM_FIELDS_LST].apply(pd.to_numeric)
-    dataframe['load_dttm'] = dataframe['load_dttm'].apply(pd.to_datetime)
-    # imputar valores ausentes con el valor justo anterior (para este dia)
-    log.info("drop_duplicates ... ")
-    dataframe = dataframe.drop_duplicates(subset=['right','strike','expiry','load_dttm'], keep='last')
-    log.info("sort_values ... ")
-    dataframe = dataframe.sort_values(by=['right','strike','expiry','load_dttm'],
-                                      ascending=[True, True, True, True]).groupby(
-                                        ['right','strike','expiry'], #,'load_dttm'],
-                                      as_index=False).apply(lambda group: group.ffill())
-    dataframe= dataframe.replace([-1],[0])
-
-    localtz = timezone('Europe/Madrid')
-    log.info("localize tz ... ")
-    dataframe.index = dataframe.index.map(lambda x: localtz.localize(x))
-    dataframe.index = dataframe.index.map(lambda x: x.replace(tzinfo=None))
-
-    return dataframe
 
 
 def extrae_last_date_abt(con,table,field):

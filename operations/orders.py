@@ -6,10 +6,10 @@ import sqlite3
 
 import pandas as pd
 
-import volibutils.sync_client as ib
-import volsetup.config as config
+import ibutils.sync_client as ib
+import core.config as config
 from core import misc_utilities as utils
-from volsetup.logger import logger
+from core.logger import logger
 
 
 def write_orders_to_sqllite(globalconf, log, dataframe):

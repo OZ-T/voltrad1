@@ -6,17 +6,19 @@ from datetime import datetime
 from time import sleep
 
 import pandas as pd
+from pytz import timezone
 from tables.exceptions import NaturalNameWarning
 
-import core.market_data_methods as mkt
+import persist.sqlite_methods
+import persist.sqlite_methods as mkt
 import operations.accounting as acc
 import operations.orders as orde
-import volibutils.sync_client as ib
-from core import misc_utilities
-from volibutils.RequestUnderlyingData import RequestUnderlyingData
-from volibutils.sync_client import IBClient
-from volsetup import config
-from volsetup.logger import logger
+import ibutils.sync_client as ib
+from core import misc_utilities, config
+from ibutils.RequestUnderlyingData import RequestUnderlyingData
+from ibutils.sync_client import IBClient
+from core.logger import logger
+from persist.portfolio_and_account_data_methods import globalconf, OPT_NUM_FIELDS_LST
 
 
 def migrate_h5(what_to_migrate,filter_symbol):
@@ -199,7 +201,7 @@ def migrate_h5_to_sqllite_portfolio():
                     log.info(("accountid: " + accountid))
                     df1 = store_file.select(node1._v_pathname)
                     df1.set_index(keys=['conId'], drop=True, inplace=True)
-                    acc.write_portfolio_to_sqllite(globalconf, log, df1)
+                    persist.sqlite_methods.write_portfolio_to_sqllite(globalconf, log, df1)
                 store_file.close()
 
 
@@ -237,7 +239,7 @@ def migrate_h5_to_sqllite_acc_summary():
                 if node1:
                     log.info(("accountid: " + accountid))
                     df1 = store_file.select(node1._v_pathname)
-                    acc.write_acc_summary_to_sqllite(globalconf, log, df1)
+                    persist.sqlite_methods.write_acc_summary_to_sqllite(globalconf, log, df1)
                 store_file.close()
 
 
@@ -663,3 +665,51 @@ def historical_data_loader():
 
     client.disconnect()
     f.close()  # Close file
+
+
+def extrae_options_chain2(start_dttm,end_dttm,symbol,expiry,secType):
+    """
+        extraer de la hdf5 los datos de cotizaciones entre dos fechas
+        imputa valores ausente con el metodo ffill de pandas dataframe dentro del dia
+    """
+    store = globalconf.open_ib_h5_store()
+    store_txt = store.filename
+    log.info("extrae_options_chain2 [%s]: start [%s] end [%s] " % (str(store_txt), str(start_dttm), str(end_dttm)))
+    dataframe = pd.DataFrame()
+    sym1= store.get_node("/"+symbol)
+    where1=['symbol==' + symbol,
+            'secType==' + secType,
+            'current_date>'     + str(start_dttm.year)
+                                 + str(start_dttm.month).zfill(2)
+                                 + str(start_dttm.day).zfill(2),
+            'current_date<=' + str(end_dttm.year)
+                                 + str(end_dttm.month).zfill(2)
+                                 + str(end_dttm.day).zfill(2)
+            ]
+    df1 = store.select(sym1._v_pathname, where=where1)
+    log.info("Number of rows loaded from h5 option chain file: [%d] where=[%s]" % ( len(df1) , str(where1)))
+    df1['load_dttm'] = pd.to_datetime(df1['current_datetime'], errors='coerce')  # DEPRECATED remove warning coerce=True)
+    df1['current_datetime_txt'] = df1.index.strftime("%Y-%m-%d %H:%M:%S")
+    log.info("append data frame ... ")
+    dataframe = dataframe.append(df1)
+    log.info("close store h5 ... ")
+    store.close()
+
+    dataframe[OPT_NUM_FIELDS_LST] = dataframe[OPT_NUM_FIELDS_LST].apply(pd.to_numeric)
+    dataframe['load_dttm'] = dataframe['load_dttm'].apply(pd.to_datetime)
+    # imputar valores ausentes con el valor justo anterior (para este dia)
+    log.info("drop_duplicates ... ")
+    dataframe = dataframe.drop_duplicates(subset=['right','strike','expiry','load_dttm'], keep='last')
+    log.info("sort_values ... ")
+    dataframe = dataframe.sort_values(by=['right','strike','expiry','load_dttm'],
+                                      ascending=[True, True, True, True]).groupby(
+                                        ['right','strike','expiry'], #,'load_dttm'],
+                                      as_index=False).apply(lambda group: group.ffill())
+    dataframe= dataframe.replace([-1],[0])
+
+    localtz = timezone('Europe/Madrid')
+    log.info("localize tz ... ")
+    dataframe.index = dataframe.index.map(lambda x: localtz.localize(x))
+    dataframe.index = dataframe.index.map(lambda x: x.replace(tzinfo=None))
+
+    return dataframe

@@ -9,12 +9,9 @@ try:
         import configparser
 except:
         from six.moves import configparser
-import h5py as h5
 from sys import platform
 import sqlalchemy
-from sqlalchemy import Table, Column, Integer, String, ForeignKey
-from datetime import datetime, timedelta
-from volsetup.logger import logger
+from core.logger import logger
 import sqlite3
 
 class GlobalConfig(object):

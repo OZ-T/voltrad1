@@ -3,10 +3,10 @@
 """
 import datetime as dt
 import pandas as pd
-from volsetup import config
+from core import config
 from datetime import datetime
 from time import sleep
-from volsetup.logger import logger
+from core.logger import logger
 
 def run_reader():
     globalconf = config.GlobalConfig()
