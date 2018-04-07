@@ -1,19 +1,17 @@
 # Used in crontab for automated data gathering
 batch_acc_to_db:
-  pointer:  operations.accounting.store_acc_summary_and_portfolio_from_ib_to_db
+  pointer:  operations.crud.store_acc_summary_and_portfolio_from_ib_to_db
 batch_orders_to_db:
-  pointer:  operations.orders.store_orders_from_ib_to_db
+  pointer:  persist.sqlite_methods.store_orders_from_ib_to_db
 batch_optchain_yhoo_to_db:
-  pointer:  core.market_data_methods.store_optchain_yahoo_to_db
+  pointer:  persist.sqlite_methods.store_optchain_yahoo_to_db
 batch_underl_ib_to_db:
-  pointer:  core.market_data_methods.store_underlying_ib_to_db
+  pointer:  persist.sqlite_methods.store_underlying_ib_to_db
 batch_itrm_wraps:
   pointer:  webscrape.market_wrap_reader.batch_run_reader
-
 # One shot jobs for initial loading
 init_itrm_wraps:
   pointer:  webscrape.market_wrap_reader.first_run
-
 
 # Web reporting generation
 run_dq_report_market:
@@ -27,7 +25,7 @@ migrate_h5:
   pointer:  core.h5_legacy_methods.migrate_h5
 # Operations
 print_acc_port:
-  pointer:  operations.accounting.print_10_days_acc_summary_and_current_positions
+  pointer:  operations.crud.print_10_days_acc_summary_and_current_positions
 # trend and risk indicators
 coppock:
    pointer: core.analytics_methods.print_coppock_diario
