@@ -30,7 +30,7 @@ def init_func():
     Initialization method.
     Initialize both global config object and display width for console printing
     """
-    globalconf = config.GlobalConfig(level=logger.DEBUG)
+    globalconf = config.GlobalConfig()
     log = globalconf.log
     client = None
     # this is to try to fit in one line each row od a dataframe when printing to console

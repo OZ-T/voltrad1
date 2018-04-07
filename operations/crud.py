@@ -23,7 +23,7 @@ def read_acc_summary_and_portfolio_from_ib(client, globalconf, log):
     return acclist, summarylist
 
 
-def print_10_days_acc_summary_and_current_positions():
+def read_10_days_acc_summary_and_current_positions():
     """ Summary information about account and portfolio for last 10 days is read from db and printed to console also."""
     days = 10
     globalconf = config.GlobalConfig(level=logger.ERROR)

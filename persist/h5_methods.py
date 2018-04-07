@@ -11,8 +11,7 @@ from tables.exceptions import NaturalNameWarning
 
 import persist.sqlite_methods
 import persist.sqlite_methods as mkt
-import operations.accounting as acc
-import operations.orders as orde
+import operations.crud as acc
 import ibutils.sync_client as ib
 from core import misc_utilities, config
 from ibutils.RequestUnderlyingData import RequestUnderlyingData
@@ -161,7 +160,7 @@ def migrate_h5_to_sqllite_orders():
                     log.info(("accountid: " + accountid))
                     df1 = store_file.select(node1._v_pathname)
                     df1.set_index(keys=['execid'], drop=True, inplace=True)
-                    orde.write_orders_to_sqllite(globalconf, log, df1)
+                    persist.sqlite_methods.write_orders_to_sqllite(globalconf, log, df1)
                 store_file.close()
 
 

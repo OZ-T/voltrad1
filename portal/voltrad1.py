@@ -172,4 +172,186 @@ if __name__ == '__main__':
 
 
 
+from flask import Flask, jsonify, request
+from flask_graphql import GraphQLView
+from core.models import db_session
+from core.schema import schema, Department
+from core.security import get_secret_key, identify, authenticate, create_user
+from datetime import timedelta
+from flask_jwt_extended import (
+    JWTManager, jwt_required, create_access_token, jwt_optional,
+    get_jwt_identity, get_jwt_claims
+)
+
+
+app = Flask(__name__)
+# Setup the Flask-JWT-Extended extension
+app.config['JWT_SECRET_KEY'] = get_secret_key()
+jwt = JWTManager(app)
+
+
+# Provide a method to create access tokens. The create_access_token() function is used to actually
+# generate the token, and you can return it to the caller however you choose.
+@app.route('/login', methods=['POST'])
+def login():
+    if not request.is_json:
+        return jsonify({"msg": "Missing JSON in request"}), 400
+
+    username = request.json.get('username', None)
+    password = request.json.get('password', None)
+
+    if not username:
+        return jsonify({"msg": "Missing username parameter"}), 400
+    if not password:
+        return jsonify({"msg": "Missing password parameter"}), 400
+
+    user = authenticate(username, password)
+
+    if user is None:
+        return jsonify({"msg": "Bad username or password"}), 401
+
+    # We can now pass this complex object directly to the create_access_token method. This will allow us to access
+    # the properties of this object in the user_claims_loader function, and get the identity of this object from the
+    # user_identity_loader function.
+    access_token = create_access_token(identity=user)
+    ret = {'access_token': access_token}
+    return jsonify(ret), 200
+
+
+@app.route('/check_token', methods=['GET'])
+@jwt_required
+def check_tocken():
+    print("check_tocken called")
+    print(request.headers)
+    ret = {
+        'valid': 'true'
+    }
+    return jsonify(ret), 200
+
+@app.route('/register', methods=['POST'])
+def register():
+    if not request.is_json:
+        return jsonify({"msg": "Missing JSON in request"}), 400
+
+    username = request.json.get('username', None)
+    password = request.json.get('password', None)
+    name = request.json.get('name', None)
+    surname = request.json.get('surname', None)
+    email = request.json.get('email', None)
+
+    if not username:
+        return jsonify({"msg": "Missing username parameter"}), 400
+    if not password:
+        return jsonify({"msg": "Missing password parameter"}), 400
+    #if not name:
+    #    return jsonify({"msg": "Missing name parameter"}), 400
+    #if not surname:
+    #    return jsonify({"msg": "Missing surname parameter"}), 400
+    if not email:
+        return jsonify({"msg": "Missing email parameter"}), 400
+
+    user = None
+    try:
+      user = create_user(name,username,surname,email,password)
+    except (RuntimeError, TypeError, NameError):
+        return jsonify({"msg": "Bad username or password"}), 401
+
+    if user is None:
+        return jsonify({"msg": "Duplicate username or email"}), 401
+
+
+    access_token = create_access_token(identity=user)
+    ret = {'access_token': access_token}
+    return jsonify(ret), 200
+
+
+
+# Create a function that will be called whenever create_access_token is used. It will take whatever object is passed into the
+# create_access_token method, and lets us define what custom claims should be added to the access token.
+@jwt.user_claims_loader
+def add_claims_to_access_token(user):
+    return {'plan': user.user_plan,'id': user.id}
+
+# Create a function that will be called whenever create_access_token is used. It will take whatever object is passed into the
+# create_access_token method, and lets us define what the identity of the access token should be.
+@jwt.user_identity_loader
+def user_identity_lookup(user):
+    return user.username
+
+
+
+
+# Protect a view with jwt_required, which requires a valid access token in the request to access.
+@app.route('/protected', methods=['GET'])
+@jwt_required
+def protected():
+    ret = {
+        # Access the identity of the current user with get_jwt_identity
+        'current_identity': get_jwt_identity(),  # test
+        'current_roles': get_jwt_claims()  # ['foo', 'bar']
+    }
+    return jsonify(ret), 200
+
+
+@app.route('/partially-protected', methods=['GET'])
+@jwt_optional
+def partially_protected():
+    # If no JWT is sent in with the request, get_jwt_identity()
+    # will return None
+    current_user = get_jwt_identity()
+    if current_user:
+        return jsonify(logged_in_as=current_user), 200
+    else:
+        return jsonify(loggeed_in_as='anonymous user'), 200
+
+
+#############################################################################################################
+# GraphQL
+#############################################################################################################
+
+def graphql_token_view():
+    view = GraphQLView.as_view('protected-graphql', schema=schema, graphiql=True)
+    view = jwt_required(view)
+    return view
+
+app.add_url_rule('/protected-graphql', view_func=graphql_token_view())
+
+app.add_url_rule(
+    '/graphql', view_func=GraphQLView.as_view('graphql',schema=schema,graphiql=True # for having the GraphiQL interface
+    )
+)
+
+"""
+Go to localhost:5000/graphql 
+  {
+    allUsers {
+      edges {
+        node {
+          id
+          name
+          activities {
+            edges {
+              node {
+                id
+                description
+                timestamp
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+"""
+
+
+@app.teardown_appcontext
+def shutdown_session(exception=None):
+    db_session.remove()
+
+if __name__ == '__main__':
+    app.run()
+
+
 
