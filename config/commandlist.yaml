@@ -12,6 +12,11 @@ batch_itrm_wraps:
 # One shot jobs for initial loading
 init_itrm_wraps:
   pointer:  webscrape.market_wrap_reader.first_run
+ecocal:
+   pointer: webscrape.yahoo_biz_economic_calendar_us.batch_run_reader
+init_ecocal:
+   pointer: webscrape.yahoo_biz_economic_calendar_us.first_run
+
 
 # Web reporting generation
 run_dq_report_market:
@@ -59,8 +64,6 @@ accsnap:
 
 ##### NEED TO REVIEW
 
-ecocal:
-   pointer: core.analytics_methods.print_ecalendar
 
 # Order commands
 fill1opt:

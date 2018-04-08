@@ -15,74 +15,38 @@ from core import config
 from datetime import datetime
 from time import sleep
 from core.logger import logger
-import requests
-import bs4
-
-# usar esta URL
-# https://finance.yahoo.com/calendar/economic?from=2017-06-04&to=2017-06-10&day=2017-06-06
-#
-
-
-def run_reader():
-    globalconf = config.GlobalConfig()
-    log = logger("yahoo biz eco calendar download")
-    log.info("Getting calendar from yahoo ... ")
-    wait_secs = 10
-    now = dt.datetime.now()  # Get current time
-    c_year = str(now.year)
-    #c_year = '2015'
-    f = globalconf.open_economic_calendar_h5_store()  # open database file
-    load_dttm = now.strftime('%Y-%m-%d %H:%M:%S')
-    # Esto es para la carga incremental inicial
-    #weeks = ["%.2d" % i for i in range(35)]
-    weeks = [ datetime.today().strftime("%W") ]
-    dataframe = pd.DataFrame()
-
-    for week in weeks:
-        log.info ("yahoo economic calendar downloader [%s] week=[%s]" % (dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),week))
-        dataframe = dataframe.append(temp1)
-        sleep(wait_secs)
-
-    dataframe = dataframe.drop_duplicates()
-    dataframe['load_dttm'] = load_dttm
-
-# write_economic_to_sqllite(globalconf, log, dataframe)
-
-if __name__=="__main__":
-    run_reader()
-
-
-'''
-Yahoo! Economic Calendar scraper
-'''
 import datetime
 import json
 import logging
 import requests
+import locale
+import persist.sqlite_methods as da
+from core import misc_utilities as utils, config
+from requests.exceptions import ContentDecodingError
 
+'''
+Yahoo! Economic Calendar scraper
+'''
+
+globalconf = config.GlobalConfig()
+log = globalconf.get_logger()
 BASE_URL = 'http://finance.yahoo.com/calendar/economic'
-
-# Logging config
-logger = logging.getLogger()
-handler = logging.StreamHandler()
-formatter = logging.Formatter(
-    '%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
-handler.setFormatter(formatter)
-logger.addHandler(handler)
-logger.setLevel(logging.ERROR)
-
 
 class YahooEconomicCalendar(object):
     """
     This is the class for fetching earnings data from Yahoo! Finance
     """
-
     def _get_data_dict(self, url):
-        page = requests.get(url)
-        page_content = page.content
-        page_data_string = [row for row in page_content.split(
-            '\n') if row.startswith('root.App.main = ')][0][:-1]
-        page_data_string = page_data_string.split('root.App.main = ', 1)[1]
+        page_data_string = None
+        try:
+            page = requests.get(url)
+            page_content = page.content
+            page_data_string = [row for row in page_content.decode('utf8').split('\n') if row.startswith('root.App.main = ')][0][:-1]
+            page_data_string = page_data_string.split('root.App.main = ', 1)[1]
+        except ContentDecodingError:
+            print("ContentDecodingError")
+            pass
+
         return json.loads(page_data_string)
 
     def economic_on(self, date):
@@ -104,7 +68,7 @@ class YahooEconomicCalendar(object):
             raise TypeError(
                 'Date should be a datetime.date object')
         date_str = date.strftime('%Y-%m-%d')
-        logger.debug('Fetching earnings data for %s', date_str)
+        log.info('Fetching earnings data for ' + date_str)
         dated_url = '{0}?day={1}'.format(BASE_URL, date_str)
         page_data_dict = self._get_data_dict(dated_url)
         return page_data_dict['context']['dispatcher']['stores']['ScreenerResultsStore']['results']['rows']
@@ -142,12 +106,50 @@ class YahooEconomicCalendar(object):
         return economic_data
 
 
-if __name__ == '__main__':
-    date_from = datetime.datetime.strptime(
-        'May 5 2017  10:00AM', '%b %d %Y %I:%M%p')
-    date_to = datetime.datetime.strptime(
-        'May 8 2017  1:00PM', '%b %d %Y %I:%M%p')
+
+
+def first_run():
+    date1 = dt.datetime(year=2018,month=3,day=1,hour=23,minute=55)
+    end = dt.datetime.now()
+    while date1 < end:
+        run_reader(now1=date1)
+        date1 = date1 + dt.timedelta(days=1)
+        sleep(3)
+
+def batch_run_reader():
+    run_reader(now1=None)
+
+def run_reader(now1 = None):
+    locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
+    now = dt.datetime.now()  # + dt.timedelta(days=-4)
+    if now1:
+        now = now1
+    weekday = now.strftime("%A").lower()
+    log.info(("Getting data from yahoo ... ",now))
+    if (  weekday in ("saturday","sunday")  or
+        now.date() in utils.get_trading_close_holidays(dt.datetime.now().year)):
+        log.info("This is a US Calendar holiday or weekend. Ending process ... ")
+        return
     yec = YahooEconomicCalendar()
-    print yec.economic_on(date_from)
-    print yec.economic_between(date_from, date_to)
+    dataframe = pd.DataFrame( yec.economic_on(now) )
+    da.write_ecocal_to_sqllite(globalconf, log, dataframe)
+
+
+if __name__ == '__main__':
+    #run_reader()
+    first_run()
+
+    #date_from = datetime.datetime.strptime(
+    #    'Apr 1 2018  10:00AM', '%b %d %Y %I:%M%p')
+    #date_to = datetime.datetime.strptime(
+    #    'Apr 7 2018  1:00PM', '%b %d %Y %I:%M%p')
+    #yec = YahooEconomicCalendar()
+    #print (yec.economic_on(date_from))
+    #print (yec.economic_between(date_from, date_to))
+
+
+
+
+
+
 

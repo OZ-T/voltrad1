@@ -134,8 +134,9 @@ def store_acc_summary_and_portfolio_from_ib_to_db():
     client.disconnect()
 
 if __name__=="__main__":
-    pass
+    #pass
     #consolidate_anciliary_h5_portfolio()
     #run_get_portfolio_data()
     #print_portfolio_from_ib()
     #print_10_days_acc_summary_and_current_positions()
+    store_acc_summary_and_portfolio_from_ib_to_db()

@@ -665,6 +665,21 @@ def write_portfolio_to_sqllite(globalconf, log, dataframe):
         store.close()
 
 
+
+def write_ecocal_to_sqllite(globalconf, log, dataframe):
+    """
+    Write to sqllite the ecocal snapshot passed as argument
+    """
+    log.info("Appending ecocal data to sqllite ... ")
+    globalconf = config.GlobalConfig()
+    db_file = globalconf.config['sqllite']['economic_db']
+    path = globalconf.config['paths']['data_folder']
+    store = sqlite3.connect(path + db_file)
+    dataframe.to_sql('yahoo_ecocal', store, if_exists='append')
+    store.close()
+
+
+
 def write_acc_summary_to_sqllite(globalconf, log, dataframe):
     """
     Write to sqllite the portfolio snapshot passed as argument
@@ -674,11 +689,16 @@ def write_acc_summary_to_sqllite(globalconf, log, dataframe):
     db_file = globalconf.config['sqllite']['account_db']
     path = globalconf.config['paths']['data_folder']
     store = sqlite3.connect(path + db_file)
-
     # get a list of names
     names=dataframe['AccountCode_'].unique().tolist()
     for name in names:
-        joe = dataframe.loc[dataframe['AccountCode_']==name]
+        cursor = store.execute('select * from ' + name + ' where 0=1')
+        columns = list(map(lambda x: x[0], cursor.description))
+        if columns:
+            columns.remove('current_datetime')
+            joe = dataframe.loc[dataframe['AccountCode_']==name][columns]
+        else:
+            joe = dataframe.loc[dataframe['AccountCode_'] == name]
         joe.to_sql(name, store, if_exists='append')
         store.close()
 
