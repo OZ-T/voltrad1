@@ -106,8 +106,6 @@ class YahooEconomicCalendar(object):
         return economic_data
 
 
-
-
 def first_run():
     date1 = dt.datetime(year=2018,month=3,day=1,hour=23,minute=55)
     end = dt.datetime.now()
@@ -136,8 +134,8 @@ def run_reader(now1 = None):
 
 
 if __name__ == '__main__':
-    #run_reader()
-    first_run()
+    batch_run_reader()
+    #first_run()
 
     #date_from = datetime.datetime.strptime(
     #    'Apr 1 2018  10:00AM', '%b %d %Y %I:%M%p')

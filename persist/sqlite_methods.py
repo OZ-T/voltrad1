@@ -678,6 +678,18 @@ def write_ecocal_to_sqllite(globalconf, log, dataframe):
     dataframe.to_sql('yahoo_ecocal', store, if_exists='append')
     store.close()
 
+def write_earnings_to_sqllite(globalconf, log, dataframe):
+    """
+    Write to sqllite the ecocal snapshot passed as argument
+    """
+    log.info("Appending earnings data to sqllite ... ")
+    globalconf = config.GlobalConfig()
+    db_file = globalconf.config['sqllite']['earnings_db']
+    path = globalconf.config['paths']['data_folder']
+    store = sqlite3.connect(path + db_file)
+    dataframe.to_sql('yahoo_earnings', store, if_exists='append')
+    store.close()
+
 
 
 def write_acc_summary_to_sqllite(globalconf, log, dataframe):
