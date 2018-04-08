@@ -22,7 +22,7 @@ run_trend_report:
   pointer: core.reporting.run_trend_report
 # H5 legacy
 migrate_h5:
-  pointer:  core.h5_legacy_methods.migrate_h5
+  pointer:  persist.h5_methods.migrate_h5
 # Operations
 print_acc_port:
   pointer:  operations.crud.print_10_days_acc_summary_and_current_positions
