@@ -2,13 +2,14 @@
 """
 
 from datetime import datetime, timedelta
-from persist.sqlite_methods import read_historical_acc_summary_from_sqllite
+from persist.sqlite_methods import read_historical_acc_summary_from_sqllite, extrae_options_chain
 import numpy as np
 import pandas as pd
 # import pandas_datareader.data as web
 from valuations.opt_pricing_methods import bsm_mcs_euro
 import core.config as config
 globalconf = config.GlobalConfig()
+log = globalconf.get_logger()
 
 OPT_NUM_FIELDS_LST = [u'CallOI', u'PutOI', u'Volume', u'askDelta', u'askGamma',
                    u'askImpliedVol', u'askOptPrice', u'askPrice', u'askPvDividend',

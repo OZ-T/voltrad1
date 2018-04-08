@@ -14,49 +14,46 @@ import sqlalchemy
 from core.logger import logger
 import sqlite3
 
+class Singleton(type):
+    _instances = {}
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
+
 # This class implements the singleton pattern
-class GlobalConfig(object):
-    class __Singleton1:
-        def __init__(self, arg):
-            self.val = arg
-            level = logger.DEBUG
-            # first try to find config file in user home (ubuntu)
-            self.log = logger("voltrad1", level)
-            path1=os.path.expanduser("~")
-            self.linux_user1=""
-            if "linux" in platform.lower():
-                #self.linux_user1=os.getenv("USER")
-                self.linux_user1=os.popen('whoami').read().rstrip()
+#Python3
+class GlobalConfig(object, metaclass=Singleton):
+    def __init__(self):
+        level = logger.DEBUG
+        # first try to find config file in user home (ubuntu)
+        self.log = logger("voltrad1", level)
+        path1=os.path.expanduser("~")
+        self.linux_user1=""
+        if "linux" in platform.lower():
+            #self.linux_user1=os.getenv("USER")
+            self.linux_user1=os.popen('whoami').read().rstrip()
 
-            if self.linux_user1.lower() == "root":
-                path1="/var/www"
-            config_file = os.path.join(path1, '.voltrad1')
-            if not os.path.exists(config_file):
-                # use the config file in the user folder (windows)
-                config_file = os.path.join(os.path.expanduser("~"), 'voltrad1.ini')
-            config = configparser.ConfigParser()
-            config.read(config_file)
-            self.config=config._sections
-            self.months = {1: 'Jan', 2: 'Feb', 3: 'Mar', 4: 'Apr', 5: 'May', 6: 'Jun',
-              7: 'Jul', 8: 'Aug', 9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Dec'}
+        if self.linux_user1.lower() == "root":
+            path1="/var/www"
+        config_file = os.path.join(path1, '.voltrad1')
+        if not os.path.exists(config_file):
+            # use the config file in the user folder (windows)
+            config_file = os.path.join(os.path.expanduser("~"), 'voltrad1.ini')
+        config = configparser.ConfigParser()
+        config.read(config_file)
+        self.config=config._sections
+        self.months = {1: 'Jan', 2: 'Feb', 3: 'Mar', 4: 'Apr', 5: 'May', 6: 'Jun',
+          7: 'Jul', 8: 'Aug', 9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Dec'}
 
-        def __str__(self):
-            return repr(self) + self.val
-    instance = None
-    def __init__(self, arg):
-        if not GlobalConfig.instance:
-            GlobalConfig.instance = GlobalConfig.____Singleton1(arg)
-        else:
-            GlobalConfig.instance.val = arg
-    def __getattr__(self, name):
-        return getattr(self.instance, name)
-
+    def __str__(self):
+        return repr(self)
 
     def get_logger(self):
         """
         return logger object        
         """
-        return GlobalConfig.instance.log
+        return self.log
 
     def log_info(self,string):
         """
@@ -64,7 +61,7 @@ class GlobalConfig(object):
         :param string: 
         :return: 
         """
-        GlobalConfig.instance.log.info(string)
+        self.log.info(string)
 
     def get_config_csv(self,name,path,sep=','):
         """
@@ -223,4 +220,4 @@ if __name__ == "__main__":
     #print(datacols)
     #print(object.get_tickers_optchain_ib())
     #print(object.get_tickers_optchain_yahoo())
-    print( object.connect_sqldb())
+    print( object.get_list_errors_to_trigger_ib())

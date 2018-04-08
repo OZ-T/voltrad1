@@ -26,30 +26,30 @@ def run():
     optchain_out = 'optchain_yahoo_db_expiry_2018-03.db'
     lst1 = glob.glob(pattern_optchain)
     lst1.remove(optchain_orig)
-    print lst1
+    print( lst1)
     dataframe = pd.DataFrame()
     for x in lst1:
         store_in1 = pd.HDFStore(path + x)
         root1 = store_in1.root
-        print root1._v_pathname
+        print (root1._v_pathname)
         for lvl1 in root1:
-            print lvl1._v_pathname
+            print (lvl1._v_pathname)
             if lvl1:
                 df1 = store_in1.select(lvl1._v_pathname)
                 dataframe = dataframe.append(df1)
-                print "store_in1", len(df1), x
+                print ("store_in1", len(df1), x)
         store_in1.close()
 
     store_in1 = pd.HDFStore(path + optchain_orig)
 
     root1 = store_in1.root
-    print root1._v_pathname
+    print (root1._v_pathname)
     for lvl1 in root1:
-        print lvl1._v_pathname
+        print (lvl1._v_pathname)
         if lvl1:
             df1 = store_in1.select(lvl1._v_pathname)
             dataframe = dataframe.append(df1)
-            print "store_in1", len(df1), optchain_orig
+            print ("store_in1", len(df1), optchain_orig)
     store_in1.close()
 
     store_out = globalconf.connect_sqllite(path + optchain_out)

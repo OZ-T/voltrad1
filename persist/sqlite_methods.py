@@ -10,15 +10,28 @@ import pandas as pd
 import pandas_datareader.data as web
 from pandas_datareader._utils import RemoteDataError
 from pytz import timezone
-import core.config as config
-from core import misc_utilities as utils, config, config as config
+from core import misc_utilities as utils, config as config
 from ibutils import sync_client as ib
-from persist.portfolio_and_account_data_methods import OPT_NUM_FIELDS_LST
 from ibutils.RequestUnderlyingData import RequestUnderlyingData
 from ibutils.sync_client import IBClient
 from core.logger import logger
-from persist.sqlite_methods import get_optchain_datasources
 from scipy import stats
+
+OPT_NUM_FIELDS_LST = [u'CallOI', u'PutOI', u'Volume', u'askDelta', u'askGamma',
+                   u'askImpliedVol', u'askOptPrice', u'askPrice', u'askPvDividend',
+                   u'askSize', u'askTheta', u'askUndPrice', u'askVega', u'bidDelta',
+                   u'bidGamma', u'bidImpliedVol', u'bidOptPrice', u'bidPrice',
+                   u'bidPvDividend', u'bidSize', u'bidTheta', u'bidUndPrice', u'bidVega',
+                   u'closePrice', u'highPrice', u'lastDelta', u'lastGamma', u'lastImpliedVol',
+                   u'lastOptPrice', u'lastPrice', u'lastPvDividend', u'lastSize',
+                   u'lastTheta', u'lastUndPrice', u'lastVega', u'lowPrice',
+                   u'modelDelta', u'modelGamma', u'modelImpliedVol', u'modelOptPrice',
+                   u'modelPvDividend', u'modelTheta', u'modelUndPrice', u'modelVega',
+                   u'multiplier', u'strike']
+
+
+globalconf = config.GlobalConfig()
+log = globalconf.get_logger()
 
 def get_columns(name,store):
     sql = "SELECT * FROM "+name +" WHERE 0=1"
