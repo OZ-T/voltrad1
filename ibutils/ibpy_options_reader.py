@@ -112,7 +112,7 @@ class IB_API:
         contract.m_exchange = contract_values['m_exchange']
         contract.m_secType = contract_values['m_secType']
         # If expiry is empty it will download all available expiries
-        if contract_values['m_expiry'] <> "":
+        if contract_values['m_expiry'] != "":
             contract.m_expiry = contract_values['m_expiry']
         self.connection.reqContractDetails(reqId, contract)
         sleep(20)

@@ -17,7 +17,6 @@ from pylab import axhline, figure, legend, plot, show
 
 import persist.h5_methods
 import persist.sqlite_methods
-from core import config
 from persist import sqlite_methods as md, portfolio_and_account_data_methods as ra
 from persist.sqlite_methods import read_graph_from_db, save_graph_to_db
 from core.logger import logger
@@ -25,14 +24,16 @@ from core.logger import logger
 warnings.filterwarnings("ignore")
 HISTORY_LIMIT = 20
 
+from core import config
+globalconf = config.GlobalConfig()
+log = globalconf.log
+
 
 def init_func():
     """
     Initialization method.
     Initialize both global config object and display width for console printing
     """
-    globalconf = config.GlobalConfig()
-    log = globalconf.log
     client = None
     # this is to try to fit in one line each row od a dataframe when printing to console
     pd.set_option('display.max_rows', 500)
@@ -126,13 +127,12 @@ def COPP(df, a=11, b=14, n=50, close_nm='close'):
 
 
 import datetime
-def coppock(globalconf, log_analytics, last_date, symbol="SPX",period="1D"):
-    df = md.read_market_data_from_sqllite(globalconf=globalconf, log=log_analytics,
-                                          db_type="underl_ib_hist",symbol=symbol,expiry=None,
-                                          last_date=last_date, num_days_back=100, resample="1D")
+def coppock(last_date, symbol="SPX",period="1D"):
+    df = md.read_market_data_from_sqllite(db_type="underl_ib_hist", symbol=symbol, expiry=None, last_date=last_date,
+                                          num_days_back=100, resample="1D")
 
     last_record_stored = np.max(df.index).replace(hour=0,minute=59, second=59)
-    df1 = md.get_last_bars_from_rt(globalconf=globalconf, log=log_analytics, symbol=symbol, last_date=last_date, last_record_stored=last_record_stored)
+    df1 = md.get_last_bars_from_rt(symbol=symbol, last_date=last_date, last_record_stored=last_record_stored)
     df = df.append(df1)
     df = COPP(df, 12, 6, 10)
     return df
@@ -193,9 +193,8 @@ def graph_coppock(symbol="SPX",period="1D"):
     ]
     script, div = components(p)
     last_date1  = np.max(df.date).strftime("%Y%m%d")
-    save_graph_to_db(globalconf=globalconf, log=log_analytics, script=script, div=div, symbol=symbol,
-                     expiry="0", last_date=last_date1, num_days_back="-1", resample="NA",
-                     estimator="COPPOCK", name="TREND")
+    save_graph_to_db(script=script, div=div, symbol=symbol, expiry="0", last_date=last_date1, num_days_back="-1",
+                     resample="NA", estimator="COPPOCK", name="TREND")
     end_func(client)
     return p
 
@@ -203,24 +202,22 @@ def get_volatility_for_report(symbol,client,log_analytics,globalconf,last_date):
     window = 34.0
     year_days = 252.0
     length = 20
-    df = md.read_market_data_from_sqllite(globalconf=globalconf, log=log_analytics,
-                                          db_type="underl_ib_hist", symbol=symbol, expiry=None,
-                                          last_date=last_date, num_days_back=100, resample="1D")
+    df = md.read_market_data_from_sqllite(db_type="underl_ib_hist", symbol=symbol, expiry=None, last_date=last_date,
+                                          num_days_back=100, resample="1D")
 
     last_record_stored = np.max(df.index).replace(hour=0,minute=59, second=59)
-    df1 = md.get_last_bars_from_rt(globalconf=globalconf, log=log_analytics, symbol=symbol, last_date=last_date, last_record_stored=last_record_stored)
+    df1 = md.get_last_bars_from_rt(symbol=symbol, last_date=last_date, last_record_stored=last_record_stored)
     df = df.append(df1)
 
     df = df.rename(columns={'close': symbol})
     df['HV'] = pd.rolling_std(df[symbol], window=int(window), min_periods=int(window)) * np.sqrt(window / year_days)
     df = df.drop(['high', 'open', 'low'], 1)
 
-    vix = md.read_market_data_from_sqllite(globalconf=globalconf, log=log_analytics,
-                                           db_type="underl_ib_hist", symbol="VIX", expiry=None,
-                                           last_date=last_date, num_days_back=100, resample="1D")
+    vix = md.read_market_data_from_sqllite(db_type="underl_ib_hist", symbol="VIX", expiry=None, last_date=last_date,
+                                           num_days_back=100, resample="1D")
 
     last_record_stored = np.max(df.index).replace(hour=0,minute=59, second=59)
-    df1 = md.get_last_bars_from_rt(globalconf=globalconf, log=log_analytics, symbol="VIX", last_date=last_date, last_record_stored=last_record_stored)
+    df1 = md.get_last_bars_from_rt(symbol="VIX", last_date=last_date, last_record_stored=last_record_stored)
     vix = vix.append(df1)
 
 
@@ -288,7 +285,7 @@ def graph_volatility(symbol):
     p.add_layout(legend, 'right')
     last_date1  = np.max(df.date).strftime("%Y%m%d")
     script, div = components(p)
-    save_graph_to_db(globalconf, log_analytics, script, div, symbol, "0", last_date1, 100, "1D", "Volatility", "TREND")
+    save_graph_to_db(script, div, symbol, "0", last_date1, 100, "1D", "Volatility", "TREND")
 
     end_func(client)
     return p
@@ -341,7 +338,7 @@ def graph_fast_move(symbol):
     # p.add_layout(legend, 'right')
     last_date1  = np.max(df.date).strftime("%Y%m%d")
     script, div = components(p)
-    save_graph_to_db(globalconf, log_analytics, script, div, symbol, "0", last_date1, 100, "1D", "FastMove", "TREND")
+    save_graph_to_db(script, div, symbol, "0", last_date1, 100, "1D", "FastMove", "TREND")
     print( df.iloc[-HISTORY_LIMIT:])
     end_func(client)
     return p
@@ -353,12 +350,11 @@ def get_fast_move_for_report(symbol,client, log_analytics, globalconf,last_date)
     num_dev_up = 2.0
     dbb_length = 120.0
 
-    df = md.read_market_data_from_sqllite(globalconf=globalconf, log=log_analytics,
-                                          db_type="underl_ib_hist", symbol=symbol, expiry=None,
-                                          last_date=last_date, num_days_back=250, resample="1D")
+    df = md.read_market_data_from_sqllite(db_type="underl_ib_hist", symbol=symbol, expiry=None, last_date=last_date,
+                                          num_days_back=250, resample="1D")
 
     last_record_stored = np.max(df.index).replace(hour=0,minute=59, second=59)
-    df1 = md.get_last_bars_from_rt(globalconf=globalconf, log=log_analytics, symbol=symbol, last_date=last_date, last_record_stored=last_record_stored)
+    df1 = md.get_last_bars_from_rt(symbol=symbol, last_date=last_date, last_record_stored=last_record_stored)
     df = df.append(df1)
 
     df = df.drop(['high', 'open', 'low'], 1).rename(columns={'close': symbol})
@@ -414,12 +410,11 @@ def print_emas(symbol="SPX"):
     end_func(client)
 
 def get_emas(last_date, log_analytics, globalconf, symbol="SPX", n=50):
-    df = md.read_market_data_from_sqllite(globalconf=globalconf, log=log_analytics,
-                                          db_type="underl_ib_hist",symbol=symbol,expiry=None,
-                                          last_date=last_date, num_days_back=500, resample="1D")
+    df = md.read_market_data_from_sqllite(db_type="underl_ib_hist", symbol=symbol, expiry=None, last_date=last_date,
+                                          num_days_back=500, resample="1D")
 
     last_record_stored = np.max(df.index).replace(hour=0,minute=59, second=59)
-    df1 = md.get_last_bars_from_rt(globalconf=globalconf, log=log_analytics, symbol=symbol, last_date=last_date, last_record_stored=last_record_stored)
+    df1 = md.get_last_bars_from_rt(symbol=symbol, last_date=last_date, last_record_stored=last_record_stored)
     df = df.append(df1)
 
 
@@ -428,13 +423,12 @@ def get_emas(last_date, log_analytics, globalconf, symbol="SPX", n=50):
     df = df.join(ema50)
     df['RSK_EMA50'] = np.where(df['close'] > df['EMA_' + str(n)], "-----", "ALERT")
     # sacar los canales de IV del historico del VIX
-    vix = md.read_market_data_from_sqllite(globalconf=globalconf, log=log_analytics,
-                                          db_type="underl_ib_hist",symbol="VIX",expiry=None,
-                                          last_date=last_date, num_days_back=100, resample="1D")
+    vix = md.read_market_data_from_sqllite(db_type="underl_ib_hist", symbol="VIX", expiry=None, last_date=last_date,
+                                           num_days_back=100, resample="1D")
 
 
     last_record_stored = np.max(vix.index).replace(hour=0,minute=59, second=59)
-    df1 = md.get_last_bars_from_rt(globalconf=globalconf, log=log_analytics, symbol="VIX", last_date=last_date, last_record_stored=last_record_stored)
+    df1 = md.get_last_bars_from_rt(symbol="VIX", last_date=last_date, last_record_stored=last_record_stored)
     vix = vix.append(df1)
 
     vix = vix.rename(columns={'close': 'vix'})['vix'].dropna()
@@ -488,9 +482,8 @@ def graph_emas(symbol="SPX"):
 
     last_date1  = np.max(df.date).strftime("%Y%m%d")
     script, div = components(p)
-    save_graph_to_db(globalconf=globalconf, log=log_analytics, script=script, div=div, symbol=symbol,
-                     expiry="0", last_date=last_date1, num_days_back="500", resample="NA",
-                     estimator="EMA50", name="TREND")
+    save_graph_to_db(script=script, div=div, symbol=symbol, expiry="0", last_date=last_date1, num_days_back="500",
+                     resample="NA", estimator="EMA50", name="TREND")
     end_func(client)
     return p
 
@@ -502,13 +495,12 @@ def graph_volatility_cone(symbol):
     """
     client , log_analytics, globalconf = init_func()
     last_date = datetime.datetime.today().strftime("%Y%m%d")
-    df = md.read_market_data_from_sqllite(globalconf=globalconf, log=log_analytics,
-                                          db_type="underl_ib_hist",symbol=symbol,expiry=None,
-                                          last_date=last_date, num_days_back=500, resample="1D")
+    df = md.read_market_data_from_sqllite(db_type="underl_ib_hist", symbol=symbol, expiry=None, last_date=last_date,
+                                          num_days_back=500, resample="1D")
 
 
     last_record_stored = np.max(df.index).replace(hour=0,minute=59, second=59)
-    df1 = md.get_last_bars_from_rt(globalconf=globalconf, log=log_analytics, symbol=symbol, last_date=last_date, last_record_stored=last_record_stored)
+    df1 = md.get_last_bars_from_rt(symbol=symbol, last_date=last_date, last_record_stored=last_record_stored)
     df = df.append(df1)
 
 
@@ -516,9 +508,8 @@ def graph_volatility_cone(symbol):
     df=df.reset_index()
 
     # use VIX to get the mean 30d 60d 90d and so on from underlying_hist_ib h5
-    vix = md.read_market_data_from_sqllite(globalconf=globalconf, log=log_analytics,
-                                          db_type="underl_ib_hist",symbol="VIX",expiry=None,
-                                          last_date=last_date, num_days_back=500, resample="1D")
+    vix = md.read_market_data_from_sqllite(db_type="underl_ib_hist", symbol="VIX", expiry=None, last_date=last_date,
+                                           num_days_back=500, resample="1D")
 
     vix = vix.reset_index()
     df['vix'] = vix.dropna().rename(columns={'close': 'vix'})['vix']
@@ -926,9 +917,8 @@ def print_summary_underl(symbol):
     client, log_analytics, globalconf = init_func()
     last_date = datetime.datetime.today().strftime("%Y%m%d")
 
-    df = md.read_market_data_from_sqllite(globalconf=globalconf, log=log_analytics,
-                                          db_type="underl_ib_hist",symbol=symbol,expiry=None,
-                                          last_date=last_date, num_days_back=500, resample="1D")
+    df = md.read_market_data_from_sqllite(db_type="underl_ib_hist", symbol=symbol, expiry=None, last_date=last_date,
+                                          num_days_back=500, resample="1D")
 
     last_record_stored = np.max(df.index).replace(hour=0,minute=59, second=59)
     #df1 = md.get_last_bars_from_rt(globalconf=globalconf, log=log_analytics, symbol=symbol, last_date=last_date, last_record_stored=last_record_stored)
@@ -1074,9 +1064,8 @@ def print_chain(val_dt,symbol,call_d_range,put_d_range,expiry,type):
     number_days_back = 10
     # max_expiry_available = max( get_expiries(globalconf=globalconf, dsId='optchain_ib_exp', symbol=symbol))
     expiry_file =  dt.datetime.strptime(expiry, "%Y%m%d").strftime("%Y-%m")
-    df = read_market_data_from_sqllite(globalconf=globalconf, log=log,
-                                          db_type="optchain_ib",symbol=symbol,expiry=expiry_file,
-                                          last_date=val_dt, num_days_back=number_days_back, resample=None)
+    df = read_market_data_from_sqllite(db_type="optchain_ib", symbol=symbol, expiry=expiry_file, last_date=val_dt,
+                                       num_days_back=number_days_back, resample=None)
 
     # filtrar las opciones que tengan la delta dentro del rango seleccionado en la ultima cotización disponible
     # me quedo con la ultima cotizacion para cada option chain member
@@ -1160,7 +1149,6 @@ if __name__ == "__main__":
     globalconf = config.GlobalConfig(level=logger.ERROR)
     log = globalconf.log
 
-    div, script = read_graph_from_db(globalconf=globalconf, log=log, symbol="SPX",
-                                     last_date=last_date1, estimator="Coppock", name="TREND")
+    div, script = read_graph_from_db(symbol="SPX", last_date=last_date1, estimator="Coppock", name="TREND")
 
     print((div, script))

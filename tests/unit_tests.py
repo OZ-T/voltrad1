@@ -14,14 +14,14 @@ class MarketData_tests(unittest.TestCase):
         globalconf = config.GlobalConfig()
         db_type = "optchain_ib"
         expiry = "222222"
-        db_file = get_market_db_file(globalconf, db_type, expiry)
+        db_file = get_market_db_file(db_type, expiry)
         print(db_file)
         self.assertEqual(db_file, "KKKK")
     def test_market_data_from_sqllite(self):
         log = logger("Testing ...")
         globalconf = config.GlobalConfig()
-        df = read_market_data_from_sqllite(globalconf, log, db_type="underl_ib_hist", symbol="USO",
-                                           expiry=None, last_date="20170623", num_days_back=50, resample="1D")
+        df = read_market_data_from_sqllite(db_type="underl_ib_hist", symbol="USO", expiry=None, last_date="20170623",
+                                           num_days_back=50, resample="1D")
         print(df)
         self.assertEqual(len(df), 100)
     def test_business_hours(self):
@@ -39,8 +39,9 @@ class MarketData_tests(unittest.TestCase):
         log = logger("Testing ...")
         globalconf = config.GlobalConfig()
         today =  dt.date.today()
-        vol = volest.VolatilityEstimator(globalconf=globalconf,log=log,db_type="underl_ib_hist",symbol="AAPL",expiry=None,
-                                         last_date=today.strftime('%Y%m%d'), num_days_back=200, resample="1D",estimator="GarmanKlass",clean=True)
+        vol = volest.VolatilityEstimator(db_type="underl_ib_hist", symbol="AAPL", expiry=None,
+                                         last_date=today.strftime('%Y%m%d'), num_days_back=200, resample="1D",
+                                         estimator="GarmanKlass", clean=True)
         #fig, plt = vol.cones(windows=[30, 60, 90, 120], quantiles=[0.25, 0.75])
         #plt.show()
 
@@ -77,7 +78,7 @@ class MarketData_tests(unittest.TestCase):
 
         globalconf = config.GlobalConfig()
 
-        dict = get_optchain_datasources(globalconf)
+        dict = get_optchain_datasources()
 
         print (dict['optchain_ib_exp']['SPY']['expiries'])
         print (dict['optchain_ib_exp']['IWM']['expiries'])
@@ -89,7 +90,7 @@ class MarketData_tests(unittest.TestCase):
         import core.config as config
         globalconf = config.GlobalConfig()
 
-        list = get_expiries(globalconf=globalconf, dsId='optchain_ib_exp', symbol="SPY")
+        list = get_expiries(dsId='optchain_ib_exp', symbol="SPY")
 
         print(max(list))
         self.assertEqual(max(list),'2017-09')

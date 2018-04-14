@@ -59,8 +59,8 @@ from core.logger import logger
 log = logger("some testing ...")
 globalconf = config.GlobalConfig()
 last_date = "20170706"
-vol = VolatilityEstimator(globalconf=globalconf, log=log, db_type="underl_ib_hist", symbol="SPY", expiry=None,
-                          last_date=last_date, num_days_back=200, resample="1D", estimator="GarmanKlass", clean=True)
+vol = VolatilityEstimator(db_type="underl_ib_hist", symbol="SPY", expiry=None, last_date=last_date, num_days_back=200,
+                          resample="1D", estimator="GarmanKlass", clean=True)
 window = 30
 windows = [30, 60, 90, 120]
 quantiles = [0.25, 0.75]
@@ -69,7 +69,7 @@ normed = True
 vol.cones_data(windows=windows, quantiles=quantiles)
 from persist.sqlite_methods import read_lineplot_data_from_db
 estimator="GarmanKlass"
-dict = read_lineplot_data_from_db(globalconf,log,symbol, last_date, estimator)
+dict = read_lineplot_data_from_db(symbol, last_date, estimator)
 
 
 def testing_operaciones_bug():

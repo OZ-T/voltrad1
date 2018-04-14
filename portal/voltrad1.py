@@ -11,7 +11,7 @@ log = globalconf.get_logger()
 
 @app.route("/files")
 def show_files():
-    return jsonify(get_data_files(globalconf))
+    return jsonify(get_data_files())
 
 
 @app.route("/table/<name>")

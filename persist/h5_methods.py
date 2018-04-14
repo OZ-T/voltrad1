@@ -119,13 +119,13 @@ def migrate_h5_to_sqllite_optchain(hdf5_pattern, h5_db_alias, drop_expiry, filte
                             if lvl1:
                                 df1 = store_file.select(lvl1._v_pathname)
                                 df1['expiry'] = lvl1._v_pathname
-                                mkt.write_market_data_to_sqllite(globalconf, log, df1, h5_db_alias)
+                                mkt.write_market_data_to_sqllite(df1, h5_db_alias)
                     else:
                         df1 = store_file.select(node1._v_pathname)
                     # Expiry is already in the index
                     if drop_expiry == True:
                         df1 = df1.drop(['Expiry'], axis=1)
-                    mkt.write_market_data_to_sqllite(globalconf, log, df1, h5_db_alias)
+                    mkt.write_market_data_to_sqllite(df1, h5_db_alias)
                 store_file.close()
 
 
@@ -164,7 +164,7 @@ def migrate_h5_to_sqllite_orders():
                     log.info(("accountid: " + accountid))
                     df1 = store_file.select(node1._v_pathname)
                     df1.set_index(keys=['execid'], drop=True, inplace=True)
-                    persist.sqlite_methods.write_orders_to_sqllite(globalconf, log, df1)
+                    persist.sqlite_methods.write_orders_to_sqllite(df1)
                 store_file.close()
 
 
@@ -204,7 +204,7 @@ def migrate_h5_to_sqllite_portfolio():
                     log.info(("accountid: " + accountid))
                     df1 = store_file.select(node1._v_pathname)
                     df1.set_index(keys=['conId'], drop=True, inplace=True)
-                    persist.sqlite_methods.write_portfolio_to_sqllite(globalconf, log, df1)
+                    persist.sqlite_methods.write_portfolio_to_sqllite(df1)
                 store_file.close()
 
 
@@ -242,7 +242,7 @@ def migrate_h5_to_sqllite_acc_summary():
                 if node1:
                     log.info(("accountid: " + accountid))
                     df1 = store_file.select(node1._v_pathname)
-                    persist.sqlite_methods.write_acc_summary_to_sqllite(globalconf, log, df1)
+                    persist.sqlite_methods.write_acc_summary_to_sqllite(df1)
                 store_file.close()
 
 

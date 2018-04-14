@@ -8,10 +8,11 @@ from core.logger import logger
 from swigibpy import Contract as IBcontract
 from swigibpy import Order as IBOrder
 
+globalconf = config.GlobalConfig()
+log = globalconf.log
+
 
 def init_func():
-    globalconf = config.GlobalConfig(level=logger.ERROR)
-    log = globalconf.log
     client = ib.IBClient(globalconf)
     clientid1 = int(globalconf.config['ib_api']['clientid_orders'])
     client.connect(clientid1=clientid1)

@@ -127,7 +127,7 @@ def run_reader():
         joe = dataframe[dataframe.symbol == name]
         joe=joe.sort_values(by=['symbol', 'current_datetime', 'expiry', 'strike', 'right'])
         # joe.to_excel(name+".xlsx")
-        write_market_data_to_sqllite(globalconf, log, joe, "optchain_ib")
+        write_market_data_to_sqllite(joe, "optchain_ib")
 
 
 

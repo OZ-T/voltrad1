@@ -152,7 +152,7 @@ def run_reader(now1 = None):
         return
     yec = YahooEarningsCalendar()
     dataframe = pd.DataFrame( yec.earnings_on(now) )
-    da.write_earnings_to_sqllite(globalconf, log, dataframe)
+    da.write_earnings_to_sqllite(dataframe)
 
 
 

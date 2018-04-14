@@ -55,8 +55,13 @@ import persist.sqlite_methods as md
 # http://stackoverflow.com/questions/4700614/how-to-put-the-legend-out-of-the-plot
 # http://www.blog.pythonlibrary.org/2010/09/04/python-101-how-to-open-a-file-or-program/
 
+from core import config
+globalconf = config.GlobalConfig()
+log = globalconf.log
+
+
 class VolatilityEstimator(object):
-    def __init__(self, globalconf, log, db_type, symbol, expiry, last_date, num_days_back, resample, estimator, clean):
+    def __init__(self, db_type, symbol, expiry, last_date, num_days_back, resample, estimator, clean):
         if symbol is None or symbol == '':
             raise ValueError('symbol symbol required')
         if num_days_back is None or num_days_back == '':
@@ -71,19 +76,16 @@ class VolatilityEstimator(object):
         self._num_days_back = num_days_back
         self._last_date = last_date
         self._estimator = estimator
-        self._globalconf = globalconf
-        self._log = log
         self._db_type = db_type
         self._expiry = expiry
         self._resample = resample
         self._clean = clean
-        self._prices = read_market_data_from_sqllite(self._globalconf, self._log, db_type=self._db_type,
-                                                       symbol=self._symbol,expiry=self._expiry, last_date=self._last_date,
-                                                       num_days_back=self._num_days_back, resample=self._resample)
+        self._prices = read_market_data_from_sqllite(db_type=self._db_type, symbol=self._symbol, expiry=self._expiry,
+                                                     last_date=self._last_date, num_days_back=self._num_days_back,
+                                                     resample=self._resample)
 
         last_record_stored = np.max(self._prices.index).replace(hour=0, minute=59, second=59)
-        df1 = md.get_last_bars_from_rt(globalconf=globalconf, log=log, symbol=symbol, last_date=last_date,
-                                       last_record_stored=last_record_stored)
+        df1 = md.get_last_bars_from_rt(symbol=symbol, last_date=last_date, last_record_stored=last_record_stored)
         self._prices = self._prices.append(df1)
 
         matplotlib.rc('image', origin='upper')
@@ -273,11 +275,9 @@ class VolatilityEstimator(object):
         ys_labels = ["top_q", "median", "bottom_q", "realized", "min", "max"]
         title = self._estimator + ' (' + self._symbol + ', daily from ' + self._last_date + ' days back ' + str(
             self._num_days_back) + ')'
-        save_lineplot_data_to_db(globalconf=self._globalconf, log=self._log , xs=xs,
-                                 ys=ys, ys_labels=ys_labels, title=title, symbol=self._symbol,
-                                 expiry=self._expiry, last_date=self._last_date,
-                                 num_days_back=self._num_days_back, resample=self._resample,
-                                 estimator=self._estimator, name = "VOLEST")
+        save_lineplot_data_to_db(xs=xs, ys=ys, ys_labels=ys_labels, title=title, symbol=self._symbol,
+                                 expiry=self._expiry, last_date=self._last_date, num_days_back=self._num_days_back,
+                                 resample=self._resample, estimator=self._estimator, name="VOLEST")
 
 
     def cones_bokeh(self, windows=[30, 60, 90, 120], quantiles=[0.25, 0.75]):
@@ -324,8 +324,8 @@ class VolatilityEstimator(object):
 
         layout1 = layout([[p, p2]])
         script, div = components(layout1)
-        save_graph_to_db(self._globalconf, self._log , script, div, self._symbol, self._expiry, self._last_date,
-                         self._num_days_back, self._resample, self._estimator, name = "VOLEST")
+        save_graph_to_db(script, div, self._symbol, self._expiry, self._last_date, self._num_days_back, self._resample,
+                         self._estimator, name="VOLEST")
         return layout1
 
 
@@ -715,10 +715,9 @@ class VolatilityEstimator(object):
         """
 
         y = self._get_estimator(window)
-        bench_vol = VolatilityEstimator(globalconf=self._globalconf, log=self._log, db_type=self._db_type, symbol=bench,
-                                         expiry=None,
-                                         last_date=self._last_date, num_days_back=self._num_days_back, resample=self._resample,
-                                         estimator=self._estimator, clean=self._clean)
+        bench_vol = VolatilityEstimator(db_type=self._db_type, symbol=bench, expiry=None, last_date=self._last_date,
+                                        num_days_back=self._num_days_back, resample=self._resample,
+                                        estimator=self._estimator, clean=self._clean)
 
         x = bench_vol._get_estimator(window)
         date = y.index
@@ -798,10 +797,9 @@ class VolatilityEstimator(object):
 
         y = self._get_estimator(window)
 
-        bench_vol = VolatilityEstimator(globalconf=self._globalconf, log=self._log, db_type=self._db_type, symbol=bench,
-                                         expiry=None,
-                                         last_date=self._last_date, num_days_back=self._num_days_back, resample=self._resample,
-                                         estimator=self._estimator, clean=self._clean)
+        bench_vol = VolatilityEstimator(db_type=self._db_type, symbol=bench, expiry=None, last_date=self._last_date,
+                                        num_days_back=self._num_days_back, resample=self._resample,
+                                        estimator=self._estimator, clean=self._clean)
 
         x = bench_vol._get_estimator(window)
         date = y.index
@@ -855,10 +853,9 @@ class VolatilityEstimator(object):
         """
         y = self._get_estimator(window)
 
-        bench_vol = VolatilityEstimator(globalconf=self._globalconf, log=self._log, db_type=self._db_type, symbol=bench,
-                                         expiry=None,
-                                         last_date=self._last_date, num_days_back=self._num_days_back, resample=self._resample,
-                                         estimator=self._estimator, clean=self._clean)
+        bench_vol = VolatilityEstimator(db_type=self._db_type, symbol=bench, expiry=None, last_date=self._last_date,
+                                        num_days_back=self._num_days_back, resample=self._resample,
+                                        estimator=self._estimator, clean=self._clean)
 
         X = bench_vol._get_estimator(window)
 
@@ -996,8 +993,8 @@ if __name__ =="__mainKK__":
     globalconf = config.GlobalConfig()
 
     last_date = "20170706"
-    vol = VolatilityEstimator(globalconf=globalconf,log=log,db_type="underl_ib_hist",symbol="SPY",expiry=None,
-                                     last_date=last_date, num_days_back=200, resample="1D",estimator="GarmanKlass",clean=True)
+    vol = VolatilityEstimator(db_type="underl_ib_hist", symbol="SPY", expiry=None, last_date=last_date,
+                              num_days_back=200, resample="1D", estimator="GarmanKlass", clean=True)
     window=30
     windows=[30, 60, 90, 120]
     quantiles=[0.25, 0.75]

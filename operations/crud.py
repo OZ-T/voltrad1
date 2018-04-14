@@ -113,7 +113,7 @@ def store_acc_summary_and_portfolio_from_ib_to_db():
         dataframe.index=dataframe['current_datetime']
         dataframe.drop('current_datetime',axis=1,inplace=True)
         dataframe.drop('multiplier', axis=1, inplace=True)
-        write_portfolio_to_sqllite(globalconf, log, dataframe)
+        write_portfolio_to_sqllite(dataframe)
     else:
         log.info("Nothing to append to sqlite ... ")
 
@@ -127,7 +127,7 @@ def store_acc_summary_and_portfolio_from_ib_to_db():
         dataframe2.drop('current_datetime',axis=1,inplace=True)
         dataframe2['current_datetime_txt'] = dataframe2.index.strftime("%Y-%m-%d %H:%M:%S")
         dataframe2.drop('Guarantee_C_USD', axis=1, inplace=True)
-        write_acc_summary_to_sqllite(globalconf, log, dataframe2)
+        write_acc_summary_to_sqllite(dataframe2)
     else:
         log.info("Nothing to append to HDF5 ... ")
 

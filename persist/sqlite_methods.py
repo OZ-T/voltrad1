@@ -7,7 +7,8 @@ from collections import defaultdict
 from core.misc_utilities import make_dict, dictify
 import pandas_datareader.data as web
 from pandas_datareader._utils import RemoteDataError
-from core import misc_utilities as utils, config as config
+from core import misc_utilities as utils
+from operations.reporting import globalconf
 from ibutils import sync_client as ib
 from ibutils.RequestUnderlyingData import RequestUnderlyingData
 from ibutils.sync_client import IBClient
@@ -27,8 +28,10 @@ OPT_NUM_FIELDS_LST = [u'CallOI', u'PutOI', u'Volume', u'askDelta', u'askGamma',
                    u'multiplier', u'strike']
 
 
+
+from core import config
 globalconf = config.GlobalConfig()
-log = globalconf.get_logger()
+log = globalconf.log
 
 import datetime
 import pandas as pd
@@ -64,8 +67,8 @@ def get_columns(name,store):
     return list(df.columns)
 
 
-def get_optchain_datasources(globalconf):
-    dict = get_optchain_datasource_files(globalconf)
+def get_optchain_datasources():
+    dict = get_optchain_datasource_files()
     dict_out = defaultdict(make_dict)
     for db_type, db_files in dict.items():
         for db_name, db_file in db_files.items():
@@ -81,7 +84,7 @@ def get_optchain_datasources(globalconf):
     return dictify(dict_out)
 
 
-def get_underlying_symbols(globalconf, db_type):
+def get_underlying_symbols(db_type):
     # TODO: get this from configuration
     symbols = {
         "optchain_ib": ["ES", "SPY"],
@@ -92,16 +95,16 @@ def get_underlying_symbols(globalconf, db_type):
     return symbols[db_type]
 
 
-def get_expiries(globalconf, dsId, symbol):
+def get_expiries(dsId, symbol):
     """
     get available expiries for options on the given underlying
     """
-    dict = get_optchain_datasources(globalconf)
+    dict = get_optchain_datasources()
     expiries = dict[dsId][symbol]['expiries']
     return expiries
 
 
-def get_market_db_file(globalconf,db_type,expiry):
+def get_market_db_file(db_type, expiry):
     if db_type == "optchain_ib":
         return1 = globalconf.config['sqllite']['optchain_ib'].format(expiry)
     elif db_type == "optchain_yhoo":
@@ -161,7 +164,7 @@ def formated_string_for_file(expiry, expiry_in_format):
     return dt.datetime.strptime(expiry, expiry_in_format).strftime('%Y-%m')
 
 
-def get_last_bars_from_rt(globalconf, log, symbol, last_date,last_record_stored):
+def get_last_bars_from_rt(symbol, last_date, last_record_stored):
     import core.misc_utilities as utils
     dt_now = dt.datetime.now()
     bh = utils.BusinessHours(last_record_stored, dt_now, worktiming=[15, 21], weekends=[6, 7])
@@ -174,10 +177,9 @@ def get_last_bars_from_rt(globalconf, log, symbol, last_date,last_record_stored)
         symbol = "SPY"
     else:
         field1 = 'lastUndPrice'
-    max_expiry_available = max( get_expiries(globalconf=globalconf, dsId='optchain_ib_exp', symbol=symbol))
-    df = read_market_data_from_sqllite(globalconf=globalconf, log=log,
-                                          db_type="optchain_ib",symbol=symbol,expiry=max_expiry_available,
-                                          last_date=last_date, num_days_back=number_days_back, resample=None)
+    max_expiry_available = max(get_expiries(dsId='optchain_ib_exp', symbol=symbol))
+    df = read_market_data_from_sqllite(db_type="optchain_ib", symbol=symbol, expiry=max_expiry_available,
+                                       last_date=last_date, num_days_back=number_days_back, resample=None)
 
     if not df.empty:
         #print(("XXXXX1 ", df))
@@ -207,13 +209,13 @@ def resample_and_improve_quality(dataframe, criteria, resample, log):
     log.info(("Resampled size ", len(dataframe)))
     return dataframe
 
-def read_market_data_from_sqllite(globalconf, log, db_type,symbol,expiry,last_date,num_days_back,resample):
+def read_market_data_from_sqllite(db_type, symbol, expiry, last_date, num_days_back, resample):
     path = globalconf.config['paths']['data_folder']
     log.info("Reading market data from sqllite ... ")
     criteria = get_partition_names(db_type)
     first_date = (dt.datetime.strptime(last_date, '%Y%m%d') - dt.timedelta(num_days_back)).strftime(
         criteria['formato_filtro'])
-    db_file = get_market_db_file(globalconf, db_type, expiry)
+    db_file = get_market_db_file(db_type, expiry)
     log.info( ( "dbfile is  ... " , db_file ) )
     store = sqlite3.connect(path + db_file)
     sql = "select * from " + symbol + " where 1=1 "
@@ -228,7 +230,7 @@ def read_market_data_from_sqllite(globalconf, log, db_type,symbol,expiry,last_da
 
     return dataframe
 
-def write_market_data_to_sqllite(globalconf, log, dataframe, db_type):
+def write_market_data_to_sqllite(dataframe, db_type):
     """
     Write to sqllite the market data snapshot passed as argument
     """
@@ -246,7 +248,7 @@ def write_market_data_to_sqllite(globalconf, log, dataframe, db_type):
             expiry_file = ""
         else:
             expiry_file = formated_string_for_file(expiry, criteria["format_expiry"])
-        db_file = get_market_db_file(globalconf,db_type,expiry_file)
+        db_file = get_market_db_file(db_type, expiry_file)
         store = sqlite3.connect(path + db_file)
         symbols = dataframe[criteria["symbol"]].unique().tolist()
         log.info(("For expiry: ",expiry," these are the symbols included in the data to be loaded:  ", symbols))
@@ -286,7 +288,7 @@ def store_underlying_ib_to_db():
     formatDate = 1
     wait_secs = 40
 
-    db_file = get_market_db_file(globalconf=globalconf, db_type="underl_ib_hist", expiry="NONE")
+    db_file = get_market_db_file(db_type="underl_ib_hist", expiry="NONE")
     store = sqlite3.connect(path + db_file)
 
     for index, row_req in underly_def.iterrows():
@@ -351,7 +353,7 @@ def store_underlying_ib_to_db():
                     dataframe = dataframe.append(temp1.reset_index().drop('index', 1))
             dataframe = dataframe.sort_values(by=['date']).set_index('date')
             log.info( "appending data to sqlite ...")
-            write_market_data_to_sqllite(globalconf, log, dataframe, "underl_ib_hist")
+            write_market_data_to_sqllite(dataframe, "underl_ib_hist")
 
         log.info("sleeping [%s] secs ..." % (str(wait_secs)))
         sleep(wait_secs)
@@ -389,7 +391,7 @@ def store_optchain_yahoo_to_db():
                     if 'JSON' in joe.columns:
                         joe['JSON'] = ""
 
-                    write_market_data_to_sqllite(globalconf, log, joe, "optchain_yhoo")
+                    write_market_data_to_sqllite(joe, "optchain_yhoo")
 
                 except KeyError as e:
                     log.warn("KeyError raised [" + str(e) + "]...")
@@ -422,7 +424,7 @@ def get_contract_details(symbol, conId=None):
     return db1[symbol]
 
 
-def read_graph_from_db(globalconf,log,symbol, last_date, estimator,name):
+def read_graph_from_db(symbol, last_date, estimator, name):
     """
     return the last saved graph of that type
     """
@@ -451,7 +453,7 @@ def read_graph_from_db(globalconf,log,symbol, last_date, estimator,name):
     return df1['div'].values[0], df1['script'].values[0]
 
 
-def read_lineplot_data_from_db(globalconf,log,symbol, last_date, estimator):
+def read_lineplot_data_from_db(symbol, last_date, estimator):
     """
     return the last saved graph of that type
     """
@@ -472,8 +474,8 @@ def read_lineplot_data_from_db(globalconf,log,symbol, last_date, estimator):
     return dict1 #['div'].values[0], df1['script'].values[0]
 
 
-def save_lineplot_data_to_db(globalconf, log, xs, ys, ys_labels, title, symbol,
-                         expiry, last_date, num_days_back, resample, estimator, name):
+def save_lineplot_data_to_db(xs, ys, ys_labels, title, symbol, expiry, last_date, num_days_back, resample, estimator,
+                             name):
     log.info("Appending data for graph to mongo ... ")
     import datetime as dt
     import pandas as pd
@@ -501,7 +503,7 @@ def save_lineplot_data_to_db(globalconf, log, xs, ys, ys_labels, title, symbol,
     #df.set_index(keys=['symbol', 'last_date', 'estimator'], drop=True, inplace=True) don't insert the index in mongo
     collection.insert_many(df.to_dict('records'))
 
-def save_graph_to_db(globalconf,log,script, div, symbol, expiry, last_date, num_days_back, resample, estimator,name):
+def save_graph_to_db(script, div, symbol, expiry, last_date, num_days_back, resample, estimator, name):
     # Embedding bokeh plots in web pages
     # http://bokeh.pydata.org/en/0.9.3/docs/user_guide/embed.html
     log.info("Appending Graph data to sqllite ... ")
@@ -529,24 +531,24 @@ def save_graph_to_db(globalconf,log,script, div, symbol, expiry, last_date, num_
     store.close()
 
 
-def get_optchain_db_types(globalconf):
+def get_optchain_db_types():
     db_types = ["optchain_ib_exp","optchain_yhoo","optchain_ib_hist"]
     return db_types
 
 import os
 
-def get_data_files(globalconf):
+def get_data_files():
     data_folder = globalconf.config['paths']['data_folder']
     return next(os.walk(data_folder))[2]
 
 
 
-def get_optchain_datasource_files(globalconf,vendor,expiry):
+def get_optchain_datasource_files(vendor, expiry):
     data_folder = globalconf.config['paths']['data_folder']
     dir = os.path.abspath(data_folder)
     exts = ".db"
     dict = {}
-    db_types = get_optchain_db_types(globalconf)
+    db_types = get_optchain_db_types()
     for x in db_types:
         dict[x] = {}
     for root, dirs, files in os.walk(dir):
@@ -561,11 +563,10 @@ def get_optchain_datasource_files(globalconf,vendor,expiry):
     return dict
 
 
-def read_historical_acc_summary_from_sqllite(globalconf, log, accountid):
+def read_historical_acc_summary_from_sqllite(accountid):
     """
     Read from sqllite the complete history of the account summary and returns as dataframe
     """
-    globalconf = config.GlobalConfig()
     db_file = globalconf.config['sqllite']['account_db']
     path = globalconf.config['paths']['data_folder']
     store = sqlite3.connect(path + db_file)
@@ -574,11 +575,10 @@ def read_historical_acc_summary_from_sqllite(globalconf, log, accountid):
     return df1
 
 
-def read_historical_portfolio_from_sqllite(globalconf, log, accountid):
+def read_historical_portfolio_from_sqllite(accountid):
     """
     Read from sqllite the complete history of the portfolio and returns as dataframe
     """
-    globalconf = config.GlobalConfig()
     db_file = globalconf.config['sqllite']['portfolio_db']
     path = globalconf.config['paths']['data_folder']
     store = sqlite3.connect(path + db_file)
@@ -589,7 +589,7 @@ def read_historical_portfolio_from_sqllite(globalconf, log, accountid):
     return df1
 
 
-def write_portfolio_to_sqllite(globalconf, log, dataframe):
+def write_portfolio_to_sqllite(dataframe):
     """
     Write to sqllite the portfolio snapshot passed as argument
     """
@@ -610,24 +610,22 @@ def write_portfolio_to_sqllite(globalconf, log, dataframe):
 
 
 
-def write_ecocal_to_sqllite(globalconf, log, dataframe):
+def write_ecocal_to_sqllite(dataframe):
     """
     Write to sqllite the ecocal snapshot passed as argument
     """
     log.info("Appending ecocal data to sqllite ... ")
-    globalconf = config.GlobalConfig()
     db_file = globalconf.config['sqllite']['economic_db']
     path = globalconf.config['paths']['data_folder']
     store = sqlite3.connect(path + db_file)
     dataframe.to_sql('yahoo_ecocal', store, if_exists='append')
     store.close()
 
-def write_earnings_to_sqllite(globalconf, log, dataframe):
+def write_earnings_to_sqllite(dataframe):
     """
     Write to sqllite the ecocal snapshot passed as argument
     """
     log.info("Appending earnings data to sqllite ... ")
-    globalconf = config.GlobalConfig()
     db_file = globalconf.config['sqllite']['earnings_db']
     path = globalconf.config['paths']['data_folder']
     store = sqlite3.connect(path + db_file)
@@ -636,12 +634,11 @@ def write_earnings_to_sqllite(globalconf, log, dataframe):
 
 
 
-def write_acc_summary_to_sqllite(globalconf, log, dataframe):
+def write_acc_summary_to_sqllite(dataframe):
     """
     Write to sqllite the portfolio snapshot passed as argument
     """
     log.info("Appending account summary data to sqllite ... ")
-    globalconf = config.GlobalConfig()
     db_file = globalconf.config['sqllite']['account_db']
     path = globalconf.config['paths']['data_folder']
     store = sqlite3.connect(path + db_file)
@@ -659,7 +656,7 @@ def write_acc_summary_to_sqllite(globalconf, log, dataframe):
         store.close()
 
 
-def write_orders_to_sqllite(globalconf, log, dataframe):
+def write_orders_to_sqllite(dataframe):
     """
     Write to sqllite the orders snapshot passed as argument
     """
@@ -689,7 +686,6 @@ def store_orders_from_ib_to_db():
         return
 
     log.info("Getting orders data from IB ... ")
-    globalconf = config.GlobalConfig()
     client = ib.IBClient(globalconf)
     clientid1 = int(globalconf.config['ib_api']['clientid_data'])
     client.connect(clientid1=clientid1)
@@ -705,7 +701,7 @@ def store_orders_from_ib_to_db():
         log.info("Appending orders to sqllite store ...")
         dataframe=dataframe.sort_values(by=['account'])
         dataframe.set_index(keys=['execid'], drop=True, inplace=True)
-        write_orders_to_sqllite(globalconf, log, dataframe)
+        write_orders_to_sqllite(dataframe)
     else:
         log.info("No orders to append ...")
 
@@ -713,3 +709,47 @@ def store_orders_from_ib_to_db():
 if __name__ == "__main__":
     df= get_yahoo_option_dataframe("SPY", "2019-03", "", "")
     print (df)
+
+
+def read_opt_chain_data(hoy, num, r_dict):
+    ayer = (dt.datetime.strptime(hoy, '%Y%m%d') - dt.timedelta(num)).strftime(r_dict['formato_hoy'])
+    log = logger("dq_report")
+    symbols = r_dict['symbols'] # ['ES','SPY']
+    expiries = r_dict['expiries'] # ['2017-06','2017-07','2017-08','2017-09','2017-10','2017-11','2017-12','2018-01']
+    db_type = r_dict['db_type'] # "optchain_ib"
+    path = globalconf.config['paths']['data_folder']
+    variables = r_dict['variables']
+    files = [x[2] for x in os.walk(path) if (x[2]) ][0]
+    filtered_files = [x for x in files if x.startswith(db_type)]
+    final_list = []
+    for file in filtered_files:
+        for expiry in expiries:
+            if expiry in file:
+                final_list.append(file)
+    log.info(("final_list = ", final_list))
+    return_df_dict = {}
+    for repo in final_list:
+        log.info("repo = " + repo)
+        store = sqlite3.connect(path + repo)
+        for symbol in symbols:
+            log.info("symbol = " + symbol)
+            df1 = pd.read_sql_query("SELECT * FROM " + symbol
+                                    + " where " + r_dict['filtro_sqlite'] + " between '" + ayer + "' and '" + hoy +"'", store)
+            df1.sort_values(by=[ r_dict['current_datetime'] ], inplace=True)
+            log.info("len(df1) = %d " % (len(df1)) )
+            df1['optsymbol'] = df1[r_dict['right']].astype(str).str.cat(df1[r_dict['strike']].astype(str))
+            for right in r_dict['valid_rights']:
+                df2 = df1[ (df1[r_dict['right']] == right) ]
+                for variable in variables:
+                    df2 = df2.drop_duplicates(subset=[r_dict['current_datetime'], r_dict['symbol'],
+                                                      r_dict['right'], r_dict['strike'],r_dict['expiry']], keep='last')
+                    # transponer y poner en cada columna un precio
+                    #                   C       ....
+                    #                   2000.0  ...
+                    #                   Ask    Bid IVBid IVAsk ...
+                    df3 = df2.pivot(index=r_dict['current_datetime'], columns='optsymbol', values=variable)
+                    df3.index = pd.to_datetime(df3.index, format=r_dict['format_index'])
+                    df3 = df3.loc[:,:].apply(pd.to_numeric, errors='coerce')
+                    title = str(variable+"_"+symbol+"_"+right+"_"+repo.replace(".db", "").replace("optchain_", ""))
+                    return_df_dict[title] = df3
+    return return_df_dict

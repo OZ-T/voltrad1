@@ -130,7 +130,7 @@ def run_reader(now1 = None):
         return
     yec = YahooEconomicCalendar()
     dataframe = pd.DataFrame( yec.economic_on(now) )
-    da.write_ecocal_to_sqllite(globalconf, log, dataframe)
+    da.write_ecocal_to_sqllite(dataframe)
 
 
 if __name__ == '__main__':

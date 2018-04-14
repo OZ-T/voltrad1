@@ -19,7 +19,7 @@ from core.logger import logger
 _rth = (15,16,17,18,19,20,21)
 SHARK_TIC_TABLE_PREFFIX = 'shark_tic_'
 
-globalconf = config.GlobalConfig(level=logger.DEBUG)
+globalconf = config.GlobalConfig()
 log = logger("TIC Sharks module")
 
 
