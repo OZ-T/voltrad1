@@ -1,10 +1,12 @@
+import datetime
 import datetime as dt
 import glob
 import os
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from time import sleep
 
+import numpy as np
 import pandas as pd
 from pytz import timezone
 from tables.exceptions import NaturalNameWarning
@@ -17,7 +19,9 @@ from core import misc_utilities, config
 from ibutils.RequestUnderlyingData import RequestUnderlyingData
 from ibutils.sync_client import IBClient
 from core.logger import logger
-from persist.portfolio_and_account_data_methods import globalconf, OPT_NUM_FIELDS_LST
+from persist.portfolio_and_account_data_methods import globalconf, OPT_NUM_FIELDS_LST, log
+from persist.sqlite_methods import log, globalconf, OPT_NUM_FIELDS_LST
+from valuations.opt_pricing_methods import bsm_mcs_euro
 
 
 def migrate_h5(what_to_migrate,filter_symbol):
@@ -712,3 +716,235 @@ def extrae_options_chain2(start_dttm,end_dttm,symbol,expiry,secType):
     dataframe.index = dataframe.index.map(lambda x: x.replace(tzinfo=None))
 
     return dataframe
+
+
+def read_biz_calendar(start_dttm, valuation_dttm,log,globalconf):
+    # leer del h5 del yahoo biz calendar
+    log.info("read_biz_calendar: [%s] " % (str(valuation_dttm)))
+    year= str(valuation_dttm.year)     # "2016"
+    store = globalconf.open_economic_calendar_h5_store()
+    sym1= store.get_node("/"+year)
+    dataframe = pd.DataFrame()
+    df1 = store.select(sym1._v_pathname)
+    store_txt = store.filename
+    log.info("Number of rows loaded from h5 economic calendar[%s]: [%d]" % ( str(store_txt), len(df1)))
+    dataframe = dataframe.append(df1)
+    store.close()
+
+    # construir un dataframe con los eventos y las fechas convertidas a datetime
+    dataframe['event_datetime'] = dataframe.Date+" "+year+" "+dataframe.Time_ET
+    dataframe['event_datetime']=dataframe['event_datetime'].apply(
+                                        lambda x: datetime.strptime(x, '%b %d %Y %I:%M %p'))
+
+    # convertir las hora que estan en el horario de la costa este de US creo (mirar en la web)
+    localtz = timezone('US/Eastern')
+    dataframe['event_datetime'] = dataframe['event_datetime'].apply(
+                                        lambda x: localtz.localize(x))
+    dataframe['event_datetime'] = dataframe['event_datetime'].apply(
+                                        lambda x: x.astimezone(timezone("Europe/Madrid")).replace(tzinfo=None))
+
+    # eliminar los duplicados (quedarse con los registros historicos que ya tienen el dato real
+    dataframe = dataframe.reset_index().drop_duplicates(subset=['event_datetime','Briefing_Forecast','For',
+                                                                'Statistic'],
+                                                                keep='last').set_index('event_datetime', drop=0)
+
+    dataframe.set_index(keys=['event_datetime'], drop=True, inplace=True)
+    dataframe = dataframe[['Actual','Briefing_Forecast','For','Market_Expects',
+                           'Prior','Revised_From','Statistic','load_dttm']]
+    dataframe = dataframe.sort_index(ascending=[True])
+    dataframe = dataframe[ (dataframe.index <= valuation_dttm) & (dataframe.index >= start_dttm) ]
+    log.info("Number of rows filtered from h5 economic calendar: [%d]" % (len(dataframe)))
+    return dataframe
+
+
+def extrae_options_chain(valuation_dttm,symbol,expiry,secType):
+    """
+        extraer de la db los datos de cotizaciones para una fecha
+        imputa valores ausente con el metodo ffill de pandas dataframe dentro del dia
+    :param year:
+    :param month:
+    :param day:
+    :param symbol:
+    :param expiry:
+    :param secType:
+    :return:
+    """
+    log.info("extrae_options_chain: [%s] " % (str(valuation_dttm)))
+    store = globalconf.open_ib_h5_store()
+    #print "extrae_options_chain year=[%s] month=[%s] day=[%s]" % (str(year),month,str(day))
+    dataframe = pd.DataFrame()
+    #for hora in store.get_node("/" + str(year) + "/" + month + "/" + str(day)):
+    #    for minuto in store.get_node(hora._v_pathname):
+    #        df1 = store.select(minuto._v_pathname, where=['symbol==' + symbol, 'expiry==' + expiry, 'secType==' + secType])
+    #        df1['load_dttm'] = datetime.strptime(minuto._v_pathname, '/%Y/%b/%d/%H/%M')
+    #        dataframe = dataframe.append(df1)
+    sym1= store.get_node("/"+symbol)
+    where1=['symbol==' + symbol, 'expiry==' + expiry,
+            'secType==' + secType, 'current_date==' + str(valuation_dttm.year) +  str(valuation_dttm.month).zfill(2)
+            + str(valuation_dttm.day).zfill(2), 'current_datetime<=' + str(valuation_dttm.year)
+            + str(valuation_dttm.month).zfill(2) + str(valuation_dttm.day).zfill(2)+str(valuation_dttm.hour).zfill(2)+"5959"]
+    df1 = store.select(sym1._v_pathname, where=where1)
+    log.info("Number of rows loaded from h5 option chain file: [%d] where=[%s]" % ( len(df1) , str(where1)))
+    df1['load_dttm'] = pd.to_datetime(df1['current_datetime'], errors='coerce')  # DEPRECATED remove warning coerce=True)
+    df1['current_datetime_txt'] = df1.index.strftime("%Y-%m-%d %H:%M:%S")
+    dataframe = dataframe.append(df1)
+    store.close()
+
+    #cadena_opcs.columns
+    dataframe[OPT_NUM_FIELDS_LST] = dataframe[OPT_NUM_FIELDS_LST].apply(pd.to_numeric)
+    dataframe['load_dttm'] = dataframe['load_dttm'].apply(pd.to_datetime)
+    # imputar valores ausentes con el valor justo anterior (para este dia)
+    #dataframe = dataframe.ffill() PERO aqui hay varios strikes !!! ESTO NO VALE
+    dataframe = dataframe.drop_duplicates(subset=['right','strike','expiry','load_dttm'], keep='last')
+
+    dataframe = dataframe.sort_values(by=['right','strike','expiry','load_dttm'],
+                                      ascending=[True, True, True, True]).groupby(
+                                      ['right','strike','expiry'],
+                                      as_index=False).apply(lambda group: group.ffill())
+    dataframe= dataframe.replace([-1],[0])
+    dataframe = dataframe.add_prefix("prices_")
+    return dataframe
+
+
+def create_opt_chain_abt(year="2016"):
+    store = globalconf.open_ib_h5_store()
+
+    dataframe = pd.DataFrame()
+
+    for lvl1 in store.get_node("/"+year):
+        #print lvl1._v_pathname #mes
+        #if lvl1._v_pathname != "/2016/Jul":
+        #    continue
+        for lvl2 in store.get_node(lvl1._v_pathname):
+            #print lvl2._v_pathname # dia
+            #if lvl2._v_pathname != "/2016/Jul/21":
+            #    continue
+            for lvl3 in store.get_node(lvl2._v_pathname):
+                # print lvl3 # hora
+                for lvl4 in store.get_node(lvl3._v_pathname):
+                    if lvl4:
+                        print ("Reading " + str(lvl4._v_pathname) + " and appending to DataFrame ...")
+                        df1 = store.select(lvl4._v_pathname)
+                        dataframe = dataframe.append(df1)
+    store.close()
+    # sort the dataframe
+    dataframe=dataframe[dataframe.current_datetime.notnull()]
+
+    types = dataframe.apply(lambda x: pd.lib.infer_dtype(x.values))
+    #print str(types)
+    for col in types[types=='floating'].index:
+        dataframe[col] = dataframe[col].map(lambda x: np.nan if x > 1e200 else x)
+
+    dataframe['index']=dataframe['current_datetime'].apply(lambda x: datetime.strptime(x, '%Y%m%d%H%M%S'))
+
+
+
+    dataframe.sort(columns=['index'], inplace=True)
+    # set the index to be this and don't drop
+    dataframe.set_index(keys=['index'], drop=True, inplace=True)
+    # get a list of names
+    names = dataframe['symbol'].unique().tolist()
+
+    max_load_dttm = dataframe.reset_index().max()['current_datetime']
+    df_load_dttm = pd.DataFrame()
+    df_load_dttm = df_load_dttm.append({"load_dttm": max_load_dttm}, ignore_index=True)
+
+    store_new = globalconf.open_ib_h5_store_abt()
+    store_new.append("/load_dttm", df_load_dttm, data_columns=True)
+
+    for name in names:
+        # now we can perform a lookup on a 'view' of the dataframe
+        print ("Storing " + name + " in ABT ...")
+        joe = dataframe.loc[dataframe.symbol == name]
+        joe.sort(columns=['symbol', 'current_datetime','expiry','strike','right'], inplace=True)
+        #joe.to_excel(name+".xlsx")
+        store_new.append("/" + name, joe, data_columns=True)
+    store_new.close()
+
+
+def extrae_historical_chain(start_dt,end_dt,symbol,strike,expiry,right):
+    contract = symbol + expiry + right + strike
+    log.info("extrae_historical_chain para : start_dt=%s end_dt=%s contract=%s " % (str(start_dt),str(end_dt),contract))
+    store = globalconf.open_historical_optchain_store()
+    dataframe = pd.DataFrame()
+    node = store.get_node("/" + contract)
+    coord1 = "index < " + end_dt + " & index > " + start_dt
+    c = store.select_as_coordinates(node._v_pathname,coord1)
+    df1 = store.select(node._v_pathname,where=c)
+    df1.sort_index(inplace=True,ascending=[True])
+    #df1 = df1[(df1.index < end_dt) & (df1.index > start_dt)]
+    dataframe = dataframe.append(df1)
+    store.close()
+    return dataframe
+
+
+def extrae_historical_chain_where(start_dt,end_dt,symbol,strike,expiry,right):
+    """
+    NOT IMPLEENTEDDD
+    :param start_dt:
+    :param end_dt:
+    :param symbol:
+    :param strike:
+    :param expiry:
+    :param right:
+    :return:
+    """
+    contract = symbol + expiry + right + strike
+    log.info("extrae_historical_chain para : start_dt=%s end_dt=%s contract=%s " % (str(start_dt),str(end_dt),contract))
+    store = globalconf.open_historical_optchain_store()
+    dataframe = pd.DataFrame()
+    #pd.concat([store.select(node._v_pathname) for node in store.get_node('df')])
+    #list =
+    node = store.get_node("/" + contract)
+    coord1 = "index < " + end_dt + " & index > " + start_dt
+    c = store.select_as_coordinates(node._v_pathname,coord1)
+    df1 = store.select(node._v_pathname,where=c)
+    df1.sort_index(inplace=True,ascending=[True])
+    #df1 = df1[(df1.index < end_dt) & (df1.index > start_dt)]
+    dataframe = dataframe.append(df1)
+    store.close()
+    return dataframe
+
+
+def extrae_fecha_inicio_estrategia(symbol,expiry,accountid,scenarioMode,simulName):
+    """
+
+    :param symbol:
+    :param expiry:
+    :param accountid:
+    :return:
+    """
+    if scenarioMode == "N":
+        f = globalconf.open_orders_store()
+        node=f.get_node("/" + accountid)
+        df1 = f.select(node._v_pathname,where=['symbol=='+symbol,'expiry=='+expiry])
+        f.close()
+    elif scenarioMode == "Y":
+        df1 = globalconf.orders_dataframe_simulation(simulName=simulName)
+        df1 = df1.set_index("index", drop=1)
+    try:
+        ret1=pd.to_datetime((df1.loc[df1.times == np.min(df1.times)]['times']).unique()[0])
+    except IndexError:
+        log.info("There are no operations for the strategy %s %s in the orders H5 db" % ( str(symbol) , str(expiry) )  )
+        ret1 = datetime.now() + timedelta(days=99999)
+    return ret1
+
+
+def lista_options_chain_keys():
+    f = globalconf.open_ib_h5_store()  # open database file
+    lst = f.keys()
+    f.close()
+    return lst
+
+
+def run_opt_pricing():
+    df= extrae_options_chain(year=2016, month="Jul", day=17, hour=16, minute=40)
+
+    # bsm_mcs_euro(s0,k,t,r,sigma,num_simulations)
+    df['t'] = df.apply(lambda row: ( datetime.strptime(row['expiry'], "%Y%m%d") - datetime(year=2016,month=7,day=17) ).days / 365.25 , axis = 1)
+    df['bsm_mcs_euro'] = df.apply(lambda row: bsm_mcs_euro(float(row['modelUndPrice']),float(row['strike']),row['t'],0.0,
+                                                           float(row['modelImpliedVol']),100000,row['right']) , axis=1)
+
+    df.to_excel(
+        datetime.now().strftime('C:/Users/David/Dropbox/proyectos/Python/voltrad1/db/core%Y_%m_%d_%H_%M_%S.xlsx'),
+        sheet_name='chains')

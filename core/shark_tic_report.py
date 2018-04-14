@@ -8,6 +8,7 @@ import pandas as pd
 from scipy import stats
 
 # In[50]:
+import persist.h5_methods
 import persist.sqlite_methods
 import persist.portfolio_and_account_data_methods as ra
 from core import misc_utilities as utils, config
@@ -119,12 +120,12 @@ def run_shark_analytics(i_symbol, i_date, i_expiry, i_secType, accountid, scenar
     # precios de la cadena de opciones lo mas cerca posible de la fecha de valoracion
     # realmente saca todos los precios del dia anteriores a dicha fecha
     ###################################################################################################################
-    cadena_opcs= persist.sqlite_methods.extrae_options_chain(valuation_dttm=fecha_valoracion, symbol=i_symbol, expiry=i_expiry, secType=i_secType)
+    cadena_opcs= persist.h5_methods.extrae_options_chain(valuation_dttm=fecha_valoracion, symbol=i_symbol, expiry=i_expiry, secType=i_secType)
 
     # cadena de opciones en el cierre del dia anterior a la fecha de valoracion
     # realmente saca todos los precios del dia anteriores a dicha fecha
-    cadena_opcs_tminus1= persist.sqlite_methods.extrae_options_chain(valuation_dttm=fecha_val_tminus1,  #cierre del dia anterior
-                                                                     symbol=i_symbol, expiry=i_expiry, secType=i_secType)
+    cadena_opcs_tminus1= persist.h5_methods.extrae_options_chain(valuation_dttm=fecha_val_tminus1,  #cierre del dia anterior
+                                                                 symbol=i_symbol, expiry=i_expiry, secType=i_secType)
 
     if cadena_opcs.empty or cadena_opcs_tminus1.empty:
         log2.info("No data to analyze cadena_opcs.empty=%s cadena_opcs_tminus1.empty=%s. Exiting ..."
@@ -197,8 +198,8 @@ def run_shark_analytics(i_symbol, i_date, i_expiry, i_secType, accountid, scenar
     cadena_opcs_orders= pd.DataFrame()
     for x in lista_dttm_con_trades:
         log2.info("Extraer options chain para fecha trade: [%s] " % (str(x)))
-        temporal1 = persist.sqlite_methods.extrae_options_chain(valuation_dttm=x,
-                                                                symbol=i_symbol, expiry=i_expiry, secType=i_secType)
+        temporal1 = persist.h5_methods.extrae_options_chain(valuation_dttm=x,
+                                                            symbol=i_symbol, expiry=i_expiry, secType=i_secType)
         cadena_opcs_orders=cadena_opcs_orders.append(temporal1)
 
     if cadena_opcs_orders.empty:
@@ -724,8 +725,8 @@ def get_strategy_start_date(con,meta,symbol,expiry,accountid,scenarioMode,simulN
             return ret1
 
     # 2.- si la estrategia no existe en la ABT se toma la fecha de inicio la fecha de la primera operacion
-    ret1 = ra.extrae_fecha_inicio_estrategia(symbol=symbol,expiry=expiry,accountid=accountid,
-                                             scenarioMode=scenarioMode,simulName=simulName)
+    ret1 = persist.h5_methods.extrae_fecha_inicio_estrategia(symbol=symbol, expiry=expiry, accountid=accountid,
+                                                             scenarioMode=scenarioMode, simulName=simulName)
     ret1=ret1.replace(minute=59, second=59) # el datetime de valoracion siemrpe ha ser el ultimo minuto para asegurar coger todos los trades
     return ret1
 

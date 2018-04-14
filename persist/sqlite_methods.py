@@ -1,15 +1,12 @@
 import datetime as dt
-import os
 import sqlite3
 import sys
 from datetime import datetime
 from time import sleep
 from collections import defaultdict
 from core.misc_utilities import make_dict, dictify
-import pandas as pd
 import pandas_datareader.data as web
 from pandas_datareader._utils import RemoteDataError
-from pytz import timezone
 from core import misc_utilities as utils, config as config
 from ibutils import sync_client as ib
 from ibutils.RequestUnderlyingData import RequestUnderlyingData
@@ -32,6 +29,34 @@ OPT_NUM_FIELDS_LST = [u'CallOI', u'PutOI', u'Volume', u'askDelta', u'askGamma',
 
 globalconf = config.GlobalConfig()
 log = globalconf.get_logger()
+
+import datetime
+import pandas as pd
+def get_yahoo_option_dataframe(underlying,expiry,strike,type):
+    try:
+        datetime.datetime.strptime(expiry, '%Y-%m')
+    except ValueError:
+        raise ValueError("Incorrect data format, should be YYYY-MM")
+    path = globalconf.config['paths']['data_folder']
+    db_file = "optchain_yhoo_expiry_"+expiry+".db"
+    store = sqlite3.connect(path + db_file)
+    df1 = pd.read_sql_query("SELECT * FROM " + underlying + " ;", store)
+
+    return df1
+
+def get_ib_option_dataframe(underlying,expiry,strike,type):
+    try:
+        datetime.datetime.strptime(expiry, '%Y-%m')
+    except ValueError:
+        raise ValueError("Incorrect data format, should be YYYY-MM")
+    path = globalconf.config['paths']['data_folder']
+    db_file = "optchain_ib_expiry_"+expiry+".db"
+    store = sqlite3.connect(path + db_file)
+    df1 = pd.read_sql_query("SELECT * FROM " + underlying + " ;", store)
+
+    return df1
+
+
 
 def get_columns(name,store):
     sql = "SELECT * FROM "+name +" WHERE 0=1"
@@ -504,51 +529,19 @@ def save_graph_to_db(globalconf,log,script, div, symbol, expiry, last_date, num_
     store.close()
 
 
-def read_biz_calendar(start_dttm, valuation_dttm,log,globalconf):
-    # leer del h5 del yahoo biz calendar
-    log.info("read_biz_calendar: [%s] " % (str(valuation_dttm)))
-    year= str(valuation_dttm.year)     # "2016"
-    store = globalconf.open_economic_calendar_h5_store()
-    sym1= store.get_node("/"+year)
-    dataframe = pd.DataFrame()
-    df1 = store.select(sym1._v_pathname)
-    store_txt = store.filename
-    log.info("Number of rows loaded from h5 economic calendar[%s]: [%d]" % ( str(store_txt), len(df1)))
-    dataframe = dataframe.append(df1)
-    store.close()
-
-    # construir un dataframe con los eventos y las fechas convertidas a datetime
-    dataframe['event_datetime'] = dataframe.Date+" "+year+" "+dataframe.Time_ET
-    dataframe['event_datetime']=dataframe['event_datetime'].apply(
-                                        lambda x: datetime.strptime(x, '%b %d %Y %I:%M %p'))
-
-    # convertir las hora que estan en el horario de la costa este de US creo (mirar en la web)
-    localtz = timezone('US/Eastern')
-    dataframe['event_datetime'] = dataframe['event_datetime'].apply(
-                                        lambda x: localtz.localize(x))
-    dataframe['event_datetime'] = dataframe['event_datetime'].apply(
-                                        lambda x: x.astimezone(timezone("Europe/Madrid")).replace(tzinfo=None))
-
-    # eliminar los duplicados (quedarse con los registros historicos que ya tienen el dato real
-    dataframe = dataframe.reset_index().drop_duplicates(subset=['event_datetime','Briefing_Forecast','For',
-                                                                'Statistic'],
-                                                                keep='last').set_index('event_datetime', drop=0)
-
-    dataframe.set_index(keys=['event_datetime'], drop=True, inplace=True)
-    dataframe = dataframe[['Actual','Briefing_Forecast','For','Market_Expects',
-                           'Prior','Revised_From','Statistic','load_dttm']]
-    dataframe = dataframe.sort_index(ascending=[True])
-    dataframe = dataframe[ (dataframe.index <= valuation_dttm) & (dataframe.index >= start_dttm) ]
-    log.info("Number of rows filtered from h5 economic calendar: [%d]" % (len(dataframe)))
-    return dataframe
-
-
 def get_optchain_db_types(globalconf):
     db_types = ["optchain_ib_exp","optchain_yhoo","optchain_ib_hist"]
     return db_types
 
+import os
 
-def get_optchain_datasource_files(globalconf):
+def get_data_files(globalconf):
+    data_folder = globalconf.config['paths']['data_folder']
+    return next(os.walk(data_folder))[2]
+
+
+
+def get_optchain_datasource_files(globalconf,vendor,expiry):
     data_folder = globalconf.config['paths']['data_folder']
     dir = os.path.abspath(data_folder)
     exts = ".db"
@@ -566,55 +559,6 @@ def get_optchain_datasource_files(globalconf):
                     dict[type1[0]][name] = filename
     # print(("XXXXX3: ",dict))
     return dict
-
-
-def extrae_options_chain(valuation_dttm,symbol,expiry,secType):
-    """
-        extraer de la db los datos de cotizaciones para una fecha
-        imputa valores ausente con el metodo ffill de pandas dataframe dentro del dia
-    :param year:
-    :param month:
-    :param day:
-    :param symbol:
-    :param expiry:
-    :param secType:
-    :return:
-    """
-    log.info("extrae_options_chain: [%s] " % (str(valuation_dttm)))
-    store = globalconf.open_ib_h5_store()
-    #print "extrae_options_chain year=[%s] month=[%s] day=[%s]" % (str(year),month,str(day))
-    dataframe = pd.DataFrame()
-    #for hora in store.get_node("/" + str(year) + "/" + month + "/" + str(day)):
-    #    for minuto in store.get_node(hora._v_pathname):
-    #        df1 = store.select(minuto._v_pathname, where=['symbol==' + symbol, 'expiry==' + expiry, 'secType==' + secType])
-    #        df1['load_dttm'] = datetime.strptime(minuto._v_pathname, '/%Y/%b/%d/%H/%M')
-    #        dataframe = dataframe.append(df1)
-    sym1= store.get_node("/"+symbol)
-    where1=['symbol==' + symbol, 'expiry==' + expiry,
-            'secType==' + secType, 'current_date==' + str(valuation_dttm.year) +  str(valuation_dttm.month).zfill(2)
-            + str(valuation_dttm.day).zfill(2), 'current_datetime<=' + str(valuation_dttm.year)
-            + str(valuation_dttm.month).zfill(2) + str(valuation_dttm.day).zfill(2)+str(valuation_dttm.hour).zfill(2)+"5959"]
-    df1 = store.select(sym1._v_pathname, where=where1)
-    log.info("Number of rows loaded from h5 option chain file: [%d] where=[%s]" % ( len(df1) , str(where1)))
-    df1['load_dttm'] = pd.to_datetime(df1['current_datetime'], errors='coerce')  # DEPRECATED remove warning coerce=True)
-    df1['current_datetime_txt'] = df1.index.strftime("%Y-%m-%d %H:%M:%S")
-    dataframe = dataframe.append(df1)
-    store.close()
-
-    #cadena_opcs.columns
-    dataframe[OPT_NUM_FIELDS_LST] = dataframe[OPT_NUM_FIELDS_LST].apply(pd.to_numeric)
-    dataframe['load_dttm'] = dataframe['load_dttm'].apply(pd.to_datetime)
-    # imputar valores ausentes con el valor justo anterior (para este dia)
-    #dataframe = dataframe.ffill() PERO aqui hay varios strikes !!! ESTO NO VALE
-    dataframe = dataframe.drop_duplicates(subset=['right','strike','expiry','load_dttm'], keep='last')
-
-    dataframe = dataframe.sort_values(by=['right','strike','expiry','load_dttm'],
-                                      ascending=[True, True, True, True]).groupby(
-                                      ['right','strike','expiry'],
-                                      as_index=False).apply(lambda group: group.ffill())
-    dataframe= dataframe.replace([-1],[0])
-    dataframe = dataframe.add_prefix("prices_")
-    return dataframe
 
 
 def read_historical_acc_summary_from_sqllite(globalconf, log, accountid):
@@ -764,3 +708,8 @@ def store_orders_from_ib_to_db():
         write_orders_to_sqllite(globalconf, log, dataframe)
     else:
         log.info("No orders to append ...")
+
+
+if __name__ == "__main__":
+    df= get_yahoo_option_dataframe("SPY", "2019-03", "", "")
+    print (df)

@@ -15,6 +15,7 @@ from numpy import log, sqrt
 from numpy.lib.stride_tricks import as_strided
 from pylab import axhline, figure, legend, plot, show
 
+import persist.h5_methods
 import persist.sqlite_methods
 from core import config
 from persist import sqlite_methods as md, portfolio_and_account_data_methods as ra
@@ -973,7 +974,7 @@ def print_historical_option(start_dt,end_dt,symbol,lst_right_strike,expiry,type)
     conversion = {'open_'+type: 'first', 'high_'+type: 'max', 'low_'+type: 'min', 'close_'+type: 'last' }
     dataframe = pd.DataFrame()
     for x in lst_right_strike.split(","):
-        df=ra.extrae_historical_chain(start_dt1,end_dt1,symbol,x[1:],expiry,x[:1])
+        df= persist.h5_methods.extrae_historical_chain(start_dt1, end_dt1, symbol, x[1:], expiry, x[:1])
         df.index = pd.to_datetime(df.index, format="%Y%m%d  %H:%M:%S")
         df["date"] = df.index
         df[[u'close_'+type, u'high_'+type, u'open_'+type, u'low_'+type]] \
@@ -1140,7 +1141,7 @@ def print_ecalendar():
     print(end)
 
     client , log_analytics, globalconf = init_func()
-    dataframe = persist.sqlite_methods.read_biz_calendar(start_dttm=start, valuation_dttm=end)
+    dataframe = persist.h5_methods.read_biz_calendar(start_dttm=start, valuation_dttm=end)
     print (dataframe)
     end_func(client)
 
