@@ -28,7 +28,7 @@ def read_10_days_acc_summary_and_current_positions():
     days = 10
     globalconf = config.GlobalConfig(level=logger.ERROR)
     log = logger("print_10_days_acc_summary_and_current_positions")
-    client = ib.IBClient(globalconf)
+    client = ib.IBClient()
     clientid1 = int(globalconf.config['ib_api']['clientid_orders'])
     client.connect(clientid1=clientid1)
     # this is to try to fit in one line each row od a dataframe when printing to console
@@ -97,7 +97,7 @@ def store_acc_summary_and_portfolio_from_ib_to_db():
         log.info("This is a US Calendar holiday. Ending process ... ")
         return
     globalconf = config.GlobalConfig()
-    client = ib.IBClient(globalconf)
+    client = ib.IBClient()
     clientid1 = int(globalconf.config['ib_api']['clientid_data'])
     client.connect(clientid1=clientid1)
 

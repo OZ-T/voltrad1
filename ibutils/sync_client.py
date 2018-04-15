@@ -17,9 +17,12 @@ import numpy as np
 ## This is the reqId IB API sends when a fill is received
 FILL_CODE=-1
 
+from core import config
+globalconf = config.GlobalConfig()
+log = globalconf.log
 
 class syncEWrapper(EWrapper):
-    def __init__(self,config1=None):
+    def __init__(self):
         ## variables to store requested data
         self.isDone = False
         self.isSnapshot = False
@@ -27,10 +30,6 @@ class syncEWrapper(EWrapper):
         self.bar  = None
         self.requests = {}
         self.req_chains = {}
-        if config1 is None:
-            self.log = logger("syncEWrapper")
-        else:
-            self.log=config1.log
         super(syncEWrapper, self).__init__()
 
     def print_this_func_info(self):
@@ -83,7 +82,7 @@ class syncEWrapper(EWrapper):
 
         orderid=orderdetails['orderid']
         orderdata[orderid]=orderdetails
-        self.log.info("add_order_data orderdetails [%s]" % ( str(orderdetails) ))
+        log.info("add_order_data orderdetails [%s]" % ( str(orderdetails) ))
         setattr(self, "data_order_structure", orderdata)
         setattr(self, "flag_order_confirm_finished", True)
 
@@ -312,14 +311,14 @@ class syncEWrapper(EWrapper):
                   "clientId":clientId,
                   "whyHeld":whyHeld }
         self.print_this_func_info()
-        self.log.info("orderStatus [%s]" % ( str(info1) ))
+        log.info("orderStatus [%s]" % ( str(info1) ))
 
     def openOrder(self, orderID, contract, order, orderState):
         """
         Tells us about any orders we are working now
         """
         self.print_this_func_info()
-        self.log.info("openOrder orderId [%s] order [%s]" % ( str(orderID), str(order) ))
+        log.info("openOrder orderId [%s] order [%s]" % ( str(orderID), str(order) ))
         ## Get a selection of interesting things about the order
         orderdetails=dict(
             symbol=contract.symbol ,
@@ -445,12 +444,12 @@ class syncEWrapper(EWrapper):
         self.print_this_func_info()
     def contractDetailsEnd(self, reqId):
         self.print_this_func_info()
-        self.log.info("contractDetailsEnd=[%s]" % ( str(reqId)) )
+        log.info("contractDetailsEnd=[%s]" % ( str(reqId)) )
         self.req_chains[reqId].isDone = True
         #print("contractDetailsEnd reqId=[%d] contractdetails=[%s]" % ( reqId , str(self.req_chains[reqId].optionsChain) ))
 
     def commissionReport(self, commissionReport):
-        self.log.info("CommisionReport is being called ... [%s] " % ( str(commissionReport) ))
+        log.info("CommisionReport is being called ... [%s] " % ( str(commissionReport) ))
         setattr(self, "flag_comm_data_finished", True)
 
     def position(self,account,contract,position):
@@ -509,7 +508,7 @@ class syncEWrapper(EWrapper):
                          comboLegsDescrip=str(comboLegsDescrip),conId=str(conId),localSymbol=str(localSymbol),
                          primaryExchange=str(primaryExchange),multiplier=str(multiplier),right=str(right),secId=str(secId),
                          secIdType=str(secIdType),strike=str(strike),underComp=str(underComp))
-        self.log.info("reqId = [%d] execdetails = [%s]" % (reqId,str(execdetails)))
+        log.info("reqId = [%d] execdetails = [%s]" % (reqId,str(execdetails)))
         if reqId==FILL_CODE:
             ## This is a fill from a trade we've just done
             pass
@@ -550,7 +549,7 @@ class syncEWrapper(EWrapper):
         msgType1=str(msgType)
         message1=str(message)
         origExch1=str(origExchange)
-        self.log.info("msgId1 = [%d] message1 = [%s]" % (msgId1,str(message1)))
+        log.info("msgId1 = [%d] message1 = [%s]" % (msgId1,str(message1)))
         self.add_news_data(self, msgId1, msgType1, message1, origExch1 )
 
     def managedAccounts(self, accountsList):
@@ -596,7 +595,7 @@ class syncEWrapper(EWrapper):
         #print("reqId = [%d] historical_details = [%s]" % (reqId,str(historical_details)))
         if "finished" in date1:
             setattr(self, "flag_historical_data_finished", True)
-            self.log.info("Historical data request finished ...")
+            log.info("Historical data request finished ...")
         else:
             self.add_historical_data(reqId, historical_details)
 
@@ -629,7 +628,7 @@ class syncEWrapper(EWrapper):
         self.print_this_func_info()
         self.time = dt.datetime.fromtimestamp(time)
         self.isDone = True
-        self.log.info("currentTime=[%s]" % ( str(self.time) ) )
+        log.info("currentTime=[%s]" % ( str(self.time) ) )
     def fundamentalData(self, reqId, data):
         self.print_this_func_info()
     def error(self,*err):
@@ -640,9 +639,9 @@ class syncEWrapper(EWrapper):
         #ERRORS_TO_TRIGGER=[201, 103, 502, 504, 509, 200, 162, 420, 2105, 1100, 478, 201, 399]
         if err[1] in ERRORS_TO_TRIGGER:
             self.isDone = True
-            self.log.error("Error =[%d] [%s] [%s]" % ( err[1], str(err[2]) ,str(err[0]) ) )
+            log.error("Error =[%d] [%s] [%s]" % ( err[1], str(err[2]) ,str(err[0]) ) )
         else:
-            self.log.info("Info =[%d] [%s] [%s]" % (err[1], str(err[2]), str(err[0])))
+            log.info("Info =[%d] [%s] [%s]" % (err[1], str(err[2]), str(err[0])))
 
     def tickSnapshotEnd(self, reqId):
         self.print_this_func_info()
@@ -653,13 +652,12 @@ class IBClient():
         Clase para conectarse como cliente a IB API con python usando swigibpy
 
     """
-    def __init__(self,config1):
+    def __init__(self):
         self.config = config1
-        self.myEWrapper = syncEWrapper(config1)
+        self.myEWrapper = syncEWrapper()
         self.myEClientSocket = EPosixClientSocket(self.myEWrapper)
         self.start_time = 0
         #self.log = logger("IBClient")
-        self.log = config1.log
 
     def connect(self, clientid1):
         port1= int(self.config.config['ib_api']['port'])
@@ -667,7 +665,7 @@ class IBClient():
         #clientid1 = int(self.config.config['ib_api']['clientid'])
         # This change is to allow more than one client in the VPS
         #clientid1 = random.randint(1, 2000)
-        self.log.info("Calling connection port=%d host=%s clientid=%d" % (port1 , host1 , clientid1))
+        log.info("Calling connection port=%d host=%s clientid=%d" % (port1 , host1 , clientid1))
         self.myEClientSocket.eConnect(host1, port1 , clientid1)
 
     def disconnect(self):
@@ -680,7 +678,7 @@ class IBClient():
             for reqId, request in self.myEWrapper.requests.items():
                 li.append( self.myEWrapper.requests[reqId].isDone )
                 if ( self.myEWrapper.requests[reqId].isDone and not self.myEWrapper.requests[reqId].isCancelled ):
-                    self.log.info("Cancelling MktData [%s] for reqId=[%d] [%d]"
+                    log.info("Cancelling MktData [%s] for reqId=[%d] [%d]"
                           % (datetime.now().strftime('%Y-%m-%d %H:%M:%S'),reqId, request.getRequestId()))
                     self.myEClientSocket.cancelMktData(id=request.getRequestId())
                     self.myEWrapper.requests[reqId].isCancelled = True
@@ -744,7 +742,7 @@ class IBClient():
 
     def getMktDataSnapshot(self, requests):
         self.start_time=time.time()
-        self.log.info("getMktDataSnapshot [%s]" % ( datetime.now().strftime('%Y-%m-%d %H:%M:%S') ) )
+        log.info("getMktDataSnapshot [%s]" % ( datetime.now().strftime('%Y-%m-%d %H:%M:%S') ) )
         self.myEWrapper.isDone = False
         self.myEWrapper.isSnapshot = True
         self.myEWrapper.requests = requests
@@ -760,7 +758,7 @@ class IBClient():
 
     def getMktData(self, requests):
         self.start_time=time.time()
-        self.log.info("getMktData [%s]" % ( datetime.now().strftime('%Y-%m-%d %H:%M:%S') ) )
+        log.info("getMktData [%s]" % ( datetime.now().strftime('%Y-%m-%d %H:%M:%S') ) )
         self.myEWrapper.isDone = False
         self.myEWrapper.isSnapshot = False
         self.myEWrapper.requests = requests
@@ -779,13 +777,13 @@ class IBClient():
                                             genericTicks=request.getGenericTicks(),
                                             snapshot=0)
             if num1 >= 30:
-                self.log.info("reqMktData requested [%d/%d] sleeping %d secs..." % (num2,total,6))
+                log.info("reqMktData requested [%d/%d] sleeping %d secs..." % (num2,total,6))
                 sleep(10)
                 num1=0
             # iterate all requests to cancel those already fulfilled
             for reqId2, request2 in self.myEWrapper.requests.items():
                 if (self.myEWrapper.requests[reqId2].isDone and not self.myEWrapper.requests[reqId2].isCancelled):
-                    self.log.info("Cancelling MktData [%s] for reqId2=[%d] [%d]"
+                    log.info("Cancelling MktData [%s] for reqId2=[%d] [%d]"
                           % (datetime.now().strftime('%Y-%m-%d %H:%M:%S'),reqId2, request2.getRequestId()))
                     self.myEClientSocket.cancelMktData(id=request2.getRequestId())
                     self.myEWrapper.requests[reqId2].isCancelled = True
@@ -798,7 +796,7 @@ class IBClient():
 
     def getOptionsChain(self,requests):
         self.start_time=time.time()
-        self.log.info("getOptionsChain [%s]" % ( datetime.now().strftime('%Y-%m-%d %H:%M:%S') ) )
+        log.info("getOptionsChain [%s]" % ( datetime.now().strftime('%Y-%m-%d %H:%M:%S') ) )
         return1 = {}
         for reqId, request in requests.items():
             self.myEWrapper.isDone = False
@@ -858,8 +856,8 @@ class IBClient():
         self.myEClientSocket.cancelNewsBulletins()
 
         if iserror:
-            self.log.error(self.myEWrapper.error_msg)
-            self.log.error("Problem getting news")
+            log.error(self.myEWrapper.error_msg)
+            log.error("Problem getting news")
 
         if not self.myEWrapper.data_news_data: #check if today there are no news
             newslist = {}
@@ -875,7 +873,7 @@ class IBClient():
         inc_secs=.2
         self.myEWrapper.init_historical_data()
         self.myEWrapper.init_error()
-        self.log.info("get_historical request")
+        log.info("get_historical request")
         #print ("id=",request.getRequestId(),"contract=",request.getInstance(),"endDateTime=",endDateTime,
         #      "durationStr=",durationStr,"barSizeSetting=",barSizeSetting,"whatToShow=",whatToShow,
         #      "useRTH=",useRTH,"formatDate=",formatDate)
@@ -899,18 +897,18 @@ class IBClient():
             if (time.time() - start_time) > int(self.config.config['ib_api']['wait_per_request']):
                     #min(int(self.config.config['ib_api']['max_wait']),
                     #int(self.config.config['ib_api']['wait_per_request']) * 2 ):
-                self.log.info( "While loop timed out: max wait reached [%d] " % ( time.time() - start_time )  )
+                log.info( "While loop timed out: max wait reached [%d] " % ( time.time() - start_time )  )
                 self.myEClientSocket.cancelHistoricalData(tickerId=request.getRequestId())
                 sleep(4)
                 finished = True
             sleep(inc_secs)
-            #self.log.info( str(self.myEWrapper.flag_historical_data_finished))
+            #log.info( str(self.myEWrapper.flag_historical_data_finished))
 
 
 
         if iserror:
-            self.log.error(self.myEWrapper.error_msg)
-            self.log.error("Problem getting historical data")
+            log.error(self.myEWrapper.error_msg)
+            log.error("Problem getting historical data")
 
         if not self.myEWrapper.data_historical_data:
             histlist = {}
@@ -948,8 +946,8 @@ class IBClient():
             sleep(inc_secs)
 
         if iserror:
-            self.log.error(self.myEWrapper.error_msg)
-            self.log.error("Problem getting executions")
+            log.error(self.myEWrapper.error_msg)
+            log.error("Problem getting executions")
 
         if not self.myEWrapper.data_fill_data: #check if today there are no orders
             execlist = {}
@@ -984,8 +982,8 @@ class IBClient():
         self.myEClientSocket.reqAccountUpdates(subscribe=False, acctCode=str(self.config.config['ib_api']['accountid']))
 
         if iserror:
-            self.log.error(self.myEWrapper.error_msg)
-            self.log.error("Problem getting account data")
+            log.error(self.myEWrapper.error_msg)
+            log.error("Problem getting account data")
 
         #print ("data_account_data = [%s]"
         #       % (str(self.myEWrapper.data_account_data[str(self.config.config['ib_api']['accountid'])])))
@@ -1027,8 +1025,8 @@ class IBClient():
             pass
         order_structure=self.myEWrapper.data_order_structure
         if iserror:
-            self.log.error (self.myEWrapper.error_msg)
-            self.log.error ("Problem getting open orders")
+            log.error (self.myEWrapper.error_msg)
+            log.error ("Problem getting open orders")
         return order_structure
 
 
@@ -1037,10 +1035,10 @@ class IBClient():
         self.myEWrapper.init_error()
         start_time=time.time()
         if orderid is None:
-            self.log.info("Getting orderid from IB")
+            log.info("Getting orderid from IB")
             orderid=self.get_next_brokerorderid()
         if orderid is not None:
-            self.log.info("Using order id of %d" % orderid)
+            log.info("Using order id of %d" % orderid)
         finished=False
         iserror=False
         # Place the order
@@ -1058,8 +1056,8 @@ class IBClient():
             pass
         order_structure=self.myEWrapper.data_order_structure
         if iserror:
-            self.log.error (self.myEWrapper.error_msg)
-            self.log.error ("Problem getting open orders")
+            log.error (self.myEWrapper.error_msg)
+            log.error ("Problem getting open orders")
 
         return order_structure
 
@@ -1086,8 +1084,8 @@ class IBClient():
             pass
 
         if brokerorderid is None or iserror:
-            self.log.error(self.myEWrapper.error_msg)
-            self.log.error("Problem getting next broker orderid")
+            log.error(self.myEWrapper.error_msg)
+            log.error("Problem getting next broker orderid")
             return None
 
         return brokerorderid
@@ -1180,7 +1178,7 @@ def run_test_get_time():
     sys.stderr = log_file
 
     globalconf = config.GlobalConfig()
-    client = IBClient(globalconf)
+    client = IBClient()
     clientid1 = int(globalconf.config['ib_api']['clientid_data'])
     client.connect(clientid1=clientid1)
 
@@ -1201,7 +1199,7 @@ def run_test_get_orders():
     sys.stderr = log_file
 
     globalconf = config.GlobalConfig()
-    client = IBClient(globalconf)
+    client = IBClient()
     clientid1 = int(globalconf.config['ib_api']['clientid_data'])
     client.connect(clientid1=clientid1)
 
@@ -1221,7 +1219,7 @@ def run_test_get_orders():
 
 def run_test_get_news():
     globalconf = config.GlobalConfig()
-    client = IBClient(globalconf)
+    client = IBClient()
     clientid1 = int(globalconf.config['ib_api']['clientid_data'])
     client.connect(clientid1=clientid1)
 
@@ -1231,7 +1229,7 @@ def run_test_get_news():
 
 def run_test_get_historical():
     globalconf = config.GlobalConfig()
-    client = IBClient(globalconf)
+    client = IBClient()
     clientid1 = int(globalconf.config['ib_api']['clientid_data'])
     client.connect(clientid1=clientid1)
     ticker = RequestUnderlyingData('ES', 'FUT', '20160916', 0, '', '', 'GLOBEX', 'XXX', 1000)

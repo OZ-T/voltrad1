@@ -13,7 +13,7 @@ log = globalconf.log
 
 
 def init_func():
-    client = ib.IBClient(globalconf)
+    client = ib.IBClient()
     clientid1 = int(globalconf.config['ib_api']['clientid_orders'])
     client.connect(clientid1=clientid1)
 

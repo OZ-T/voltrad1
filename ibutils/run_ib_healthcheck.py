@@ -12,7 +12,7 @@ if __name__=="__main__":
     This simple example returns the time
     """
     globalconf = config.GlobalConfig()
-    client = IBClient(globalconf)
+    client = IBClient()
     clientid1 = int(globalconf.config['ib_api']['clientid_data'])
     client.connect(clientid1=clientid1)
     dataframe = pd.DataFrame({'ibtime': client.getTime()}, index=[0])

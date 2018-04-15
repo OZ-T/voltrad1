@@ -536,7 +536,7 @@ def store_orders_from_ib_to_h5():
 
     log.info("Getting orders data from IB ... ")
     globalconf = config.GlobalConfig()
-    client = ib.IBClient(globalconf)
+    client = ib.IBClient()
     clientid1 = int(globalconf.config['ib_api']['clientid_data'])
     client.connect(clientid1=clientid1)
 
@@ -596,7 +596,7 @@ def historical_data_loader():
 
     globalconf = config.GlobalConfig()
     underly_def = globalconf.get_tickers_historical_ib()
-    client = IBClient(globalconf)
+    client = IBClient()
     clientid1 = int(globalconf.config['ib_api']['clientid_data'])
     client.connect(clientid1=clientid1)
 

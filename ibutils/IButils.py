@@ -4,6 +4,10 @@ import csv
 
 from swigibpy import Contract
 
+from core import config
+globalconf = config.GlobalConfig()
+log = globalconf.log
+
 DEFAULT_VALUE=np.nan
 
 class autodf(object):

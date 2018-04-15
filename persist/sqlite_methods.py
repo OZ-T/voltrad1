@@ -274,7 +274,7 @@ def store_underlying_ib_to_db():
     globalconf = config.GlobalConfig()
     path = globalconf.config['paths']['data_folder']
     underly_def = globalconf.get_tickers_historical_ib()
-    client = IBClient(globalconf)
+    client = IBClient()
     clientid1 = int(globalconf.config['ib_api']['clientid_data'])
     client.connect(clientid1=clientid1)
 
@@ -686,7 +686,7 @@ def store_orders_from_ib_to_db():
         return
 
     log.info("Getting orders data from IB ... ")
-    client = ib.IBClient(globalconf)
+    client = ib.IBClient()
     clientid1 = int(globalconf.config['ib_api']['clientid_data'])
     client.connect(clientid1=clientid1)
 

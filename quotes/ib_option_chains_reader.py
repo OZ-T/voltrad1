@@ -36,7 +36,7 @@ def run_reader():
         underl_under.update({ int(index) : RequestUnderlyingData( row['symbol'], row['underl_type'],
                                                    str(row['underl_expiry']),0,'','', row['underl_ex'] , row['underl_curr'] , int(index) ) })
 
-    client = ib.IBClient(globalconf)
+    client = ib.IBClient()
     clientid1 = int(globalconf.config['ib_api']['clientid_data'])
     client.connect(clientid1=clientid1)
 

@@ -2,11 +2,14 @@ from swigibpy import EWrapper
 import time
 from swigibpy import EPosixClientSocket, ExecutionFilter
 from ibutils.IButils import bs_resolve, action_ib_fill
-import ConfigParser
 
 FILL_CODE = 1234
 MEANINGLESS_NUMBER = 999999
 MAX_WAIT = 99999
+
+from core import config
+globalconf = config.GlobalConfig()
+log = globalconf.log
 
 def return_IB_connection_info():
     """
@@ -22,8 +25,7 @@ class IBWrapper(EWrapper):
     """
     Callback object passed to TWS, these functions will be called directly by TWS.
     """
-    def __init__(self, globalconfig):
-        self.globalconfig=globalconfig
+    def __init__(self):
         self.nextValidId = 1
 
     def init_error(self):
@@ -42,12 +44,13 @@ class IBWrapper(EWrapper):
         """
         This event is called when there is an error with the communication or when TWS wants to send a message to the client.
         """
-        errors_to_trigger=self.globalconfig.get_list_errors_to_trigger_ib()
+        errors_to_trigger=globalconfig.get_list_errors_to_trigger_ib()
         if errorCode in errors_to_trigger:
             errormsg="IB error id %d errorcode %d string %s" %(id, errorCode, errorString)
             print (errormsg)
             setattr(self, "flag_iserror", True)
             setattr(self, "error_msg", errormsg)
+
 
     def currentTime(self, time_from_server):
         """

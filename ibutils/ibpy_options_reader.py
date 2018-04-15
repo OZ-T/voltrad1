@@ -105,7 +105,7 @@ class IB_API:
         """
         Call for all the options contract for the underlying
         """
-        print "Calling Contract Details"
+        print ("Calling Contract Details")
         # Contract creation
         contract = Contract()
         contract.m_symbol = contract_values['m_symbol']
@@ -121,7 +121,7 @@ class IB_API:
         """
         Call for all the options prices and greeks
         """
-        print "Calling Market Data"
+        print ("Calling Market Data")
         self.reqId = 1
         # Loop through all options contracts
         for option in self.d_contracts.values():
