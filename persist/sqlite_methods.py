@@ -8,7 +8,6 @@ from core.misc_utilities import make_dict, dictify
 import pandas_datareader.data as web
 from pandas_datareader._utils import RemoteDataError
 from core import misc_utilities as utils
-from operations.reporting import globalconf
 from ibutils import sync_client as ib
 from ibutils.RequestUnderlyingData import RequestUnderlyingData
 from ibutils.sync_client import IBClient

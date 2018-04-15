@@ -124,12 +124,11 @@ class GlobalConfig(object, metaclass=Singleton):
         :return:
         """
         if scenarioMode == "N":
-            name = self.config['sqllite']['strategy_tic']
+            db_file = self.config['sqllite']['strategy_tic']
         elif scenarioMode == "Y":
-            name = self.config['sqllite']['strategy_tic_simul']
+            db_file = self.config['sqllite']['strategy_tic_simul']
         path=self.config['paths']['analytics_folder']
-
-        return pd.HDFStore(path + name)
+        return sqlite3.connect(path + db_file)
 
     def open_economic_calendar_h5_store(self):
         """

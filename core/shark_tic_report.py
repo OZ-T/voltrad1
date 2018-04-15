@@ -689,13 +689,10 @@ def get_strategy_start_date(con,meta,symbol,expiry,accountid,scenarioMode,simulN
     if appendh5 == 1:
         # 1.- Comprobar primero si hay ya registros en la ABT para la estrategia
         store_abt = globalconf.open_ib_abt_strategy_tic(scenarioMode)
+
         try:
-            node1 = symbol + "/" + expiry
-            if scenarioMode == "Y":
-                node1=simulName
-            node_abt = store_abt.get_node("/" + node1)
-            df1_abt = store_abt.select(node_abt._v_pathname,
-                                       where=['subyacente==' + symbol, 'expiry==' + expiry, 'accountid==' + accountid])
+            where = ' where subyacente=' + symbol + ' expiry=' + expiry + 'accountid=' + accountid + ' ;'
+            df1_abt = pd.read_sql_query("SELECT * FROM " + symbol + where, store_abt)
             ret1=pd.to_datetime((df1_abt.loc[df1_abt.DTMaxdatost == np.max(df1_abt.DTMaxdatost)]['DTMaxdatost']).unique()[0])
             store_abt.close()
             # add one hour to run from the next hour
