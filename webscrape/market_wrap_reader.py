@@ -52,7 +52,9 @@ def run_reader(now1 = None):
 
     base = "https://www.itpm.com/wraps_post/"
     month = now.strftime("%b").lower()
-    daymonth = now.strftime("%d").zfill(2)
+    #daymonth = now.strftime("%d").zfill(2)
+    # Fix URL change format: without leading zeroes
+    daymonth = now.strftime("%d")
     year = now.strftime("%Y")
     wrapTypes = ("opening","closing")
     globalconf = config.GlobalConfig()
