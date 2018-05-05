@@ -81,13 +81,16 @@ def expiry_date(expiry_ident):
             expiry_date = datetime.datetime.strptime(expiry_ident, "%Y%m")
         elif len(expiry_ident) == 8:
             expiry_date = datetime.datetime.strptime(expiry_ident, "%Y%m%d")
+        elif len(expiry_ident) == 0:
+            expiry_date = None
         else:
             raise Exception("")
 
     elif isinstance(expiry_ident, datetime.datetime) or isinstance(
             expiry_ident, datetime.date):
         expiry_date = expiry_ident
-
+    elif expiry_ident is None:
+        expiry_date = expiry_ident
     else:
         raise Exception(
             "expiry_date needs to be a string with 4 or 6 digits, ")

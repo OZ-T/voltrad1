@@ -8,6 +8,7 @@ from core import misc_utilities as utils, config
 from textblob import TextBlob
 import locale
 from time import sleep
+import core.misc_utilities as utils
 
 log = logger("wrap download")
 
@@ -28,21 +29,26 @@ def download(url,log, user_agent='wswp',  num_retries=2):
     return html
 
 def first_run():
-    date1 = dt.datetime(year=2017,month=3,day=22,hour=23,minute=55)
+    date11 = dt.datetime(year=2017,month=3,day=22,hour=23,minute=55)
     end = dt.datetime.now()
     while date1 < end:
         run_reader(now1=date1)
         date1 = date1 + dt.timedelta(days=1)
         sleep(3)
 
-def batch_run_reader():
-    run_reader(now1=None)
 
 def run_reader(now1 = None):
+    """
+    Run with empty string to get today's
+
+    :param now1:
+    :return:
+    """
     locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
     now = dt.datetime.now()  # + dt.timedelta(days=-4)
-    if now1:
-        now = now1
+    mydate = utils.expiry_date(now1)
+    if mydate:
+        now = mydate
     weekday = now.strftime("%A").lower()
     log.info(("Getting data from www.itpm.com ... ",now))
     if (  weekday in ("saturday","sunday")  or
@@ -115,6 +121,7 @@ def get_sentiment(statement):
 if __name__=="__main__":
     #date1 = dt.datetime(year=2018, month=5, day=3, hour=23, minute=55)
     date1 = None
+    #run_reader("20180501")
     run_reader(now1=date1)
     #first_run()
 
