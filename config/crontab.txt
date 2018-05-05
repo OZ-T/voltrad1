@@ -21,40 +21,40 @@
 # 
 # m h  dom mon dow   command
 MAILTO=""
-DATE=date +%d-%m-%y
+#DATE=date +%d-%m-%y
+DATE=date +%m-%y
 PARAM_DATE=date +%Y%m%d
 # IBG Connection
 1 3 * * 1-5 /home/david/shell/run_healthcheck_ibg.sh >> /var/log/voltrad1/ib_healthcheck_ibg_$($DATE).log 2>&1 &
 # download historical data for option chains
-22 3 * * 1-5 /home/david/shell/run_ib_historical_opt.sh 
+#22 3 * * 1-5 /home/david/shell/run_ib_historical_opt.sh 
 
 # download historical data for underlying contracts
-10 14 * * 1-5 /home/david/shell/run_healthcheck_ibg.sh >> /var/log/voltrad1/ib_healthcheck_ibg_$($DATE).log 2>&1 &
-15 14 * * 1-5 nohup /home/david/shell/p batch_underl_ib_to_db >> /var/log/voltrad1/ib_underlying_$($DATE).log 2>&1 &
-52 14-21 * * 1-5 nohup /home/david/shell/p run_volest_report $($PARAM_DATE) >> /var/log/voltrad1/ib_volest_rpt_$($DATE).log 2>&1 &
-54 14-21 * * 1-5 nohup /home/david/shell/p run_trend_report $($PARAM_DATE) >> /var/log/voltrad1/ib_trend_rpt_$($DATE).log 2>&1 &
+#10 14 * * 1-5 /home/david/shell/run_healthcheck_ibg.sh >> /var/log/voltrad1/ib_healthcheck_ibg_$($DATE).log 2>&1 &
+#15 14 * * 1-5 nohup /home/david/shell/p batch_underl_ib_to_db >> /var/log/voltrad1/ib_underlying_$($DATE).log 2>&1 &
+#52 14-21 * * 1-5 nohup /home/david/shell/p run_volest_report $($PARAM_DATE) >> /var/log/voltrad1/ib_volest_rpt_$($DATE).log 2>&1 &
+#54 14-21 * * 1-5 nohup /home/david/shell/p run_trend_report $($PARAM_DATE) >> /var/log/voltrad1/ib_trend_rpt_$($DATE).log 2>&1 &
 
 
 # cron job every weekday during RTH (regular trading hours US)
-1 15-23 * * 1-5 /home/david/shell/run_healthcheck_ibg.sh >> /var/log/voltrad1/ib_healthcheck_ibg_$($DATE).log 2>&1 &
-42 15-21 * * 1-5 /home/david/shell/run_ib_opt.sh
-57 15-21 * * 1-5 nohup /home/david/shell/p batch_orders_to_db  >> /var/log/voltrad1/ib_orders_$($DATE).log 2>&1 &
-59 15-21 * * 1-5 nohup /home/david/shell/p batch_acc_to_db  >> /var/log/voltrad1/ib_accounting_$($DATE).log 2>&1 &
+#1 15-23 * * 1-5 /home/david/shell/run_healthcheck_ibg.sh >> /var/log/voltrad1/ib_healthcheck_ibg_$($DATE).log 2>&1 &
+#42 15-21 * * 1-5 /home/david/shell/run_ib_opt.sh
+#57 15-21 * * 1-5 nohup /home/david/shell/p batch_orders_to_db  >> /var/log/voltrad1/ib_orders_$($DATE).log 2>&1 &
+#59 15-21 * * 1-5 nohup /home/david/shell/p batch_acc_to_db  >> /var/log/voltrad1/ib_accounting_$($DATE).log 2>&1 &
 
-# cron daily yahoo option chains save to hdf5
+# cron daily yahoo option chains save to db
 10 16-22 * * 1-5 /home/david/shell/p batch_optchain_yhoo_to_db >> /var/log/voltrad1/yahoo_opt_$($DATE).log 2>&1 &
 #02 16-22 * * 1-5 /home/david/shell/run_shark_tic.sh 
 
 # store orders executed during the day and portfolio snapshot
-36 23 * * 1-5 nohup /home/david/shell/p batch_orders_to_db  >> /var/log/voltrad1/ib_orders_$($DATE).log 2>&1 &
-38 23 * * 1-5 nohup /home/david/shell/p batch_acc_to_db  >> /var/log/voltrad1/ib_accounting_$($DATE).log 2>&1 &
-55 23 * * 1-5 nohup /home/david/shell/p batch_itrm_wraps  >> /var/log/voltrad1/itrm_wraps_$($DATE).log 2>&1 &
+#36 23 * * 1-5 nohup /home/david/shell/p batch_orders_to_db  >> /var/log/voltrad1/ib_orders_$($DATE).log 2>&1 &
+#38 23 * * 1-5 nohup /home/david/shell/p batch_acc_to_db  >> /var/log/voltrad1/ib_accounting_$($DATE).log 2>&1 &
+
+55 23 * * 1-5 nohup /home/david/shell/p batch_itrm_wraps "NA" >> /var/log/voltrad1/itrm_wraps_$($DATE).log 2>&1 &
+56 23 * * 1-5 nohup /home/david/shell/p ecocal >> /var/log/voltrad1/ecocal_$($DATE).log 2>&1 &
+57 23 * * 1-5 nohup /home/david/shell/p earnings  >> /var/log/voltrad1/earnings_$($DATE).log 2>&1 &
 
 59 0 * * 6 /home/david/shell/run_backup.sh
 5 0 * * 6 /home/david/shell/gw.sh stop sim
 
 # FIXME 55 22 * * 1-5 /home/david/shell/run_ivol_opt.sh 
-# economic calendar from biz yahoo. start of week and end of week to get the resulting number of the economic events
-# this creates duplicates in the hdf5 which need to be handled in the subsequent analysis
-# FIXME 55 5 * * 1 /home/david/shell/run_yhoo_eco_calendar.sh 
-# FIXME 55 5 * * 6 /home/david/shell/run_yhoo_eco_calendar.sh 
