@@ -39,7 +39,7 @@ def first_run():
 
 def run_reader(now1 = None):
     """
-    Run with empty string to get today's
+    Run with "NA" string to get today's
 
     :param now1:
     :return:

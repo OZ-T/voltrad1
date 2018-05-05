@@ -81,7 +81,7 @@ def expiry_date(expiry_ident):
             expiry_date = datetime.datetime.strptime(expiry_ident, "%Y%m")
         elif len(expiry_ident) == 8:
             expiry_date = datetime.datetime.strptime(expiry_ident, "%Y%m%d")
-        elif len(expiry_ident) == 0:
+        elif len(expiry_ident) <= 5:
             expiry_date = None
         else:
             raise Exception("")
