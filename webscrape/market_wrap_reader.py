@@ -54,7 +54,7 @@ def run_reader(now1 = None):
     month = now.strftime("%b").lower()
     #daymonth = now.strftime("%d").zfill(2)
     # Fix URL change format: without leading zeroes
-    daymonth = now.strftime("%d")
+    daymonth = str(now.day)
     year = now.strftime("%Y")
     wrapTypes = ("opening","closing")
     globalconf = config.GlobalConfig()
@@ -113,7 +113,9 @@ def get_sentiment(statement):
     }
 
 if __name__=="__main__":
-    run_reader()
+    #date1 = dt.datetime(year=2018, month=5, day=3, hour=23, minute=55)
+    date1 = None
+    run_reader(now1=date1)
     #first_run()
 
 
