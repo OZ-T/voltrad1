@@ -50,6 +50,7 @@ PARAM_DATE=date +%Y%m%d
 #36 23 * * 1-5 nohup /home/david/shell/p batch_orders_to_db  >> /var/log/voltrad1/ib_orders_$($DATE).log 2>&1 &
 #38 23 * * 1-5 nohup /home/david/shell/p batch_acc_to_db  >> /var/log/voltrad1/ib_accounting_$($DATE).log 2>&1 &
 
+50 23 * * 1-5 nohup /home/david/shell/p batch_momentum  "NA" >> /var/log/voltrad1/momentum_$($DATE).log 2>&1 &
 55 23 * * 1-5 nohup /home/david/shell/p batch_itrm_wraps "NA" >> /var/log/voltrad1/itrm_wraps_$($DATE).log 2>&1 &
 56 23 * * 1-5 nohup /home/david/shell/p ecocal >> /var/log/voltrad1/ecocal_$($DATE).log 2>&1 &
 57 23 * * 1-5 nohup /home/david/shell/p earnings  >> /var/log/voltrad1/earnings_$($DATE).log 2>&1 &
