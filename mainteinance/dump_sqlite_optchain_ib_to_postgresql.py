@@ -52,4 +52,4 @@ def run_ib(symbol,expiry):
 
 
 if __name__ == "__main__":
-    run(symbol="ES", expiry="2017-04")
+    run_ib(symbol="ES", expiry="2017-04")
