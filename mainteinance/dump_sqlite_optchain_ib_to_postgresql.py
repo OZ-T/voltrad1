@@ -24,7 +24,10 @@ path = globalconf.config['paths']['data_folder']
 def run_ib(symbol,expiry):
     dataframe = sql.get_ib_option_dataframe(symbol, expiry, None, None)
     dataframe['expiry'] = pd.to_datetime(dataframe['expiry'], format='%Y%m%d')
-    dataframe.drop(['current_date','current_datetime'], axis=1, inplace=True)
+    drop_lst = ['current_date', 'current_datetime']
+    if 'Halted' in dataframe.columns:
+        drop_lst.append('Halted')
+    dataframe.drop(drop_lst, axis=1, inplace=True)
     dataframe=dataframe.rename(columns={'index': 'load_dttm'})
     con, meta = globalconf.connect_sqldb()
     # Valores muy pequenos hacen crash al load en postgresql
