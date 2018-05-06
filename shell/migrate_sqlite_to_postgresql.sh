@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-export IN_PATH = /data/voltrad1
+export IN_PATH=/data/voltrad1
 
 
 /home/david/shell/p mv_ib_opt "ES" "2016-08"
