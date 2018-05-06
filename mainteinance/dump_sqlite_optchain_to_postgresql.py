@@ -54,5 +54,26 @@ def run_ib(symbol,expiry):
     dataframe.to_sql(name="OPTIONS_CHAIN_IB", con=con, if_exists='append', chunksize=50, index=False)
 
 
+
+def run_yhoo(symbol,expiry):
+    dataframe = sql.get_yahoo_option_dataframe(symbol, expiry, None, None)
+    dataframe['expiry'] = pd.to_datetime(dataframe['expiry'], format='%Y%m%d')
+    drop_lst = []
+    if 'Quote_Time_txt' in dataframe.columns:
+        drop_lst.append('Quote_Time_txt')
+    if 'Last_Trade_Date_txt' in dataframe.columns:
+        drop_lst.append('Last_Trade_Date_txt')
+    if 'JSON' in dataframe.columns:
+        drop_lst.append('JSON')
+
+    dataframe.drop(drop_lst, axis=1, inplace=True)
+    con, meta = globalconf.connect_sqldb()
+    # path = globalconf.config['paths']['data_folder']
+    # store = sqlite3.connect(path + "AAAA.db")
+    # dataframe.to_sql("AAAAA", store, if_exists='append')
+    #print(list(dataframe))
+    dataframe.to_sql(name="OPTIONS_CHAIN_YHOO", con=con, if_exists='append', chunksize=50, index=False)
+
+
 if __name__ == "__main__":
     run_ib(symbol="ES", expiry="2017-04")
