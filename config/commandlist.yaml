@@ -9,15 +9,19 @@ batch_underl_ib_to_db:
   pointer:  persist.sqlite_methods.store_underlying_ib_to_db
 batch_itrm_wraps:
   pointer:  webscrape.market_wrap_reader.run_reader
+batch_momentum:
+  pointer:  webscrape.stock_mkt_momentum.run_reader
+ecocal:
+   pointer: webscrape.yahoo_biz_economic_calendar_us.batch_run_reader
+earnings:
+   pointer: webscrape.yahoo_earnings_calendar.batch_run_reader
+
+
 # One shot jobs for initial loading
 init_itrm_wraps:
   pointer:  webscrape.market_wrap_reader.first_run
-ecocal:
-   pointer: webscrape.yahoo_biz_economic_calendar_us.batch_run_reader
 init_ecocal:
    pointer: webscrape.yahoo_biz_economic_calendar_us.first_run
-earnings:
-   pointer: webscrape.yahoo_earnings_calendar.batch_run_reader
 init_earnings:
    pointer: webscrape.yahoo_earnings_calendar.first_run
 

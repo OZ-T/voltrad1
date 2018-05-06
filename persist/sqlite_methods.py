@@ -588,6 +588,21 @@ def read_historical_portfolio_from_sqllite(accountid):
     return df1
 
 
+def write_momentum_to_sqllite(dataframe,table):
+    """
+    Write to sqllite the momentum snapshot passed as argument
+    """
+    log.info("Appending momentum data [" +table+ "] to sqllite ... " )
+    globalconf = config.GlobalConfig()
+    db_file = globalconf.config['sqllite']['momentum_db']
+    path = globalconf.config['paths']['data_folder']
+    store = sqlite3.connect(path + db_file)
+    dataframe.to_sql(table, store, if_exists='append')
+    store.close()
+
+
+
+
 def write_portfolio_to_sqllite(dataframe):
     """
     Write to sqllite the portfolio snapshot passed as argument

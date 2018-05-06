@@ -1,32 +1,16 @@
-from urllib.request import Request, urlopen
-import urllib.error
 from bs4 import BeautifulSoup
 import datetime as dt
 from core.logger import logger
 import persist.document_methods as da
-from core import misc_utilities as utils, config
+from core import config
 from textblob import TextBlob
 import locale
 from time import sleep
 import core.misc_utilities as utils
+from webscrape.utilities import download
 
 log = logger("wrap download")
 
-def download(url,log, user_agent='wswp',  num_retries=2):
-    try:
-        q = Request(url)
-        q.add_header('User-agent', user_agent)
-        html = urlopen(q).read()
-    except urllib.error.HTTPError as e:
-        log.error( 'Download error: %s' % (str(e.reason)) )
-        html = None
-        if num_retries > 0:
-            if hasattr(e, 'code') and 500 <= e.code < 600:
-                # retry 5XX HTTP errors
-                return download(url, log, user_agent, num_retries-1)
-        else:
-            return None
-    return html
 
 def first_run():
     date11 = dt.datetime(year=2017,month=3,day=22,hour=23,minute=55)
@@ -68,9 +52,9 @@ def run_reader(now1 = None):
     for wrapType in wrapTypes:
         url = base + wrapType + "-wrap-" + weekday + "-" + month + "-" + daymonth + "-" + year + "/"
         log.info ('[%s] Downloading: %s' % (str(now) , url ) )
-        b_html=download(url=url,log=log,
-                        user_agent="Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36"
-                        )
+        b_html= download(url=url, log=log,
+                         user_agent="Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36"
+                         )
         if b_html is None:
             continue
         soup = BeautifulSoup(b_html, 'html.parser')

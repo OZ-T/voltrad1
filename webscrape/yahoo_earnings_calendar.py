@@ -28,7 +28,6 @@ class YahooEarningsCalendar(object):
     """
     This is the class for fetching earnings data from Yahoo! Finance
     """
-
     def _get_data_dict(self, url):
         page = requests.get(url)
         page_content = page.content
@@ -123,11 +122,6 @@ class YahooEarningsCalendar(object):
         return earnings_data
 
 
-
-
-
-
-
 def first_run():
     date1 = dt.datetime(year=2017,month=3,day=1,hour=23,minute=55)
     end = dt.datetime.now()
@@ -153,14 +147,6 @@ def run_reader(now1 = None):
     yec = YahooEarningsCalendar()
     dataframe = pd.DataFrame( yec.earnings_on(now) )
     da.write_earnings_to_sqllite(dataframe)
-
-
-
-
-
-
-
-
 
 
 if __name__ == '__main__':
