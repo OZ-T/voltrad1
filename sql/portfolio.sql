@@ -1,0 +1,26 @@
+CREATE TABLE IF NOT EXISTS "DU242089" (
+"conId" TEXT,
+  "accountName" TEXT,
+  "averageCost" TEXT,
+  "comboLegsDescrip" TEXT,
+  "combolegs" TEXT,
+  "expiry" TEXT,
+  "localSymbol" TEXT,
+  "marketPrice" TEXT,
+  "marketValue" TEXT,
+  "position" TEXT,
+  "primaryExchange" TEXT,
+  "realizedPNL" TEXT,
+  "right" TEXT,
+  "secId" TEXT,
+  "secIdType" TEXT,
+  "secType" TEXT,
+  "strike" TEXT,
+  "symbol" TEXT,
+  "underComp" TEXT,
+  "unrealizedPNL" TEXT,
+  "current_date" TEXT,
+  "current_datetime" TEXT,
+  "multiplier" TEXT
+);
+CREATE INDEX "ix_DU242089_conId"ON "DU242089" ("conId");
