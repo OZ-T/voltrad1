@@ -140,18 +140,24 @@ def run_reader(now1 = None):
         now = now1
     weekday = now.strftime("%A").lower()
     log.info(("Getting data from yahoo ... ",now))
-    if (  weekday in ("saturday","sunday")  or
-        now.date() in utils.get_trading_close_holidays(dt.datetime.now().year)):
-        log.info("This is a US Calendar holiday or weekend. Ending process ... ")
-        return
     yec = YahooEarningsCalendar()
-    dataframe = pd.DataFrame( yec.earnings_on(now) )
-    da.write_earnings_to_sqllite(dataframe)
+
+    # Earnings data get updated slowly so to be sure we have the real actual value an not only the estimate
+    # we should retrieve from previous days
+    # we'll have duplicates in DB
+    from datetime import timedelta
+    from time import sleep
+    for i in [0,5]:
+        date_load = now - timedelta(days=i)
+        dataframe = pd.DataFrame( yec.earnings_on(date_load) )
+        da.write_earnings_to_sqllite(dataframe)
+        sleep(5)
 
 
 if __name__ == '__main__':
-    #batch_run_reader()
-    first_run()
+    batch_run_reader()
+
+    #first_run()
 
     #date_from = datetime.datetime.strptime(
     #    'May 5 2017  10:00AM', '%b %d %Y %I:%M%p')
