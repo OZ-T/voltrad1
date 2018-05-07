@@ -19,14 +19,25 @@ import sqlite3
 # path = '/home/david/data/'
 
 globalconf = config.GlobalConfig()
+log = globalconf.get_logger()
 path = globalconf.config['paths']['data_folder']
 
 def run_ib(symbol,expiry):
     dataframe = sql.get_ib_option_dataframe(symbol, expiry, None, None)
+
+    if dataframe.empty:
+        log.info('DataFrame is empty!')
+        return
+
     dataframe['expiry'] = pd.to_datetime(dataframe['expiry'], format='%Y%m%d')
-    drop_lst = ['current_date', 'current_datetime']
+    drop_lst = []
     if 'Halted' in dataframe.columns:
         drop_lst.append('Halted')
+    if 'current_date' in dataframe.columns:
+        drop_lst.append('current_date')
+    if 'current_datetime' in dataframe.columns:
+        drop_lst.append('current_datetime')
+
     dataframe.drop(drop_lst, axis=1, inplace=True)
     dataframe=dataframe.rename(columns={'index': 'load_dttm'})
     con, meta = globalconf.connect_sqldb()
@@ -47,6 +58,15 @@ def run_ib(symbol,expiry):
     dataframe.loc[abs(dataframe['bidTheta']) < 1e-12, 'bidTheta'] = 0
     dataframe.loc[abs(dataframe['modelOptPrice']) < 1e-12, 'modelOptPrice'] = 0
 
+    # INFO
+    #duplicated = pd.concat(g for _, g in dataframe.groupby(["load_dttm","symbol", "expiry","strike", "right"]) if len(g) > 1)
+    #print (duplicated)
+
+    # keep the last if there are duplicates
+    log.info(("len before removing dups",len(dataframe)))
+    dataframe = dataframe.drop_duplicates(subset=["load_dttm","symbol", "expiry","strike", "right"], keep='last')
+    log.info(("len after removing dups", len(dataframe)))
+
     # path = globalconf.config['paths']['data_folder']
     # store = sqlite3.connect(path + "AAAA.db")
     # dataframe.to_sql("AAAAA", store, if_exists='append')
@@ -54,9 +74,13 @@ def run_ib(symbol,expiry):
     dataframe.to_sql(name="OPTIONS_CHAIN_IB", con=con, if_exists='append', chunksize=50, index=False)
 
 
-
 def run_yhoo(symbol,expiry):
     dataframe = sql.get_yahoo_option_dataframe(symbol, expiry, None, None)
+
+    if dataframe.empty:
+        log.info('DataFrame is empty!')
+        return
+
     dataframe['expiry'] = pd.to_datetime(dataframe['expiry'], format='%Y%m%d')
     drop_lst = []
     if 'Quote_Time_txt' in dataframe.columns:
@@ -72,8 +96,14 @@ def run_yhoo(symbol,expiry):
     # store = sqlite3.connect(path + "AAAA.db")
     # dataframe.to_sql("AAAAA", store, if_exists='append')
     #print(list(dataframe))
+
+    # keep the last if there are duplicates
+    log.info(("len before removing dups",len(dataframe)))
+    dataframe = dataframe.drop_duplicates(subset=["Quote_Time","Symbol", "Expiry_txt","Strike", "Type"], keep='last')
+    log.info(("len after removing dups", len(dataframe)))
+
     dataframe.to_sql(name="OPTIONS_CHAIN_YHOO", con=con, if_exists='append', chunksize=50, index=False)
 
 
 if __name__ == "__main__":
-    run_ib(symbol="ES", expiry="2017-04")
+    run_ib(symbol="SPY", expiry="2017-10")
