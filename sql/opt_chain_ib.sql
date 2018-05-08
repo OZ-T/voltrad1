@@ -16,7 +16,6 @@ CREATE TABLE IF NOT EXISTS "OPTIONS_CHAIN_IB" (
   "modelImpliedVol" REAL,
   "modelDelta" REAL,
   "modelOptPrice" REAL,
-  "modelPvDividend" REAL,
   "modelGamma" REAL,
   "modelVega" REAL,
   "modelTheta" REAL,

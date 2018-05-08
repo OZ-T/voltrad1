@@ -52,6 +52,9 @@ def run_ib(symbol,expiry):
         drop_lst.append('askPvDividend')
     if 'lastPvDividend' in dataframe.columns:
         drop_lst.append('lastPvDividend')
+    if 'modelPvDividend' in dataframe.columns:
+        drop_lst.append('modelPvDividend')
+
 
     dataframe.drop(drop_lst, axis=1, inplace=True)
     dataframe=dataframe.rename(columns={'index': 'load_dttm'})
