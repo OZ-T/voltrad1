@@ -30,6 +30,7 @@ def run_ib(symbol,expiry):
         return
 
     dataframe['expiry'] = pd.to_datetime(dataframe['expiry'], format='%Y%m%d')
+    #ataframe['expiry'] = dataframe['expiry'].dt.date
     drop_lst = []
     if 'Halted' in dataframe.columns:
         drop_lst.append('Halted')
@@ -37,6 +38,20 @@ def run_ib(symbol,expiry):
         drop_lst.append('current_date')
     if 'current_datetime' in dataframe.columns:
         drop_lst.append('current_datetime')
+    if 'secType' in dataframe.columns:
+        drop_lst.append('secType')
+    if 'exchange' in dataframe.columns:
+        drop_lst.append('exchange')
+    if 'currency' in dataframe.columns:
+        drop_lst.append('currency')
+    if 'comboLegsDescrip' in dataframe.columns:
+        drop_lst.append('comboLegsDescrip')
+    if 'bidPvDividend' in dataframe.columns:
+        drop_lst.append('bidPvDividend')
+    if 'askPvDividend' in dataframe.columns:
+        drop_lst.append('askPvDividend')
+    if 'lastPvDividend' in dataframe.columns:
+        drop_lst.append('lastPvDividend')
 
     dataframe.drop(drop_lst, axis=1, inplace=True)
     dataframe=dataframe.rename(columns={'index': 'load_dttm'})
@@ -83,6 +98,7 @@ def run_yhoo(symbol,expiry):
             return
 
         dataframe['Expiry_txt'] = pd.to_datetime(dataframe['Expiry_txt'], format="%Y-%m-%d %H:%M:%S")
+        dataframe=dataframe.rename(columns={'Expiry_txt': 'Expiry'})
         drop_lst = []
         if 'Quote_Time_txt' in dataframe.columns:
             drop_lst.append('Quote_Time_txt')
@@ -90,7 +106,15 @@ def run_yhoo(symbol,expiry):
             drop_lst.append('Last_Trade_Date_txt')
         if 'JSON' in dataframe.columns:
             drop_lst.append('JSON')
+        if 'Symbol' in dataframe.columns:
+            drop_lst.append('Symbol')
+        if 'Root' in dataframe.columns:
+            drop_lst.append('Root')
+        if 'IsNonstandard' in dataframe.columns:
+            drop_lst.append('IsNonstandard')
 
+        # only one char for call/put
+        dataframe.Type = dataframe.Type.str[:1]
         dataframe.drop(drop_lst, axis=1, inplace=True)
         con, meta = globalconf.connect_sqldb()
         # path = globalconf.config['paths']['data_folder']
@@ -100,7 +124,7 @@ def run_yhoo(symbol,expiry):
 
         # keep the last if there are duplicates
         log.info(("len before removing dups",len(dataframe)))
-        dataframe = dataframe.drop_duplicates(subset=["Quote_Time","Symbol", "Expiry_txt","Strike", "Type"], keep='last')
+        dataframe = dataframe.drop_duplicates(subset=["Quote_Time","Underlying", "Expiry_txt","Strike", "Type"], keep='last')
         log.info(("len after removing dups", len(dataframe)))
 
         dataframe.to_sql(name="OPTIONS_CHAIN_YHOO", con=con, if_exists='append', chunksize=50, index=False)

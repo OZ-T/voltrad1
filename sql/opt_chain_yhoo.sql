@@ -1,8 +1,7 @@
 CREATE TABLE IF NOT EXISTS "OPTIONS_CHAIN_YHOO" (
 "Quote_Time" TIMESTAMP not NULL,
   "Strike" REAL not NULL,
-  "Type" TEXT not NULL,
-  "Symbol" TEXT not NULL,
+  "Type" varchar(1) not NULL,
   "Last" REAL,
   "Bid" REAL,
   "Ask" REAL,
@@ -11,12 +10,10 @@ CREATE TABLE IF NOT EXISTS "OPTIONS_CHAIN_YHOO" (
   "Vol" REAL,
   "Open_Int" REAL,
   "IV" REAL,
-  "Root" TEXT,
-  "IsNonstandard" INTEGER,
-  "Underlying" TEXT,
+  "Underlying" varchar(4)  not NULL,
   "Underlying_Price" REAL,
   "Last_Trade_Date" TIMESTAMP,
-  "Expiry_txt" TEXT not NULL,
-   PRIMARY KEY("Quote_Time","Symbol", "Expiry_txt","Strike", "Type" )
+  "Expiry" date not NULL,
+   PRIMARY KEY("Quote_Time","Underlying", "Expiry","Strike", "Type" )
 );
 CREATE INDEX "ix_OPTIONS_CHAIN_YHOO_Quote_Time"ON "OPTIONS_CHAIN_YHOO" ("Quote_Time");
