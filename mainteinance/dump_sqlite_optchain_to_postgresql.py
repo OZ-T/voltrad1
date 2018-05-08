@@ -55,7 +55,6 @@ def run_ib(symbol,expiry):
     if 'modelPvDividend' in dataframe.columns:
         drop_lst.append('modelPvDividend')
 
-
     dataframe.drop(drop_lst, axis=1, inplace=True)
     dataframe=dataframe.rename(columns={'index': 'load_dttm'})
     con, meta = globalconf.connect_sqldb()

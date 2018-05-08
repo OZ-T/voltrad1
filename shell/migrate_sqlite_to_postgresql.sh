@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-
 export IN_PATH=/data/voltrad1
 
 if [ "$1" == "IB" ]; then

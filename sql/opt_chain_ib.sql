@@ -1,7 +1,6 @@
 CREATE TABLE IF NOT EXISTS "OPTIONS_CHAIN_IB" (
 "load_dttm" TIMESTAMP   not null ,
   "symbol" varchar(4)    not null ,
-  "secType" char(4) ,
   "expiry" date    not null,
   "strike" REAL    not null ,
   "right" char(1)    not null,
