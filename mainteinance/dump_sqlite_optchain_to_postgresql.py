@@ -126,7 +126,7 @@ def run_yhoo(symbol,expiry):
 
         # keep the last if there are duplicates
         log.info(("len before removing dups",len(dataframe)))
-        dataframe = dataframe.drop_duplicates(subset=["Quote_Time","Underlying", "Expiry_txt","Strike", "Type"], keep='last')
+        dataframe = dataframe.drop_duplicates(subset=["Quote_Time","Underlying", "Expiry","Strike", "Type"], keep='last')
         log.info(("len after removing dups", len(dataframe)))
 
         dataframe.to_sql(name="OPTIONS_CHAIN_YHOO", con=con, if_exists='append', chunksize=50, index=False)
