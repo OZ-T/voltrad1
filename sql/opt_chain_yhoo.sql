@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS "OPTIONS_CHAIN_YHOO" (
   "Expiry" date not NULL,
    PRIMARY KEY("Quote_Time","Underlying", "Expiry","Strike", "Type" )
 );
-CREATE INDEX "ix_OPTIONS_CHAIN_YHOO_Quote_Time"ON "OPTIONS_CHAIN_YHOO" ("Quote_Time");
+--CREATE INDEX "ix_OPTIONS_CHAIN_YHOO_Quote_Time"ON "OPTIONS_CHAIN_YHOO" ("Quote_Time");
 
 
 

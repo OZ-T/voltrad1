@@ -47,7 +47,7 @@
   "lowPrice" REAL,
    PRIMARY KEY("load_dttm","symbol", "expiry","strike", "right" )
 );
-CREATE INDEX "ix_OPTIONS_CHAIN_IB_index"ON "OPTIONS_CHAIN_IB" ("load_dttm");
+--CREATE INDEX "ix_OPTIONS_CHAIN_IB_index"ON "OPTIONS_CHAIN_IB" ("load_dttm");
 
 
 -- This creates a hypertable that is partitioned by time
