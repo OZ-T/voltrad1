@@ -28,6 +28,26 @@ def run_portfolio():
     if dataframe.empty:
         log.info('DataFrame is empty!')
         return
+    keep_lst = [ "conId", "accountName", "averageCost", "expiry", "localSymbol", "marketPrice", "marketValue",
+                 "position", "primaryExchange", "realizedPNL", "right", "secType",
+                 "strike", "symbol", "unrealizedPNL", "current_datetime" ]
+
+    dataframe = dataframe[keep_lst]
+    dataframe['current_datetime'] = pd.to_datetime(dataframe['current_datetime'], format="%Y%m%d%H%M%S")
+    dataframe['expiry'] = pd.to_datetime(dataframe['expiry'], format='%Y%m%d',errors='coerce')
+    dataframe[['strike', 'averageCost', 'marketPrice', 'marketValue', 'position',
+               'realizedPNL', 'unrealizedPNL']] = \
+        dataframe[['strike', 'averageCost', 'marketPrice', 'marketValue', 'position',
+                   'realizedPNL', 'unrealizedPNL']].apply(pd.to_numeric)
+
+    con, meta = globalconf.connect_sqldb()
+    log.info(("len before removing dups", len(dataframe)))
+    dataframe = dataframe.drop_duplicates(subset=["current_datetime","accountName", "conId"], keep='last')
+    log.info(("len after removing dups", len(dataframe)))
+
+    dataframe.to_sql(name="portfolio", con=con, if_exists='append', chunksize=50, index=False)
+    log.info("Loaded into PSQL table")
+
 
 def run_account():
     accountid = globalconf.get_accountid()
@@ -35,6 +55,16 @@ def run_account():
     if dataframe.empty:
         log.info('DataFrame is empty!')
         return
+
+
+
+def run_orders():
+    accountid = globalconf.get_accountid()
+    dataframe = sql.read_orders_from_sqllite(accountid)
+    if dataframe.empty:
+        log.info('DataFrame is empty!')
+        return
+
 
 def run_ib(symbol,expiry):
     dataframe = sql.get_ib_option_dataframe(symbol, expiry, None, None)
@@ -151,4 +181,5 @@ def run_yhoo(symbol,expiry):
 
 if __name__ == "__main__":
     #run_ib(symbol="SPY", expiry="2017-10")
-    run_portfolio()
+    #run_portfolio()
+    run_orders()

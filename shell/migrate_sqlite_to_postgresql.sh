@@ -27,3 +27,9 @@ if [ "$1" == "YHOO" ]; then
     done
 fi
 
+if [ "$1" == "PTF" ]; then
+    echo "Running Portfolio ... "
+            /home/david/shell/p mv_ptf
+        done
+    done
+fi

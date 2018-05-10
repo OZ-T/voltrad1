@@ -30,8 +30,8 @@ mv_ib_opt:
   pointer: mainteinance.dump_sqlite_to_postgresql.run_ib
 mv_yhoo_opt:
   pointer: mainteinance.dump_sqlite_to_postgresql.run_yhoo
-
-
+mv_ptf:
+  pointer: mainteinance.dump_sqlite_to_postgresql.run_portfolio
 
 # Web reporting generation
 run_dq_report_market:

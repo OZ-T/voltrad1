@@ -670,6 +670,20 @@ def write_acc_summary_to_sqllite(dataframe):
         store.close()
 
 
+
+def read_orders_from_sqllite(accountid):
+    """
+    Read from sqllite the complete history of the portfolio and returns as dataframe
+    """
+    db_file = globalconf.config['sqllite']['orders_db']
+    path = globalconf.config['paths']['data_folder']
+    store = sqlite3.connect(path + db_file)
+    df1 = pd.read_sql_query("SELECT * FROM " + accountid, store)
+    #df1['date1']=df1.index.map(lambda x: x.date())
+    #df1= df1.drop_duplicates(subset=['date1'],keep='last')
+    store.close()
+    return df1
+
 def write_orders_to_sqllite(dataframe):
     """
     Write to sqllite the orders snapshot passed as argument

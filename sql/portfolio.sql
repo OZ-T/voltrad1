@@ -1,26 +1,20 @@
-CREATE TABLE IF NOT EXISTS "DU242089" (
-"conId" TEXT,
-  "accountName" TEXT,
-  "averageCost" TEXT,
-  "comboLegsDescrip" TEXT,
-  "combolegs" TEXT,
-  "expiry" TEXT,
+CREATE TABLE IF NOT EXISTS portfolio (
+  "conId" varchar(10) not NULL,
+  "accountName" varchar(10) not NULL,
+  "averageCost" real,
+  "expiry" date,
   "localSymbol" TEXT,
-  "marketPrice" TEXT,
-  "marketValue" TEXT,
-  "position" TEXT,
+  "marketPrice" real,
+  "marketValue" real,
+  "position" real,
   "primaryExchange" TEXT,
-  "realizedPNL" TEXT,
-  "right" TEXT,
-  "secId" TEXT,
-  "secIdType" TEXT,
+  "realizedPNL" real,
+  "right" varchar(1),
   "secType" TEXT,
-  "strike" TEXT,
-  "symbol" TEXT,
-  "underComp" TEXT,
-  "unrealizedPNL" TEXT,
-  "current_date" TEXT,
-  "current_datetime" TEXT,
-  "multiplier" TEXT
+  "strike" real,
+  "symbol" text,
+  "unrealizedPNL" real,
+  "current_datetime" TIMESTAMP not NULL,
+  PRIMARY KEY("current_datetime","accountName", "conId" )
 );
-CREATE INDEX "ix_DU242089_conId"ON "DU242089" ("conId");
+CREATE INDEX "ix_portfolio" ON portfolio ("current_datetime","accountName", "conId");
