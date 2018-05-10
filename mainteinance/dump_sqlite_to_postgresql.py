@@ -102,7 +102,8 @@ def run_ib(symbol,expiry):
     # store = sqlite3.connect(path + "AAAA.db")
     # dataframe.to_sql("AAAAA", store, if_exists='append')
     #print(list(dataframe))
-    dataframe.to_sql(name="OPTIONS_CHAIN_IB", con=con, if_exists='append', chunksize=50, index=False)
+    dataframe.to_sql(name="options_chain_ib", con=con, if_exists='append', chunksize=50, index=False)
+    log.info("Loaded into PSQL TimeScale table")
 
 
 def run_yhoo(symbol,expiry):
@@ -143,7 +144,8 @@ def run_yhoo(symbol,expiry):
         dataframe = dataframe.drop_duplicates(subset=["Quote_Time","Underlying", "Expiry","Strike", "Type"], keep='last')
         log.info(("len after removing dups", len(dataframe)))
 
-        dataframe.to_sql(name="OPTIONS_CHAIN_YHOO", con=con, if_exists='append', chunksize=50, index=False)
+        dataframe.to_sql(name="options_chain_yhoo", con=con, if_exists='append', chunksize=50, index=False)
+        log.info("Loaded into PSQL TimeScale table")
     except pd.io.sql.DatabaseError as e:
         log.info("No table for this symbol and expiry : " + str(e) )
 
