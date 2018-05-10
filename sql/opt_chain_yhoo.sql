@@ -22,7 +22,7 @@ CREATE INDEX "ix_OPTIONS_CHAIN_YHOO_Quote_Time"ON options_chain_yhoo ("Quote_Tim
 
 -- This creates a hypertable that is partitioned by time
 --   using the values in the `time` column.
-SELECT create_hypertable(options_chain_yhoo, 'load_dttm');
+SELECT create_hypertable('options_chain_yhoo', 'load_dttm');
 -- USING https://docs.timescale.com/v0.9/getting-started/creating-hypertables
 -- RUN THE following en una session de sudo -u postgres psql
 -- SELECT create_hypertable("OPTIONS_CHAIN_YHOO", "Quote_Time");
