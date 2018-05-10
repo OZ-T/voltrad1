@@ -582,8 +582,8 @@ def read_historical_portfolio_from_sqllite(accountid):
     path = globalconf.config['paths']['data_folder']
     store = sqlite3.connect(path + db_file)
     df1 = pd.read_sql_query("SELECT * FROM " + accountid, store)
-    df1['date1']=df1.index.map(lambda x: x.date())
-    df1= df1.drop_duplicates(subset=['date1'],keep='last')
+    #df1['date1']=df1.index.map(lambda x: x.date())
+    #df1= df1.drop_duplicates(subset=['date1'],keep='last')
     store.close()
     return df1
 

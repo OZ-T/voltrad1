@@ -22,6 +22,20 @@ globalconf = config.GlobalConfig()
 log = globalconf.get_logger()
 path = globalconf.config['paths']['data_folder']
 
+def run_portfolio():
+    accountid = globalconf.get_accountid()
+    dataframe = sql.read_historical_portfolio_from_sqllite(accountid)
+    if dataframe.empty:
+        log.info('DataFrame is empty!')
+        return
+
+def run_account():
+    accountid = globalconf.get_accountid()
+    dataframe = sql.read_historical_acc_summary_from_sqllite(accountid)
+    if dataframe.empty:
+        log.info('DataFrame is empty!')
+        return
+
 def run_ib(symbol,expiry):
     dataframe = sql.get_ib_option_dataframe(symbol, expiry, None, None)
 
@@ -134,4 +148,5 @@ def run_yhoo(symbol,expiry):
         log.info("No table for this symbol and expiry : " + str(e) )
 
 if __name__ == "__main__":
-    run_ib(symbol="SPY", expiry="2017-10")
+    #run_ib(symbol="SPY", expiry="2017-10")
+    run_portfolio()

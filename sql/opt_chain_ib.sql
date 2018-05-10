@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS "OPTIONS_CHAIN_IB" (
+    CREATE TABLE IF NOT EXISTS "OPTIONS_CHAIN_IB" (
 "load_dttm" TIMESTAMP   not null ,
   "symbol" varchar(4)    not null ,
   "expiry" date    not null,
@@ -48,3 +48,11 @@ CREATE TABLE IF NOT EXISTS "OPTIONS_CHAIN_IB" (
    PRIMARY KEY("load_dttm","symbol", "expiry","strike", "right" )
 );
 CREATE INDEX "ix_OPTIONS_CHAIN_IB_index"ON "OPTIONS_CHAIN_IB" ("load_dttm");
+
+
+-- This creates a hypertable that is partitioned by time
+--   using the values in the `time` column.
+
+-- USING https://docs.timescale.com/v0.9/getting-started/creating-hypertables
+
+SELECT create_hypertable("OPTIONS_CHAIN_IB", "load_dttm");

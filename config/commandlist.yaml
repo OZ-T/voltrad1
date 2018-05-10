@@ -27,9 +27,9 @@ init_earnings:
 
 # Move to analytical db
 mv_ib_opt:
-  pointer: mainteinance.dump_sqlite_optchain_to_postgresql.run_ib
+  pointer: mainteinance.dump_sqlite_to_postgresql.run_ib
 mv_yhoo_opt:
-  pointer: mainteinance.dump_sqlite_optchain_to_postgresql.run_yhoo
+  pointer: mainteinance.dump_sqlite_to_postgresql.run_yhoo
 
 
 
