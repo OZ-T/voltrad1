@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS "OPTIONS_CHAIN_YHOO" (
   "Expiry" date not NULL,
    PRIMARY KEY("Quote_Time","Underlying", "Expiry","Strike", "Type" )
 );
---CREATE INDEX "ix_OPTIONS_CHAIN_YHOO_Quote_Time"ON "OPTIONS_CHAIN_YHOO" ("Quote_Time");
+CREATE INDEX "ix_OPTIONS_CHAIN_YHOO_Quote_Time"ON "OPTIONS_CHAIN_YHOO" ("Quote_Time");
 
 
 
@@ -24,5 +24,5 @@ CREATE TABLE IF NOT EXISTS "OPTIONS_CHAIN_YHOO" (
 --   using the values in the `time` column.
 
 -- USING https://docs.timescale.com/v0.9/getting-started/creating-hypertables
-
-SELECT create_hypertable("OPTIONS_CHAIN_YHOO", "Quote_Time");
+-- RUN THE following en una session de sudo -u postgres psql
+-- SELECT create_hypertable("OPTIONS_CHAIN_YHOO", "Quote_Time");
