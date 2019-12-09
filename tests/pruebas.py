@@ -1,3 +1,4 @@
+#%%
 import pandas as pd
 
 import core.config as config
@@ -9,13 +10,12 @@ from persist.portfolio_and_account_data_methods import extrae_account_delta
 globalconf = config.GlobalConfig()
 log = logger("Testing ...")
 last_date = datetime.datetime.today().strftime("%Y%m%d")
-#df = get_last_bars_from_rt(globalconf=globalconf, log=log, symbol="ES", last_date=last_date,number_days_back=4)
-#import core.analytics_methods as am
-#df = am.coppock(globalconf=globalconf, log_analytics=log, last_date=last_date, symbol="SPY",period="1D")
 
-#print (df)
+#%%
 
 
+
+#%%
 import datetime as dt
 symbol = "SPY"
 expiry = "20170317"

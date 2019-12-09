@@ -1,3 +1,5 @@
+# Cache folder
+
 This folder store temporary files (pickles or sqlite3) that store fequenqly used queries
 the name of the cache file should include the time stamp to be able to invalidate it in case is stale without querying the file
 
