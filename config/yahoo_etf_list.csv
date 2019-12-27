@@ -16,6 +16,9 @@ TLT,iShares 20+ yr treasury,Bond
 LQD,iShares Investment grade Corp Bond,Bond
 EMB,iShares Emerging Mkt Bond,Bond
 BND,Total Bond Mkt,Bond
+BNDX,Vanguard Total International Bond Index Fund ETF Shares,Bond
+VTI,Vanguard Total Stock Market Index Fund ETF Shares,Equity
+VXUS,Vanguard Total International Stock Index Fund ETF Share,Equity
 UVXY,ProShares Ultra VIX,VIX
 ^VIX,VOLATILITY S&P 500,VIX
 VXX,iPath SP 500 VIX,VIX
