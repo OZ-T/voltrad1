@@ -388,7 +388,7 @@ def store_etf_stocks_yahoo_to_db():
                  start=None,
                  end=None,
                  retry_count=3,
-                 pause=0.1,
+                 pause=0.1
                  )
             df['Quote_Time'] =  dt.datetime.now()   
             df['Quote_Time_txt'] = df['Quote_Time'].dt.strftime("%Y-%m-%d %H:%M:%S")
