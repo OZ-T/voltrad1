@@ -21,8 +21,9 @@ def get_all_config():
     """
     Get all configuration
     """
-    try:
+    try:        
         with open(config_file,'r') as f:
+            print("Config file %s" % (str(f)))
             all_config_info=yload(f)
     except IOError: # doesnt work on 2.7 FileNotFoundError:
         raise Exception("Need a valid yaml file as the configuration, %s didn't work" % config_file)

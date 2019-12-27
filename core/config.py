@@ -40,9 +40,11 @@ class GlobalConfig(object, metaclass=Singleton):
         if not os.path.exists(config_file):
             # use the config file in the user folder (windows)
             config_file = os.path.join(os.path.expanduser("~"), 'voltrad1.ini')
+        self.log.info("Read config file [%s]" % (str(config_file) ))
         config = configparser.ConfigParser()
         config.read(config_file)
         self.config=config._sections
+        #self.log.info("Read config sections [%s]" % (str(self.config) ))
         self.months = {1: 'Jan', 2: 'Feb', 3: 'Mar', 4: 'Apr', 5: 'May', 6: 'Jun',
           7: 'Jul', 8: 'Aug', 9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Dec'}
 

@@ -389,17 +389,14 @@ def store_etf_stocks_yahoo_to_db():
                  retry_count=3,
                  pause=0.1,
                  )
-
+            df['Quote_Time'] =  dt.datetime.now()   
             df['Quote_Time_txt'] = df['Quote_Time'].dt.strftime("%Y-%m-%d %H:%M:%S")
             df['Last_Trade_Date_txt'] = df['Last_Trade_Date'].dt.strftime("%Y-%m-%d %H:%M:%S")
             df = df.reset_index().set_index("Quote_Time")
             df['Symbol'] = symbol
-
             write_market_data_to_sqllite(df, "underl_yhoo")
-
-            log.info("sleeping [%s] secs ..." % (str(wait_secs)))
             sleep(wait_secs)
-
+            log.info("sleeping [%s] secs ..." % (str(wait_secs)))
         except (RemoteDataError,TypeError) as err:
             log.info("No information for ticker [%s] Error=[%s] sys_info=[%s]" % (str(symbol) , str(err) , sys.exc_info()[0] ))
             continue
