@@ -4,6 +4,7 @@ Based on Rob Carver code
 """
 
 import inspect
+import yaml 
 from yaml import load as yload
 import importlib
 import sys
@@ -23,8 +24,8 @@ def get_all_config():
     """
     try:        
         with open(config_file,'r') as f:
-            print("Config file %s" % (str(f)))
-            all_config_info=yload(f)
+            #print("Config file %s" % (str(f)))
+            all_config_info=yload(f, Loader=yaml.FullLoader)
     except IOError: # doesnt work on 2.7 FileNotFoundError:
         raise Exception("Need a valid yaml file as the configuration, %s didn't work" % config_file)
     return all_config_info

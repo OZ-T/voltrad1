@@ -104,6 +104,7 @@ def get_expiries(dsId, symbol):
 
 
 def get_market_db_file(db_type, expiry):
+    log.info(("Call get_market_db_file "))
     if db_type == "optchain_ib":
         return1 = globalconf.config['sqllite']['optchain_ib'].format(expiry)
     elif db_type == "optchain_yhoo":
@@ -414,7 +415,9 @@ def store_optchain_yahoo_to_db():
     for symbol,row in optchain_def.iterrows():
         log.info("Init yahoo quotes downloader symbol=%s" % (symbol) )
         try:
-            option = web.Options(symbol,source1)
+            option = web.YahooOptions(symbol)
+            # FIX "Yahoo Options has been immediately deprecated due to large breaks in the API"
+            # option = web.Options(symbol,source1)
             for j in option.expiry_dates:
                 log.info("expiry=%s" % (str(j)))
                 try:
