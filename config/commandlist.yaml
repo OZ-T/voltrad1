@@ -5,6 +5,8 @@ batch_orders_to_db:
   pointer:  persist.sqlite_methods.store_orders_from_ib_to_db
 batch_optchain_yhoo_to_db:
   pointer:  persist.sqlite_methods.store_optchain_yahoo_to_db
+batch_etf_yhoo_to_db:
+  pointer:  persist.sqlite_methods.store_etf_stocks_yahoo_to_db
 batch_underl_ib_to_db:
   pointer:  persist.sqlite_methods.store_underlying_ib_to_db
 batch_itrm_wraps:

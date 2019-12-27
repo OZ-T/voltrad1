@@ -108,6 +108,8 @@ def get_market_db_file(db_type, expiry):
         return1 = globalconf.config['sqllite']['optchain_ib'].format(expiry)
     elif db_type == "optchain_yhoo":
         return1 = globalconf.config['sqllite']['optchain_yhoo'].format(expiry)
+    elif db_type == "underl_yhoo":
+        return1 = globalconf.config['sqllite']['underl_yhoo']
     elif db_type == "optchain_ib_hist":
         return1 = globalconf.config['sqllite']['optchain_ib_hist_db'].format(expiry)
     elif db_type == "underl_ib_hist":
@@ -132,6 +134,14 @@ def get_partition_names(db_type):
     elif db_type == "optchain_yhoo":
         return1 = {'expiry':"Expiry_txt",
                    "format_expiry":"%Y-%m-%d  %H:%M:%S",
+                   "symbol":"Underlying",
+                   "sorting_var":"Quote_Time_txt",
+                   "filtro_sqlite": "substr(Quote_time,1,10)",
+                   'formato_filtro': '%Y-%m-%d'
+                   }
+    elif db_type == "underl_yhoo":
+        return1 = {'expiry':"",
+                   "format_expiry":"NO_EXPIRY",
                    "symbol":"Underlying",
                    "sorting_var":"Quote_Time_txt",
                    "filtro_sqlite": "substr(Quote_time,1,10)",
@@ -359,6 +369,48 @@ def store_underlying_ib_to_db():
 
     client.disconnect()
     store.close()
+
+def store_etf_stocks_yahoo_to_db():
+    globalconf = config.GlobalConfig()
+    optchain_def = globalconf.get_tickers_optchain_yahoo()
+    source1 = globalconf.config['use_case_yahoo_options']['source']
+    log = logger("yahoo etf stocks")
+    log.info("Getting  etf stocks data from yahoo w pandas_datareader ... [%s]"
+             % (dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S') ))
+    wait_secs=10
+    for symbol,row in optchain_def.iterrows():
+        log.info("Init yahoo quotes downloader symbol=%s" % (symbol) )             
+        try:
+            df = web.DataReader(
+                 name=symbol,
+                 data_source=source1,
+                 start=None,
+                 end=None,
+                 retry_count=3,
+                 pause=0.1,
+                 session=None,
+                 api_key=None,
+                 )
+
+            df['Quote_Time_txt'] = df['Quote_Time'].dt.strftime("%Y-%m-%d %H:%M:%S")
+            df['Last_Trade_Date_txt'] = df['Last_Trade_Date'].dt.strftime("%Y-%m-%d %H:%M:%S")
+            df = df.reset_index().set_index("Quote_Time")
+            df['Symbol'] = symbol
+
+            write_market_data_to_sqllite(df, "underl_yhoo")
+
+            log.info("sleeping [%s] secs ..." % (str(wait_secs)))
+            sleep(wait_secs)
+
+        except (RemoteDataError,TypeError) as err:
+            log.info("No information for ticker [%s] Error=[%s] sys_info=[%s]" % (str(symbol) , str(err) , sys.exc_info()[0] ))
+            continue
+        except KeyError as e:
+            log.warn("KeyError raised [" + str(e) + "]...")
+            continue
+
+
+
 
 def store_optchain_yahoo_to_db():
     globalconf = config.GlobalConfig()
