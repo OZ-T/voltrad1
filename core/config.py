@@ -76,7 +76,7 @@ class GlobalConfig(object, metaclass=Singleton):
         :return:
         """
         file= path + name
-        return  pd.DataFrame.from_csv( path =file, sep=sep )
+        return  pd.read_csv( filepath_or_buffer =file, sep=sep , header=0 )
 
     def get_tickers_optchain_yahoo(self):
         """

@@ -119,6 +119,7 @@ def get_market_db_file(db_type, expiry):
 
 
 def get_partition_names(db_type):
+    log.info(("Call get_partition_names "))
     """
     Returns the way to filter the input dataset expiry variable text, format of that variable symbol variable
      and sorting criteria
@@ -141,9 +142,9 @@ def get_partition_names(db_type):
                    'formato_filtro': '%Y-%m-%d'
                    }
     elif db_type == "underl_yhoo":
-        return1 = {'expiry':"",
+        return1 = {'expiry':"Expiry_txt",
                    "format_expiry":"NO_EXPIRY",
-                   "symbol":"Underlying",
+                   "symbol":"Symbol",
                    "sorting_var":"Quote_Time_txt",
                    "filtro_sqlite": "substr(Quote_time,1,10)",
                    'formato_filtro': '%Y-%m-%d'
@@ -247,7 +248,9 @@ def write_market_data_to_sqllite(dataframe, db_type):
     log.info("Appending market data to sqllite ... ")
     path = globalconf.config['paths']['data_folder']
     criteria = get_partition_names(db_type)
+    log.info("Partition criteria ... " % (criteria) )    
     expiries = dataframe[criteria["expiry"]].unique().tolist()
+
     log.info(("These are the expiries included in the data to be loaded: ", expiries))
     # expiries_file = map(lambda i: formated_string_for_file(i,criteria[1]) , expiries)
     # remove empty string expiries (bug in H5 legacy files)
@@ -372,20 +375,39 @@ def store_underlying_ib_to_db():
     store.close()
 
 def store_etf_stocks_yahoo_to_db():
+    log = logger("yahoo etf stocks")
     globalconf = config.GlobalConfig()
+    path = globalconf.config['paths']['data_folder']
     optchain_def = globalconf.get_tickers_optchain_yahoo()
     source1 = globalconf.config['use_case_yahoo_options']['source']
-    log = logger("yahoo etf stocks")
     log.info("Getting  etf stocks data from yahoo w pandas_datareader ... [%s] [%s]"
              % (dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S') , source1  )  )
     wait_secs=10
-    for symbol,row in optchain_def.iterrows():
-        log.info("Init yahoo quotes downloader symbol=%s" % (symbol) )             
+
+    for _,row in optchain_def.iterrows():
+        log.info("Init yahoo quotes downloader symbol=%s" % (row.symbol) )             
+
+        db_file = get_market_db_file(db_type="underl_yhoo", expiry="NONE")
+        store = sqlite3.connect(path + db_file)
+
+        sql = "SELECT count(*) as count1 FROM sqlite_master WHERE type='table' AND name='" + str(row['symbol']) + "';"
+        tbl_exist = pd.read_sql_query(sql, store)['count1'][0]
+        log.info("Does this symbol has a table in sqlite? " + str(tbl_exist))
+        last_record_stored = None
+        if tbl_exist:
+            sql = "SELECT MAX(DATE) as max1 FROM " + str(row['symbol']) + " ;"
+            last_date = pd.read_sql_query( sql , store)['max1'][0]
+            log.info("Last date in data store for symbol " + row['symbol'] + " is " + str(last_date) )
+            if last_date is not None:
+                last_record_stored = dt.datetime.strptime(str(last_date), '%Y-%m-%d %H:%M:%S') + dt.timedelta(minutes=60)
+                if last_record_stored.date() == dt.datetime.today().date():
+                    log.info("All data available is already in the store. ")
+                    continue
         try:
             df = web.DataReader(
-                 name=symbol,
+                 name=row.symbol,
                  data_source=source1,
-                 start=None,
+                 start=last_record_stored,
                  end=None,
                  retry_count=3,
                  pause=0.1
@@ -393,12 +415,15 @@ def store_etf_stocks_yahoo_to_db():
             df['Quote_Time'] =  dt.datetime.now()   
             df['Quote_Time_txt'] = df['Quote_Time'].dt.strftime("%Y-%m-%d %H:%M:%S")
             df = df.reset_index().set_index("Quote_Time")
-            df['Symbol'] = symbol
+            df['Expiry_txt'] = datetime.datetime(9999,12,31,23,59).strftime("%Y-%m-%d %H:%M:%S")
+            df['Symbol'] = row.symbol
+            count_row = df.shape[0]
+            log.info("Number of new rows [%s] " %  (str(count_row)) )
             write_market_data_to_sqllite(df, "underl_yhoo")
             sleep(wait_secs)
             log.info("sleeping [%s] secs ..." % (str(wait_secs)))
         except (RemoteDataError,TypeError) as err:
-            log.info("No information for ticker [%s] Error=[%s] sys_info=[%s]" % (str(symbol) , str(err) , sys.exc_info()[0] ))
+            log.info("No information for ticker [%s] Error=[%s] sys_info=[%s]" % (str(row.symbol) , str(err) , sys.exc_info()[0] ))
             continue
         except KeyError as e:
             log.warn("KeyError raised [" + str(e) + "]...")
@@ -412,10 +437,10 @@ def store_optchain_yahoo_to_db():
     log.info("Getting options chain data from yahoo w pandas_datareader ... [%s]"
              % (dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S') ))
     wait_secs=3
-    for symbol,row in optchain_def.iterrows():
-        log.info("Init yahoo quotes downloader symbol=%s" % (symbol) )
+    for _,row in optchain_def.iterrows():
+        log.info("Init yahoo quotes downloader symbol=%s" % (row.symbol) )
         try:
-            option = web.YahooOptions(symbol)
+            option = web.YahooOptions(row.symbol)
             # FIX "Yahoo Options has been immediately deprecated due to large breaks in the API"
             # option = web.Options(symbol,source1)
             for j in option.expiry_dates:
@@ -441,7 +466,7 @@ def store_optchain_yahoo_to_db():
                     log.warn("KeyError raised [" + str(e) + "]...")
             sleep(wait_secs)
         except (RemoteDataError,TypeError) as err:
-            log.info("No information for ticker [%s] Error=[%s] sys_info=[%s]" % (str(symbol) , str(err) , sys.exc_info()[0] ))
+            log.info("No information for ticker [%s] Error=[%s] sys_info=[%s]" % (str(row.symbol) , str(err) , sys.exc_info()[0] ))
             continue
 
 
