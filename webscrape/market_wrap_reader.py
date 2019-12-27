@@ -12,8 +12,8 @@ from webscrape.utilities import download
 log = logger("wrap download")
 
 
-def first_run():
-    date11 = dt.datetime(year=2017,month=3,day=22,hour=23,minute=55)
+def first_run(now1 = None):
+    date11 = dt.datetime(year=2019,month=6,day=5,hour=23,minute=55)
     end = dt.datetime.now()
     while date1 < end:
         run_reader(now1=date1)
