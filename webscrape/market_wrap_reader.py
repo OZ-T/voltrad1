@@ -41,7 +41,7 @@ def run_reader(now1 = None):
         return
 
     base = "https://www.itpm.com/wraps_post/"
-    month = now.strftime("%b").lower()
+    month = now.strftime("%B").lower()  # Changed format update 27DEC2019 nov --> november
     #daymonth = now.strftime("%d").zfill(2)
     # Fix URL change format: without leading zeroes
     daymonth = str(now.day)
@@ -49,6 +49,7 @@ def run_reader(now1 = None):
     wrapTypes = ("opening","closing")
     globalconf = config.GlobalConfig()
     # example https://www.itpm.com/wraps_post/closing-wrap-friday-nov-17-2017/
+    # Changed format update 27DEC2019: https://www.itpm.com/wraps_post/closing-wrap-friday-december-20-2019/
     for wrapType in wrapTypes:
         url = base + wrapType + "-wrap-" + weekday + "-" + month + "-" + daymonth + "-" + year + "/"
         log.info ('[%s] Downloading: %s' % (str(now) , url ) )
