@@ -411,7 +411,7 @@ def store_optchain_yahoo_to_db():
     log = logger("yahoo options chain")
     log.info("Getting options chain data from yahoo w pandas_datareader ... [%s]"
              % (dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S') ))
-
+    wait_secs=3
     for symbol,row in optchain_def.iterrows():
         log.info("Init yahoo quotes downloader symbol=%s" % (symbol) )
         try:
@@ -437,10 +437,9 @@ def store_optchain_yahoo_to_db():
                         joe['JSON'] = ""
 
                     write_market_data_to_sqllite(joe, "optchain_yhoo")
-
                 except KeyError as e:
                     log.warn("KeyError raised [" + str(e) + "]...")
-
+            sleep(wait_secs)
         except (RemoteDataError,TypeError) as err:
             log.info("No information for ticker [%s] Error=[%s] sys_info=[%s]" % (str(symbol) , str(err) , sys.exc_info()[0] ))
             continue
