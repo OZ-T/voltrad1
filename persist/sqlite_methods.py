@@ -375,8 +375,8 @@ def store_etf_stocks_yahoo_to_db():
     optchain_def = globalconf.get_tickers_optchain_yahoo()
     source1 = globalconf.config['use_case_yahoo_options']['source']
     log = logger("yahoo etf stocks")
-    log.info("Getting  etf stocks data from yahoo w pandas_datareader ... [%s]"
-             % (dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S') ))
+    log.info("Getting  etf stocks data from yahoo w pandas_datareader ... [%s] [%s]"
+             % (dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S') , source1  )  )
     wait_secs=10
     for symbol,row in optchain_def.iterrows():
         log.info("Init yahoo quotes downloader symbol=%s" % (symbol) )             
@@ -388,7 +388,6 @@ def store_etf_stocks_yahoo_to_db():
                  end=None,
                  retry_count=3,
                  pause=0.1,
-                 session=None,
                  )
 
             df['Quote_Time_txt'] = df['Quote_Time'].dt.strftime("%Y-%m-%d %H:%M:%S")
