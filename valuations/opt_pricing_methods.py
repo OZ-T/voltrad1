@@ -1,5 +1,38 @@
 """@package docstring
 """
+from QuantLib import *
+from core.misc_utilities import *
+
+def bsm_price_and_greeks(underlying_price,irate,sigma_amt,valuation_date,strike,expiration_date,option_type):
+    exp_date = expiry_date(expiration_date)
+    val_date = expiry_date(valuation_date)
+    u = SimpleQuote(underlying_price)
+    # the length of rate which closest corresponds to the maturity of the option. 
+    # This will be true opportunity cost of having capital tied up in option positions 
+    #with regard to the risk free rate.
+    r = SimpleQuote(irate)
+    sigma = SimpleQuote(sigma_amt)
+    if option_type == "call":
+        opt_type = Option.Call
+    elif option_type == "put":
+        opt_type = Option.Put
+    today = Date( val_date.day,  val_date.month, val_date.year)
+    Settings.instance().evaluationDate = today
+    option = EuropeanOption(PlainVanillaPayoff(opt_type, strike),
+                            EuropeanExercise(Date(exp_date.day, exp_date.month, exp_date.year)))
+
+    riskFreeCurve = FlatForward(0, TARGET(), QuoteHandle(r), Actual360())
+    volatility = BlackConstantVol(0, TARGET(), QuoteHandle(sigma), Actual360())
+
+    process = BlackScholesProcess(QuoteHandle(u),
+                                    YieldTermStructureHandle(riskFreeCurve),
+                                    BlackVolTermStructureHandle(volatility))
+    engine = AnalyticEuropeanEngine(process)
+    option.setPricingEngine(engine)
+    print(option.NPV() , option.delta(), option.gamma() , option.theta(), option.vega() )
+
+    return ( option.NPV() , option.delta(), option.gamma() , option.theta(), option.vega() )
+
 
 # sacado del libro python for finance
 
