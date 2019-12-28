@@ -3,7 +3,11 @@
 from QuantLib import *
 from core.misc_utilities import *
 
-def bsm_price_and_greeks(underlying_price,irate,sigma_amt,valuation_date,strike,expiration_date,option_type):
+"""
+ Reference: https://www.quantlib.org/reference/namespace_quant_lib.html
+"""
+
+def bsm_price_and_greeks(underlying_price,irate,sigma_amt,valuation_date,strike,expiration_date,option_right_type,opt_val_type):
     exp_date = expiry_date(expiration_date)
     val_date = expiry_date(valuation_date)
     u = SimpleQuote(underlying_price)
@@ -12,14 +16,21 @@ def bsm_price_and_greeks(underlying_price,irate,sigma_amt,valuation_date,strike,
     #with regard to the risk free rate.
     r = SimpleQuote(irate)
     sigma = SimpleQuote(sigma_amt)
-    if option_type == "call":
+    if option_right_type == "call":
         opt_type = Option.Call
-    elif option_type == "put":
+    elif option_right_type == "put":
         opt_type = Option.Put
     today = Date( val_date.day,  val_date.month, val_date.year)
+    first_date = Date(1,1,1999)
     Settings.instance().evaluationDate = today
-    option = EuropeanOption(PlainVanillaPayoff(opt_type, strike),
-                            EuropeanExercise(Date(exp_date.day, exp_date.month, exp_date.year)))
+
+    if opt_val_type == "european" or 1==1:
+        option = EuropeanOption(PlainVanillaPayoff(opt_type, strike),
+                                EuropeanExercise(Date(exp_date.day, exp_date.month, exp_date.year)))
+    #else:
+        #option = VanillaOption(PlainVanillaPayoff(opt_type, strike),
+        #                        AmericanExercise(earliestDate=first_date,
+        #                                         latestDate=Date(exp_date.day, exp_date.month, exp_date.year)))
 
     riskFreeCurve = FlatForward(0, TARGET(), QuoteHandle(r), Actual360())
     volatility = BlackConstantVol(0, TARGET(), QuoteHandle(sigma), Actual360())
