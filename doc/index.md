@@ -3,11 +3,30 @@
 
 ## Trading plan
 
-Operate when the prices are in lateral ranges. How to search for lateral range in prices in practice?
+Operate when the prices are in **lateral ranges**. How to search for lateral range in prices in practice?
+
+Don't seek to find out the price.
 
 Risk control is fundamental for trading.
 
-Estimate the success probability of a strategy (ventaja).
+Estimate the **success probability for a strategy** (ventaja). How to estimate the sucess probability of a TIC strategy.
+This is a clear task for a predictive model (NN scipy `tensorflow` of whatever or some kind of backtesting) based on the data provided
+estimate the probability of sucess, maybe use python backtestesters like `zipline` or `zorro`?? (to be developed in JIRA VOL-18)
+
+
+Template to use for price levels:
+
+- Price of underlying
+- **SMA(20)** (to be developed in JIRA VOL-15)
+- **SMA(50)** (to be developed in JIRA VOL-15)
+- **SMA(200)** (to be developed in JIRA VOL-15)
+- **pearson Pivot points monthly** (where to find this??) these are probably optional (to be developed in JIRA VOL-15)
+- **pearson Pivot points weekly** (where to find this??) (to be developed in JIRA VOL-15)
+- **probability cone** (to be developed in JIRA VOL-19)
+
+For example SMA(50) is calculated as follows:
+
+`df['SMA(50)'] = df.GLD.rolling(50).mean() `
 
 Mean Implied Volatility for each underlying, how to calculate it? 
     
