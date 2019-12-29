@@ -40,7 +40,7 @@ def bsm_price_and_greeks(underlying_price,irate,sigma_amt,valuation_date,strike,
                                     BlackVolTermStructureHandle(volatility))
     engine = AnalyticEuropeanEngine(process)
     option.setPricingEngine(engine)
-    print(option.NPV() , option.delta(), option.gamma() , option.theta(), option.vega() )
+    #print(option.NPV() , option.delta(), option.gamma() , option.theta(), option.vega() )
 
     return ( option.NPV() , option.delta(), option.gamma() , option.theta(), option.vega() )
 
