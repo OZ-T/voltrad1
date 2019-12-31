@@ -46,6 +46,18 @@ def get_yahoo_option_dataframe(underlying,expiry,strike,type):
 
     return df1
 
+def get_yahoo_underlying_dataframe(symbols):
+    path = globalconf.config['paths']['data_folder']
+    db_file = "underly_yhoo.db"
+    store = sqlite3.connect(path + db_file)
+    df1 = pd.DataFrame()
+    for symbol in symbols:
+        temp = pd.read_sql_query(sql="SELECT * FROM " + symbol + " ;", con=store)
+        temp=temp.set_index(['Date'],drop=True)
+        temp.index = pd.to_datetime(temp.index)
+        df1=df1.append(temp)
+    return df1
+
 def get_ib_option_dataframe(underlying,expiry,strike,type):
     try:
         datetime.datetime.strptime(expiry, '%Y-%m')

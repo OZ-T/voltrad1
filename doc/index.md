@@ -1,5 +1,6 @@
 # Documentation
 
+*"CHECK ALT. DATA"* - **H. Clifford McBride** (astronaut), Ad Astra
 
 ## Trading plan
 
@@ -14,7 +15,7 @@ This is a clear task for a predictive model (NN scipy `tensorflow` of whatever o
 estimate the probability of sucess, maybe use python backtestesters like `zipline` or `zorro`?? (to be developed in JIRA VOL-18)
 
 
-Template to use for price levels:
+### Template to use for price levels:
 
 - Price of underlying
 - **SMA(20)** (to be developed in JIRA VOL-15)
@@ -46,6 +47,23 @@ this indicator is only applicable to stocks (it works for SPY but not for FXE fo
 so in stocks if the prices closes below the SMA(50) in a given day, the next trading day there is high prob thhat the market will have a negative return.
 
 Search for the volatility cones code (dropbox folder or in this repo)
+
+
+## Measures
+
+The following measures are calculated:
+
+   - Deltas, gammas, thetas, vegas are calculateed using quanlib python in the following function: [bsm_price_and_greeks]( ../valuations/opt_pricing_methods.py )
+   - Prediction capability in a random market (Shannon) [sto_cycles_probability](../core/analytics_methods.py)
+   - Coppock:
+   - Mcclelan:
+   - SMA(x): [sma](../core/analytics_methods.py)
+   - Probability cones, volatility cones:
+   - Pearson pivot:
+   - Time to maturity:
+   - *"In the money" Implied Volatility*: 
+   - Mean IV of an underlying:
+   - Sucess probability of an strategy: this is the key measure probably, in TOS is given by the platform.
 
 
 

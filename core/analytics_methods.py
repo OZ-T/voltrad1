@@ -29,6 +29,152 @@ globalconf = config.GlobalConfig()
 log = globalconf.log
 
 
+def sma(period,df,symbol):
+    df[symbol+'_SMA_'+str(period)] = df[symbol].rolling(period).mean()
+
+
+def drawdown(period,df,symbol):    
+    df[symbol+'_Drawdown_'+str(period)] = (df[symbol] - df[symbol].rolling(window=period, min_periods=1).max() ) / df[symbol].rolling(window=period, min_periods=1).max()
+    
+
+def ReturnsTD(df,symbol):    
+    df['DateBoY'] = [ pd.to_datetime(r.date()) for r in df.index - pd.offsets.BYearBegin()]
+    df['DateBoM'] = [ pd.to_datetime(r.date()) for r in df.index - pd.offsets.MonthBegin()]
+    #df['DateBoW'] = [ pd.to_datetime(r.date()) for r in df.index - pd.offsets.BYearBegin() ???]    
+    try:
+        df[symbol+'_BoY'] = [ df.loc[df.index >= x,symbol].first('1D').item() for x in df['DateBoY'] ]
+        df[symbol+'_BoM'] = [ df.loc[df.index >= x,symbol].first('1D').item() for x in df['DateBoM'] ]
+        #df[symbol+'_BoW'] = [ df.loc[df.index >= x,symbol].first('1D').item() for x in df['DateBoW'] ]
+    except KeyError:
+        df[symbol+'_BoY'] = df[symbol]
+        df[symbol+'_BoM'] = df[symbol]
+    df[symbol+'_Return_BoY'] = (df[symbol] -  df[symbol+'_BoY']  ) / df[symbol+'_BoY']
+    df[symbol+'_Return_BoM'] = (df[symbol] -  df[symbol+'_BoM']  ) / df[symbol+'_BoM']
+    #df[symbol+'_Return_BoW'] = (df[symbol] -  df[symbol+'_BoW']  ) / df[symbol+'_BoW']
+    #df.drop('DateBoY',axis=1,inplace=True)
+    #df.drop('DateBoM',axis=1,inplace=True)
+    #df.drop('DateBoW',axis=1,inplace=True)
+    #df.drop(symbol+'_BoY',axis=1,inplace=True)
+    #df.drop(symbol+'_BoM',axis=1,inplace=True)
+    #df.drop(symbol+'_BoW',axis=1,inplace=True)
+
+
+
+def sto_cycles_probability(price,deep):
+    """
+    Indicador StoCyclesProb: Capacidad de predicción en un mercado aleatorio. Basado en los cálculos de entropía de Shannon
+
+        Deep = {default dos, uno, tres}
+
+    """
+    displace = 0
+    Periodo =255
+
+    """     #Calculo del nivel 1
+        A = if close > close[1] then 1 else 0;
+        B = if close < close[1] then 1 else 0;
+        def Alcista = A + A[1] + A[2] + A[3] + A[4] + A[5] + A[6] + A[7] + A[8] + A[9];
+        def Bajista = B + B[1] + B[2] + B[3] + B[4] + B[5] + B[6] + B[7] + B[8] + B[9];
+        def ProbAlcista = Alcista / 10;
+        def ProbBajista = Bajista / 10;
+        def EntrProbAlcista = ProbAlcista * Lg(ProbAlcista) / Lg(2);
+        def EntrProbBajista = ProbBajista * Lg(ProbBajista) / Lg(2);
+        def SumaEntr = -(EntrProbAlcista + EntrProbBajista) * 100;
+        def PrediccionN1 = 100 - SumaEntr;
+        #Calculo del nivel 2
+        def AA = if close[1] > close[2] and close > close[1] then 1 else 0;
+        def AB = if close[1] > close[2] and close < close[1] then 1 else 0;
+        def BB = if close[1] < close[2] and close < close[1] then 1 else 0;
+        def BA = if close[1] < close[2] and close > close[1] then 1 else 0;
+        def AlAl = AA + AA[1] + AA[2] + AA[3] + AA[4] + AA[5] + AA[6] + AA[7] + AA[8] + AA[9] + AA[10] + AA[11] + AA[12] + AA[13] + AA[14] + AA[15] + AA[16] + AA[17] + AA[18] + AA[19];
+        def AlBa = AB + AB[1] + AB[2] + AB[3] + AB[4] + AB[5] + AB[6] + AB[7] + AB[8] + AB[9] + AB[10] + AB[11] + AB[12] + AB[13] + AB[14] + AB[15] + AB[16] + AB[17] + AB[18] + AB[19];
+        def BaBa = BB + BB[1] + BB[2] + BB[3] + BB[4] + BB[5] + BB[6] + BB[7] + BB[8] + BB[9] + BB[10] + BB[11] + BB[12] + BB[13] + BB[14] + BB[15] + BB[16] + BB[17] + BB[18] + BB[19];
+        def BaAl = BA + BA[1] + BA[2] + BA[3] + BA[4] + BA[5] + BA[6] + BA[7] + BA[8] + BA[9] + BA[10] + BA[11] + BA[12] + BA[13] + BA[14] + BA[15] + BA[16] + BA[17] + BA[18] + BA[19];
+        def ProbAlAl = if AlAl == 0 then 0.00001 else AlAl / 20;
+        def ProbAlBa = if AlBa == 0 then 0.00001 else AlBa / 20;
+        def ProbBaBa = if BaBa == 0 then 0.00001 else BaBa / 20;
+        def ProbBaAl = if BaAl == 0 then 0.00001 else BaAl / 20;
+        def EntrProbAlAl = ProbAlAl * Lg(ProbAlAl) / Lg(2);
+        def EntrProbAlBa = ProbAlBa * Lg(ProbAlBa) / Lg(2);
+        def EntrProbBaBa = ProbBaBa * Lg(ProbBaBa) / Lg(2);
+        def EntrProbBaAl = ProbBaAl * Lg(ProbBaAl) / Lg(2);
+        def SumaEntrN2 = -(EntrProbAlAl + EntrProbAlBa + EntrProbBaBa + EntrProbBaAl) / 2 * 100;
+        def PrediccionN2 = 100 - SumaEntrN2;
+        #Calculo del nivel 3
+        def AAA = if close[2] > close[3] and close[1] > close[2] and close > close[1] then 1 else 0;
+        def AAB = if close[2] > close[3] and close[1] > close[2] and close < close[1] then 1 else 0;
+        def ABA = if close[2] > close[3] and close[1] < close[2] and close > close[1] then 1 else 0;
+        def ABB = if close[2] > close[3] and close[1] < close[2] and close < close[1] then 1 else 0;
+        def BAA = if close[2] < close[3] and close[1] > close[2] and close > close[1] then 1 else 0;
+        def BAB = if close[2] < close[3] and close[1] > close[2] and close < close[1] then 1 else 0;
+        def BBA = if close[2] < close[3] and close[1] < close[2] and close > close[1] then 1 else 0;
+        def BBB = if close[2] < close[3] and close[1] < close[2] and close < close[1] then 1 else 0;
+        def AlAlAl = AAA + AAA[1] + AAA[2] + AAA[3] + AAA[4] + AAA[5] + AAA[6] + AAA[7] + AAA[8] + AAA[9] + AAA[10] + AAA[11] + AAA[12] + AAA[13] + AAA[14] + AAA[15] + AAA[16] + AAA[17] + AAA[18] + AAA[19] + AAA[20] + AAA[21] + AAA[22] + AAA[23] + AAA[24] + AAA[25] + AAA[26] + AAA[27] + AAA[28] + AAA[29] + AAA[30] + AAA[31] + AAA[32] + AAA[33] + AAA[34] + AAA[35] + AAA[36] + AAA[37] + AAA[38] + AAA[39];
+        def AlAlBa = AAB + AAB[1] + AAB[2] + AAB[3] + AAB[4] + AAB[5] + AAB[6] + AAB[7] + AAB[8] + AAB[9] + AAB[10] + AAB[11] + AAB[12] + AAB[13] + AAB[14] + AAB[15] + AAB[16] + AAB[17] + AAB[18] + AAB[19] + AAB[20] + AAB[21] + AAB[22] + AAB[23] + AAB[24] + AAB[25] + AAB[26] + AAB[27] + AAB[28] + AAB[29] + AAB[30] + AAB[31] + AAB[32] + AAB[33] + AAB[34] + AAB[35] + AAB[36] + AAB[37] + AAB[38] + AAB[39];
+        def AlBaAl = ABA + ABA[1] + ABA[2] + ABA[3] + ABA[4] + ABA[5] + ABA[6] + ABA[7] + ABA[8] + ABA[9] + ABA[10] + ABA[11] + ABA[12] + ABA[13] + ABA[14] + ABA[15] + ABA[16] + ABA[17] + ABA[18] + ABA[19] + ABA[20] + ABA[21] + ABA[22] + ABA[23] + ABA[24] + ABA[25] + ABA[26] + ABA[27] + ABA[28] + ABA[29] + ABA[30] + ABA[31] + ABA[32] + ABA[33] + ABA[34] + ABA[35] + ABA[36] + ABA[37] + ABA[38] + ABA[39];
+        def AlBaBa = ABB + ABB[1] + ABB[2] + ABB[3] + ABB[4] + ABB[5] + ABB[6] + ABB[7] + ABB[8] + ABB[9] + ABB[10] + ABB[11] + ABB[12] + ABB[13] + ABB[14] + ABB[15] + ABB[16] + ABB[17] + ABB[18] + ABB[19] + ABB[20] + ABB[21] + ABB[22] + ABB[23] + ABB[24] + ABB[25] + ABB[26] + ABB[27] + ABB[28] + ABB[29] + ABB[30] + ABB[31] + ABB[32] + ABB[33] + ABB[34] + ABB[35] + ABB[36] + ABB[37] + ABB[38] + ABB[39];
+        def BaAlAl = BAA + BAA[1] + BAA[2] + BAA[3] + BAA[4] + BAA[5] + BAA[6] + BAA[7] + BAA[8] + BAA[9] + BAA[10] + BAA[11] + BAA[12] + BAA[13] + BAA[14] + BAA[15] + BAA[16] + BAA[17] + BAA[18] + BAA[19] + BAA[20] + BAA[21] + BAA[22] + BAA[23] + BAA[24] + BAA[25] + BAA[26] + BAA[27] + BAA[28] + BAA[29] + BAA[30] + BAA[31] + BAA[32] + BAA[33] + BAA[34] + BAA[35] + BAA[36] + BAA[37] + BAA[38] + BAA[39];
+        def BaAlBa = BAB + BAB[1] + BAB[2] + BAB[3] + BAB[4] + BAB[5] + BAB[6] + BAB[7] + BAB[8] + BAB[9] + BAB[10] + BAB[11] + BAB[12] + BAB[13] + BAB[14] + BAB[15] + BAB[16] + BAB[17] + BAB[18] + BAB[19] + BAB[20] + BAB[21] + BAB[22] + BAB[23] + BAB[24] + BAB[25] + BAB[26] + BAB[27] + BAB[28] + BAB[29] + BAB[30] + BAB[31] + BAB[32] + BAB[33] + BAB[34] + BAB[35] + BAB[36] + BAB[37] + BAB[38] + BAB[39];
+        def BaBaAl = BBA + BBA[1] + BBA[2] + BBA[3] + BBA[4] + BBA[5] + BBA[6] + BBA[7] + BBA[8] + BBA[9] + BBA[10] + BBA[11] + BBA[12] + BBA[13] + BBA[14] + BBA[15] + BBA[16] + BBA[17] + BBA[18] + BBA[19] + BBA[20] + BBA[21] + BBA[22] + BBA[23] + BBA[24] + BBA[25] + BBA[26] + BBA[27] + BBA[28] + BBA[29] + BBA[30] + BBA[31] + BBA[32] + BBA[33] + BBA[34] + BBA[35] + BBA[36] + BBA[37] + BBA[38] + BBA[39];
+        def BaBaBa = BBB + BBB[1] + BBB[2] + BBB[3] + BBB[4] + BBB[5] + BBB[6] + BBB[7] + BBB[8] + BBB[9] + BBB[10] + BBB[11] + BBB[12] + BBB[13] + BBB[14] + BBB[15] + BBB[16] + BBB[17] + BBB[18] + BBB[19] + BBB[20] + BBB[21] + BBB[22] + BBB[23] + BBB[24] + BBB[25] + BBB[26] + BBB[27] + BBB[28] + BBB[29] + BBB[30] + BBB[31] + BBB[32] + BBB[33] + BBB[34] + BBB[35] + BBB[36] + BBB[37] + BBB[38] + BBB[39];
+        def ProbAlAlAl = if AlAlAl == 0 then 0.00001 else AlAlAl / 40;
+        def ProbAlAlBa = if AlAlBa == 0 then 0.00001 else AlAlBa / 40;
+        def ProbAlBaAl = if AlBaAl == 0 then 0.00001 else AlBaAl / 40;
+        def ProbAlBaBa = if AlBaBa == 0 then 0.00001 else AlBaBa / 40;
+        def ProbBaAlAl = if BaAlAl == 0 then 0.00001 else BaAlAl / 40;
+        def ProbBaAlBa = if BaAlBa == 0 then 0.00001 else BaAlBa / 40;
+        def ProbBaBaAl = if BaBaAl == 0 then 0.00001 else BaBaAl / 40;
+        def ProbBaBaBa = if BaBaBa == 0 then 0.00001 else BaBaBa / 40;
+        def EntrProbAlAlAl = ProbAlAlAl * Lg(ProbAlAlAl) / Lg(2);
+        def EntrProbAlAlBa = ProbAlAlBa * Lg(ProbAlAlBa) / Lg(2);
+        def EntrProbAlBaAl = ProbAlBaAl * Lg(ProbAlBaAl) / Lg(2);
+        def EntrProbAlBaBa = ProbAlBaBa * Lg(ProbAlBaBa) / Lg(2);
+        def EntrProbBaAlAl = ProbBaAlAl * Lg(ProbBaAlAl) / Lg(2);
+        def EntrProbBaAlBa = ProbBaAlBa * Lg(ProbBaAlBa) / Lg(2);
+        def EntrProbBaBaAl = ProbBaBaAl * Lg(ProbBaBaAl) / Lg(2);
+        def EntrProbBaBaBa = ProbBaBaBa * Lg(ProbBaBaBa) / Lg(2);
+        def SumaEntrN3 = -(EntrProbAlAlAl + EntrProbAlAlBa + EntrProbAlBaAl + EntrProbAlBaBa + EntrProbBaAlAl + EntrProbBaAlBa + EntrProbBaBaAl + EntrProbBaBaBa) / 3 * 100;
+        def PrediccionN3 = 100 - SumaEntrN3;
+        switch (Deep) {
+        case dos:
+            Prediccion = PrediccionN1;
+        case uno:
+            Prediccion = PrediccionN2;
+        case tres:
+            Prediccion = PrediccionN3;
+        }
+        def Predi=Prediccion;
+        def Spread = (Predi - Average(Predi, Periodo));
+        def sDev = StDev(data = Spread, Periodo);
+        plot SpreadPred=Spread/sDev;
+        SpreadPred.SetDefaultColor(Color.BLACK);
+        SpreadPred.SetLineWeight(2);
+        SpreadPred.SetPaintingStrategy(PaintingStrategy.LINE);
+        SpreadPred.SetStyle(Curve.SHORT_DASH);
+        plot UpperBand = 2;
+        UpperBand.SetDefaultColor(GetColor(7));
+        UpperBand.SetStyle(Curve.MEDIUM_DASH);
+        UpperBand.SetLineWeight(3);
+        plot UpperBandInt = 1;
+        UpperBandInt.SetDefaultColor(GetColor(7));
+        UpperBandInt.SetStyle(Curve.SHORT_DASH);
+        UpperBandInt.SetLineWeight(2);
+        plot CeroBand = 0;
+        CeroBand.SetDefaultColor(GetColor(7));
+        CeroBand.SetStyle(Curve.FIRM);
+        CeroBand.SetLineWeight(1);
+        plot LowerBandInt = - 1;
+        LowerBandInt.SetDefaultColor(GetColor(7));
+        LowerBandInt.SetStyle(Curve.SHORT_DASH);
+        LowerBandInt.SetLineWeight(2);
+        plot LowerBand = -2;
+        LowerBand.SetDefaultColor(GetColor(7));
+        LowerBand.SetStyle(Curve.MEDIUM_DASH);
+        LowerBand.SetLineWeight(3);
+        AddLabel(yes, “AV.PRED (SD) = "  +AsText(Average(Predi,Periodo), NumberFormat.TWO_DECIMAL_PLACES)+ " ("+AsText(Sdev, NumberFormat.TWO_DECIMAL_PLACES)+") "+ " Highest = "+AsText(Highest(Predi,Periodo), NumberFormat.TWO_DECIMAL_PLACES)+ " ("+AsText(Highest(Spread/Sdev,Periodo), NumberFormat.TWO_DECIMAL_PLACES)+ ") "+ " Lowest = "+AsText(Lowest(Predi,Periodo), NumberFormat.TWO_DECIMAL_PLACES)+ " ("+AsText(Lowest(Spread/Sdev,Periodo), NumberFormat.TWO_DECIMAL_PLACES)+ ") ", if SpreadPred >= 0 then CreateColor ( 43, 141, 80 ) else Color.RED);
+    """
+    return None
+
 def init_func():
     """
     Initialization method.
