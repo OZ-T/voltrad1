@@ -55,7 +55,7 @@ The following measures are calculated:
 
    - Deltas, gammas, thetas, vegas are calculateed using quanlib python in the following function: [bsm_price_and_greeks]( ../valuations/opt_pricing_methods.py )
    - Prediction capability in a random market (Shannon) [sto_cycles_probability](../core/analytics_methods.py)
-   - Coppock:
+   - Coppock: [COPP](../core/analytics_methods.py)
    - Mcclelan:
    - SMA(x): [sma](../core/analytics_methods.py)
    - Probability cones, volatility cones:
@@ -64,6 +64,8 @@ The following measures are calculated:
    - *"In the money" Implied Volatility*: 
    - Mean IV of an underlying:
    - Sucess probability of an strategy: this is the key measure probably, in TOS is given by the platform.
+   - ReturnsTD (YTD, MTD, WTD): [ReturnsTD](../core/analytics_methods.py)
+   - Drawdown: [drawdown](../core/analytics_methods.py)
 
 
 
