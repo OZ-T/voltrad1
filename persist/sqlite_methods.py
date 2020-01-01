@@ -411,7 +411,7 @@ def store_etf_stocks_yahoo_to_db():
             last_date = pd.read_sql_query( sql , store)['max1'][0]
             log.info("Last date in data store for symbol " + row['symbol'] + " is " + str(last_date) )
             if last_date is not None:
-                if last_record_stored.date() == dt.datetime.today().date():
+                if dt.datetime.strptime(str(last_date), '%Y-%m-%d %H:%M:%S').date() == dt.datetime.today().date():
                     log.info("All data available is already in the store. ")
                     continue
                 last_record_stored = dt.datetime.strptime(str(last_date), '%Y-%m-%d %H:%M:%S') + dt.timedelta(days=1)
