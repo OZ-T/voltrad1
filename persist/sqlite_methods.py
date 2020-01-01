@@ -389,6 +389,10 @@ def store_underlying_ib_to_db():
 def store_etf_stocks_yahoo_to_db():
     log = logger("yahoo etf stocks")
     globalconf = config.GlobalConfig()
+    if dt.datetime.now().date() in utils.get_trading_close_holidays(dt.datetime.now().year):
+        log.info("This is a US Calendar holiday. Ending process ... ")
+        return
+
     path = globalconf.config['paths']['data_folder']
     optchain_def = globalconf.get_tickers_optchain_yahoo()
     source1 = globalconf.config['use_case_yahoo_options']['source']
@@ -447,6 +451,10 @@ def store_optchain_yahoo_to_db():
     optchain_def = globalconf.get_tickers_optchain_yahoo()
     source1 = globalconf.config['use_case_yahoo_options']['source']
     log = logger("yahoo options chain")
+    if dt.datetime.now().date() in utils.get_trading_close_holidays(dt.datetime.now().year):
+        log.info("This is a US Calendar holiday. Ending process ... ")
+        return
+
     log.info("Getting options chain data from yahoo w pandas_datareader ... [%s]"
              % (dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S') ))
     wait_secs=3
