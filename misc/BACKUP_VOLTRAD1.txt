@@ -1,0 +1,5 @@
+
+
+
+tar cf /home/david/20170111.tar.gz --use-compress-prog=pbzip2 /data/voltrad1/
+

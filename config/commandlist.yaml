@@ -1,69 +1,99 @@
-# Operations
+# Used in crontab for automated data gathering
 batch_acc_to_db:
-  pointer:  operations.accounting.store_acc_summary_and_portfolio_from_ib_to_db
-print_acc_port:
-  pointer:  operations.accounting.print_10_days_acc_summary_and_current_positions
+  pointer:  operations.crud.store_acc_summary_and_portfolio_from_ib_to_db
 batch_orders_to_db:
-  pointer:  operations.orders.store_orders_from_ib_to_db
-migrate_h5_orders_sqlite:
-  pointer:  operations.orders.migrate_h5_to_sqllite_orders
-migrate_h5_port_sqlite:
-  pointer:  operations.accounting.migrate_h5_to_sqllite_portfolio
-migrate_h5_acc_sqlite:
-  pointer:  operations.accounting.migrate_h5_to_sqllite_acc_summary
-
-# Market data
-migrate_h5_optchain_ib_sqlite:
-  pointer:  operations.market_data.migrate_h5_to_sqllite_optchain_ib
-migrate_h5_optchain_yhoo_sqlite:
-  pointer:  operations.market_data.migrate_h5_to_sqllite_optchain_yahoo
+  pointer:  persist.sqlite_methods.store_orders_from_ib_to_db
 batch_optchain_yhoo_to_db:
-  pointer:  operations.market_data.store_optchain_yahoo_to_db
+  pointer:  persist.sqlite_methods.store_optchain_yahoo_to_db
+batch_etf_yhoo_to_db:
+  pointer:  persist.sqlite_methods.store_etf_stocks_yahoo_to_db
+batch_underl_ib_to_db:
+  pointer:  persist.sqlite_methods.store_underlying_ib_to_db
+batch_itrm_wraps:
+  pointer:  webscrape.market_wrap_reader.run_reader
+batch_itrm_wraps_first:
+  pointer:  webscrape.market_wrap_reader.first_run 
+batch_momentum:
+  pointer:  webscrape.stock_mkt_momentum.run_reader
+ecocal:
+   pointer: webscrape.yahoo_biz_economic_calendar_us.batch_run_reader
+earnings:
+   pointer: webscrape.yahoo_earnings_calendar.batch_run_reader
+
+
+# One shot jobs for initial loading
+init_itrm_wraps:
+  pointer:  webscrape.market_wrap_reader.first_run
+init_ecocal:
+   pointer: webscrape.yahoo_biz_economic_calendar_us.first_run
+init_earnings:
+   pointer: webscrape.yahoo_earnings_calendar.first_run
+
+# Move to analytical db
+mv_ib_opt:
+  pointer: mainteinance.dump_sqlite_to_postgresql.run_ib
+mv_yhoo_opt:
+  pointer: mainteinance.dump_sqlite_to_postgresql.run_yhoo
+mv_ptf:
+  pointer: mainteinance.dump_sqlite_to_postgresql.run_portfolio
 
 # Web reporting generation
 run_dq_report_market:
-  pointer: analytics.dq_report.run_dq_report_market
-
+  pointer: core.reporting.run_dq_report_market
+run_volest_report:
+  pointer: core.reporting.run_volest_report
+run_trend_report:
+  pointer: core.reporting.run_trend_report
+# H5 legacy
+migrate_h5:
+  pointer:  persist.h5_methods.migrate_h5
+# Operations
+print_acc_port:
+  pointer:  operations.crud.print_10_days_acc_summary_and_current_positions
 # trend and risk indicators
 coppock:
-   pointer: analytics.analytics_methods.print_coppock_diario
+   pointer: core.analytics_methods.print_coppock_diario
 emas:
-   pointer: analytics.analytics_methods.print_emas
-summary:
-  pointer: analytics.analytics_methods.print_summary_underl
+   pointer: core.analytics_methods.print_emas
 vol:
-  pointer: analytics.analytics_methods.print_volatity
+  pointer: core.analytics_methods.print_volatity
 fastmove:
-  pointer: analytics.analytics_methods.print_fast_move
-cone:
-  pointer: analytics.analytics_methods.print_volatility_cone
+  pointer: core.analytics_methods.print_fast_move
+summary:
+  pointer: core.analytics_methods.print_summary_underl
 
 # pretrade analysis commands
 lstprc:
-   pointer: volibutils.orders_methods.list_prices_before_trade
+   pointer: ibutils.orders_methods.list_prices_before_trade
 lstchain:
-  pointer: analytics.analytics_methods.print_quasi_realtime_chain
+  pointer: core.analytics_methods.print_chain
 lstspreadprc:
-   pointer: volibutils.orders_methods.list_spread_prices_before_trade
+   pointer: ibutils.orders_methods.list_spread_prices_before_trade
 chainprc:
-   pointer: volibutils.orders_methods.list_option_chain
+   pointer: ibutils.orders_methods.list_option_chain
 hist_opt:
-   pointer: analytics.analytics_methods.print_historical_option
-ecocal:
-   pointer: analytics.analytics_methods.print_ecalendar
-simul_tic:
-   pointer: analytics.analytics_methods.print_TBD
+   pointer: core.analytics_methods.print_historical_option
+
+
+accdelta:
+  pointer: core.analytics_methods.print_account_delta
+accsnap:
+  pointer: core.analytics_methods.print_account_snapshot
+
+
+##### NEED TO REVIEW
+
 
 # Order commands
 fill1opt:
-   pointer: volibutils.orders_methods.place_plain_order
+   pointer: ibutils.orders_methods.place_plain_order
    typecast:
       strike: float
       quantity: int
       lmtPrice: float
       orderId: int
 fill1spread:
-   pointer: volibutils.orders_methods.place_or_modif_spread_order
+   pointer: ibutils.orders_methods.place_or_modif_spread_order
    typecast:
       strike_l: float
       strike_s: float
@@ -71,53 +101,23 @@ fill1spread:
       lmtPrice: float
       orderId: int
 lstorders:
-   pointer: volibutils.orders_methods.list_open_orders
+   pointer: ibutils.orders_methods.list_open_orders
 cancel:
-   pointer: volibutils.orders_methods.cancel_open_order
+   pointer: ibutils.orders_methods.cancel_open_order
    typecast:
       orderId: int
 cancelall:
-   pointer: volibutils.orders_methods.cancel_all_open_orders
-
+   pointer: ibutils.orders_methods.cancel_all_open_orders
 # TIC portfolio management
 ticrpt:
-   pointer: analytics.analytics_methods.print_tic_report
+   pointer: core.analytics_methods.print_tic_report
 #portfolio:
 #   pointer: operations.vol_grab_accounting.print_portfolio_from_ib
-accdelta:
-  pointer: analytics.analytics_methods.print_account_delta
-accsnap:
-  pointer: analytics.analytics_methods.print_account_snapshot
-
 # general market analysis
 hist_under:
-   pointer: analytics.analytics_methods.print_historical_underl
-
+   pointer: core.analytics_methods.print_historical_underl
 # Batch commands & anciliary commands
 batch_tic_rpt:
-   pointer: analytics.shark_tic_report.run_report
-fix_ecalendar:
-  pointer: volsetup.fix_h5_economic_calendar.run
-fix_histo_optchain:
-  pointer: volsetup.fix_h5_historical_opt.run
-
-batch_hist_underlying:
-  pointer:  volquotes.historical_data_loader.run_reader
+   pointer: core.shark_tic_report.run_report
 batch_hist_options:
-  pointer:  volquotes.historical_opt_chains_loader.run_reader
-
-
-
-# DONT USE
-fix_acc_h5:
-  pointer:  operations.accounting.consolidate_anciliary_h5_account
-fix_port_h5:
-  pointer:  operations.accounting.consolidate_anciliary_h5_portfolio
-fix_orders_h5:
-  pointer:  operations.orders.consolidate_anciliary_h5_orders
-fix_optchain:
-  pointer: volsetup.fix_h5_optchain_ib.run
-fix_optchain_yhoo:
-  pointer: volsetup.fix_h5_yahoo_optchain.run
-
-
+  pointer:  quotes.historical_opt_chains_loader.run_reader

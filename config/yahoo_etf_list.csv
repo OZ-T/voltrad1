@@ -16,6 +16,21 @@ TLT,iShares 20+ yr treasury,Bond
 LQD,iShares Investment grade Corp Bond,Bond
 EMB,iShares Emerging Mkt Bond,Bond
 BND,Total Bond Mkt,Bond
+BNDX,Vanguard Total International Bond Index Fund ETF Shares,Bond
+VTI,Vanguard Total Stock Market Index Fund ETF Shares,Equity
+VXUS,Vanguard Total International Stock Index Fund ETF Share,Equity
+EDV,Vanguard Extended Duration Treasury Index Fund ETF Shares,Bond
+BIV,Vanguard Intermediate-Term Bond Index Fund ETF Shares,Bond
 UVXY,ProShares Ultra VIX,VIX
 ^VIX,VOLATILITY S&P 500,VIX
 VXX,iPath SP 500 VIX,VIX
+GOOG,Goggle Alphabet Inc.,Stock
+AMZN,Amazon.com Inc.,Stock
+AAPL,Apple Inc.,Stock
+FB,Facebook Inc.,Stock
+NFLX,Netflix Inc.,Stock
+VGIT,Vanguard Intermediate-Term Treasury Index Fund ETF Shares,Bond
+VTC,Vanguard Total Corporate Bond ETF ETF Shares,Bond
+VCIT,Vanguard Intermediate-Term Corporate Bond Index Fund ETF Shares,Bond
+VOO,Vanguard S&P 500 ETF,Equity
+SPYV,SPDR Portfolio S&P 500 Value ETF,Equity
